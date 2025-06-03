@@ -16,7 +16,10 @@ fn main() {
     // Windows doesn't build the C bindings automatically, and since they're auto-generated from
     // another project, I'm not inclined to fix it. The Rust implementation is still very fast.
     #[cfg(target_os = "windows")]
-    return;
+    {
+        println!("cargo:rustc-cfg=rust_implementation_only");
+        return;
+    }
 
     // build hardware optimized version
     build_optimized();
@@ -32,10 +35,11 @@ fn build_optimized() {
     }
 
     if "x86_64" == target_arch || "x86" == target_arch {
-        build_optimized_x86()
+        return build_optimized_x86()
     }
 
     // fall back to Rust implementation
+    println!("cargo:rustc-cfg=rust_implementation_only");
 }
 
 fn build_optimized_target_crc32_iscsi(name: &str, flags: &[String]) {
@@ -99,11 +103,12 @@ fn build_optimized_aarch64() {
         #[allow(unreachable_code)]
         #[cfg(all(target_arch = "aarch64", target_feature = "neon"))]
         if is_aarch64_feature_detected!("crc") {
-            build_neon_v12e_v1()
+            return build_neon_v12e_v1()
         }
     }
 
     // fall through to internal Rust implementation
+    println!("cargo:rustc-cfg=rust_implementation_only");
 }
 
 fn build_neon_blended() {
@@ -163,7 +168,7 @@ fn build_optimized_x86() {
         let target_arch = env::var("CARGO_CFG_TARGET_ARCH").unwrap();
         if "x86" == target_arch {
             // this is the only one supported on 32-bit x86 systems
-            crate::build_sse_v4s3x3()
+            return crate::build_sse_v4s3x3()
         }
 
         #[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
@@ -184,11 +189,12 @@ fn build_optimized_x86() {
 
         #[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
         if is_x86_feature_detected!("sse4.2") && is_x86_feature_detected!("pclmulqdq") {
-            crate::build_sse_v4s3x3()
+            return crate::build_sse_v4s3x3()
         }
     }
 
     // fall through to internal Rust implementation
+    println!("cargo:rustc-cfg=rust_implementation_only");
 }
 
 fn build_avx512_vpclmulqdq_v3x2() {
