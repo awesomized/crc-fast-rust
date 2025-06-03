@@ -11,10 +11,13 @@ use crate::structs::CrcParams;
 use std::ffi::CStr;
 use std::os::raw::c_char;
 
+#[cfg(not(rust_implementation_only))]
 mod crc32_iscsi;
+#[cfg(not(rust_implementation_only))]
 mod crc32_iso_hdlc;
 
 // note that the initial state needs to be reversed
+#[cfg(not(rust_implementation_only))]
 #[inline(always)]
 pub(crate) fn crc32_iso_hdlc(state: u64, data: &[u8], params: CrcParams) -> u64 {
     unsafe {
@@ -29,6 +32,7 @@ pub(crate) fn crc32_iso_hdlc(state: u64, data: &[u8], params: CrcParams) -> u64 
 }
 
 // note that the initial state needs to be reversed
+#[cfg(not(rust_implementation_only))]
 #[inline(always)]
 pub(crate) fn crc32_iscsi(state: u64, data: &[u8], params: CrcParams) -> u64 {
     unsafe {
@@ -39,11 +43,13 @@ pub(crate) fn crc32_iscsi(state: u64, data: &[u8], params: CrcParams) -> u64 {
     }
 }
 
+#[cfg(not(rust_implementation_only))]
 #[allow(unused)]
 pub unsafe fn get_iso_hdlc_target() -> String {
     convert_to_string(crc32_iso_hdlc::get_iso_hdlc_target())
 }
 
+#[cfg(not(rust_implementation_only))]
 #[allow(unused)]
 pub unsafe fn get_iscsi_target() -> String {
     convert_to_string(crc32_iscsi::get_iscsi_target())

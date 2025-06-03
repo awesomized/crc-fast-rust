@@ -76,4 +76,4 @@ optimize_crc32_sse_v4s3x3 = []
 
 [lints.rust]
 # build-time feature enablement
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(optimized_crc32_iscsi)','cfg(optimized_crc32_iso_hdlc)' ] }
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(optimized_crc32_iscsi)','cfg(optimized_crc32_iso_hdlc)','cfg(rust_implementation_only)'] }
