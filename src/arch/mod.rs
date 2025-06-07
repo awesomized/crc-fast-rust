@@ -20,12 +20,12 @@ use crate::arch::aarch64::AArch64Ops;
 use crate::arch::x86::X86Ops;
 
 #[cfg(all(target_arch = "x86_64", feature = "vpclmulqdq"))]
-use crate::arch::vpclmulqdq::VpclmulqdqOps;
+use crate::arch::vpclmulqdq::Vpclmulqdq512Ops;
 
-pub(crate) mod aarch64;
+mod aarch64;
 mod software;
 mod vpclmulqdq;
-pub(crate) mod x86;
+mod x86;
 
 /// Main entry point that dispatches to the appropriate architecture
 ///
@@ -61,14 +61,16 @@ pub(crate) unsafe fn update(state: u64, bytes: &[u8], params: CrcParams) -> u64 
         use std::arch::is_x86_feature_detected;
 
         if bytes.len() >= 256 && is_x86_feature_detected!("vpclmulqdq") {
-            let ops = vpclmulqdq::VpclmulqdqOps::new();
+            let ops = Vpclmulqdq512Ops::new();
 
             return match params.width {
-                64 => algorithm::update::<VpclmulqdqOps, Width64>(state, bytes, params, &ops),
-                32 => {
-                    algorithm::update::<VpclmulqdqOps, Width32>(state as u32, bytes, params, &ops)
-                        as u64
-                }
+                64 => algorithm::update::<Vpclmulqdq512Ops, Width64>(state, bytes, params, &ops),
+                32 => algorithm::update::<Vpclmulqdq512Ops, Width32>(
+                    state as u32,
+                    bytes,
+                    params,
+                    &ops,
+                ) as u64,
                 _ => panic!("Unsupported CRC width: {}", params.width),
             };
         }
@@ -90,11 +92,18 @@ pub(crate) unsafe fn update(state: u64, bytes: &[u8], params: CrcParams) -> u64 
 }
 
 pub fn get_target() -> String {
-    #[cfg(target_arch = "aarch64")]
+    #[cfg(all(target_arch = "aarch64", target_feature = "sha3"))]
+    return "internal-aarch64-neon-eor3".to_string();
+
+    #[cfg(all(target_arch = "aarch64", not(target_feature = "sha3")))]
     return "internal-aarch64-neon".to_string();
 
     #[cfg(all(target_arch = "x86_64", feature = "vpclmulqdq"))]
-    return "internal-x86_64-avx512-vpclmulqdq".to_string();
+    {
+        if is_x86_feature_detected!("vpclmulqdq") {
+            return "internal-x86_64-avx512-vpclmulqdq".to_string();
+        }
+    }
 
     #[allow(unreachable_code)]
     #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
@@ -110,6 +119,7 @@ mod tests {
     use crate::crc32::consts::CRC32_BZIP2;
     use crate::crc64::consts::CRC64_NVME;
     use crate::test::consts::{TEST_256_BYTES_STRING, TEST_ALL_CONFIGS, TEST_CHECK_STRING};
+    use crate::test::create_aligned_data;
     use rand::{rng, Rng};
 
     #[test]
@@ -124,6 +134,76 @@ mod tests {
             assert_eq!(
                 actual,
                 config.get_check(),
+                "Mismatch CRC, {}, expected {:#x}, got {:#x}",
+                config.get_name(),
+                config.get_check(),
+                actual
+            );
+        }
+    }
+
+    #[test]
+    fn test_256_string() {
+        for config in TEST_ALL_CONFIGS {
+            let actual = unsafe {
+                update(
+                    config.get_init(),
+                    &*create_aligned_data(TEST_256_BYTES_STRING),
+                    *config.get_params(),
+                ) ^ config.get_xorout()
+            };
+
+            assert_eq!(
+                actual,
+                config.checksum_with_reference(TEST_256_BYTES_STRING),
+                "Mismatch CRC, {}, expected {:#x}, got {:#x}",
+                config.get_name(),
+                config.get_check(),
+                actual
+            );
+        }
+    }
+
+    #[test]
+    fn test_512_string() {
+        let test_string = b"12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234561234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456";
+
+        for config in TEST_ALL_CONFIGS {
+            let actual = unsafe {
+                update(
+                    config.get_init(),
+                    &*create_aligned_data(test_string),
+                    *config.get_params(),
+                ) ^ config.get_xorout()
+            };
+
+            assert_eq!(
+                actual,
+                config.checksum_with_reference(test_string),
+                "Mismatch CRC, {}, expected {:#x}, got {:#x}",
+                config.get_name(),
+                config.get_check(),
+                actual
+            );
+        }
+    }
+
+    #[test]
+    fn test_1024_string() {
+        let test_string = b"1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345612345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234561234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456";
+
+        for config in TEST_ALL_CONFIGS {
+            let actual = unsafe {
+                update(
+                    config.get_init(),
+                    &*create_aligned_data(test_string),
+                    *config.get_params(),
+                ) ^ config.get_xorout()
+            };
+
+            assert_eq!(
+                actual,
+                config.checksum_with_reference(test_string),
                 "Mismatch CRC, {}, expected {:#x}, got {:#x}",
                 config.get_name(),
                 config.get_check(),
@@ -296,7 +376,7 @@ mod tests {
                 assert_eq!(
                     actual,
                     expected,
-                    "\nFailed for {} with length {}\\nGot: {:016x}\nExpected: {:016x}",
+                    "\nFailed for {} with length {}\nGot: {:016x}\nExpected: {:016x}",
                     config.get_name(),
                     len,
                     actual,

@@ -17,7 +17,7 @@ pub struct CrcParams {
     pub refout: bool,
     pub xorout: u64,
     pub check: u64,
-    pub keys: [u64; 21],
+    pub keys: [u64; 23],
 }
 
 /// CRC-32 width implementation

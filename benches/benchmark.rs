@@ -51,6 +51,28 @@ fn random_data(size: i32) -> Vec<u8> {
     buf
 }
 
+fn create_aligned_data(input: &[u8]) -> Vec<u8> {
+    // Size of our target alignment structure
+    let align_size = std::mem::size_of::<[[u64; 4]; 2]>(); // 64 bytes
+
+    // Create a vector with padding to ensure we can find a properly aligned position
+    let mut padded = Vec::with_capacity(input.len() + align_size);
+
+    // Fill with zeros initially to reach needed capacity
+    padded.resize(input.len() + align_size, 0);
+
+    // Find the first address that satisfies our alignment
+    let start_addr = padded.as_ptr() as usize;
+    let align_offset = (align_size - (start_addr % align_size)) % align_size;
+
+    // Copy the input into the aligned position
+    let aligned_start = &mut padded[align_offset..];
+    aligned_start[..input.len()].copy_from_slice(input);
+
+    // Return the exact slice we need
+    aligned_start[..input.len()].to_vec()
+}
+
 #[inline(always)]
 fn bench_crc32(c: &mut Criterion) {
     let mut group = c.benchmark_group("CRC-32");
@@ -65,7 +87,7 @@ fn bench_crc32(c: &mut Criterion) {
     );
 
     for (size_name, size) in SIZES {
-        let buf = random_data(*size);
+        let buf = create_aligned_data(&*random_data(*size));
 
         let (part1, rest) = buf.split_at(buf.len() / 4);
         let (part2, rest) = rest.split_at(rest.len() / 3);
@@ -78,6 +100,7 @@ fn bench_crc32(c: &mut Criterion) {
             let alg_suffix = algorithm_name_parts.next();
 
             group.throughput(Throughput::Bytes(*size as u64));
+            group.sample_size(1000);
 
             let bench_name = [alg_suffix.unwrap(), "(checksum)"].join(" ");
 
@@ -108,7 +131,7 @@ fn bench_crc64(c: &mut Criterion) {
     let mut group = c.benchmark_group("CRC-64");
 
     for (size_name, size) in SIZES {
-        let buf = random_data(*size);
+        let buf = create_aligned_data(&*random_data(*size));
 
         let (part1, rest) = buf.split_at(buf.len() / 4);
         let (part2, rest) = rest.split_at(rest.len() / 3);
@@ -121,6 +144,7 @@ fn bench_crc64(c: &mut Criterion) {
             let alg_suffix = algorithm_name_parts.next();
 
             group.throughput(Throughput::Bytes(*size as u64));
+            group.sample_size(1000);
 
             let bench_name = [alg_suffix.unwrap(), "(checksum)"].join(" ");
 

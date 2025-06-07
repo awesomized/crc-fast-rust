@@ -48,7 +48,7 @@ pub trait ArchOps: Sized + Copy + Clone {
         _first: &[Self::Vector; 8],
         _rest: &[[Self::Vector; 8]],
         _reflector: &Reflector<Self::Vector>,
-        _keys: [u64; 21],
+        _keys: [u64; 23],
     ) -> bool
     where
         Self::Vector: Copy,
@@ -294,7 +294,7 @@ pub trait EnhancedCrcWidth: CrcWidth {
     unsafe fn perform_final_reduction<T: ArchOps>(
         state: T::Vector,
         reflected: bool,
-        keys: [u64; 21],
+        keys: [u64; 23],
         ops: &T,
     ) -> Self::Value
     where

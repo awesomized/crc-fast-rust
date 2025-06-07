@@ -1,6 +1,8 @@
 // Copyright 2025 Don MacAskill. Licensed under MIT or Apache-2.0.
 
-//! This module provides AVX2 and VPCLMULQDQ-specific implementations of the ArchOps trait.
+//! This module provides AVX-512 and VPCLMULQDQ-specific implementations of the ArchOps trait.
+//!
+//! It performs folding using 4 x ZMM registers of 512-bits each.
 
 #![cfg(all(target_arch = "x86_64", feature = "vpclmulqdq"))]
 
@@ -11,121 +13,105 @@ use crate::traits::{ArchOps, EnhancedCrcWidth};
 use std::arch::x86_64::*;
 use std::ops::BitXor;
 
-/// Implements the ArchOps trait using 256-bit AVX2 and VPCLMULQDQ instructions
+/// Implements the ArchOps trait using 512-bit AVX-512 and VPCLMULQDQ instructions at 512 bits.
 /// Delegates to X86Ops for standard 128-bit operations
 #[derive(Debug, Copy, Clone)]
-pub struct VpclmulqdqOps(X86Ops);
+pub struct Vpclmulqdq512Ops(X86Ops);
 
-impl VpclmulqdqOps {
+impl Vpclmulqdq512Ops {
     #[inline(always)]
     pub fn new() -> Self {
         Self(X86Ops)
     }
 }
 
-// Wrapper for __m256i to make it easier to work with
+// Wrapper for __m512i to make it easier to work with
 #[derive(Debug, Copy, Clone)]
-struct Simd256(__m256i);
+struct Simd512(__m512i);
 
-impl Simd256 {
+impl Simd512 {
     #[inline]
-    #[target_feature(enable = "avx2")]
-    unsafe fn new(x3: u64, x2: u64, x1: u64, x0: u64) -> Self {
-        Self(_mm256_set_epi64x(
-            x3 as i64, x2 as i64, x1 as i64, x0 as i64,
+    #[target_feature(enable = "avx512f")]
+    unsafe fn new(x7: u64, x6: u64, x5: u64, x4: u64, x3: u64, x2: u64, x1: u64, x0: u64) -> Self {
+        Self(_mm512_set_epi64(
+            x7 as i64, x6 as i64, x5 as i64, x4 as i64, x3 as i64, x2 as i64, x1 as i64, x0 as i64,
         ))
     }
 
     #[inline]
-    #[target_feature(enable = "avx2,avx512f,avx512vl,vpclmulqdq")]
-    unsafe fn fold_32(&self, coeff: &Self, data_to_xor: &Self) -> Self {
-        // XOR3
-        Self(_mm256_ternarylogic_epi64(
-            _mm256_clmulepi64_epi128(self.0, coeff.0, 0x00),
-            _mm256_clmulepi64_epi128(self.0, coeff.0, 0x11),
-            data_to_xor.0,
-            0x96,
+    #[target_feature(enable = "avx512f,avx512vl,vpclmulqdq")]
+    unsafe fn fold_64(&self, coeff: &Self, new_data: &Self) -> Self {
+        // Use 512-bit ternary logic XOR3 with carryless multiplication
+        Self(_mm512_ternarylogic_epi64(
+            _mm512_clmulepi64_epi128(self.0, coeff.0, 0), // Low parts
+            _mm512_clmulepi64_epi128(self.0, coeff.0, 17), // High parts
+            new_data.0,
+            0x96, // XOR3 operation
         ))
     }
 
     #[inline]
-    #[target_feature(enable = "avx2")]
-    unsafe fn extract_u64s(&self) -> [u64; 4] {
-        let mut result = [0u64; 4];
-        _mm256_storeu_si256(result.as_mut_ptr().cast(), self.0);
+    #[target_feature(enable = "avx512f")]
+    unsafe fn extract_u64s(&self) -> [u64; 8] {
+        let mut result = [0u64; 8];
+        _mm512_storeu_si512(result.as_mut_ptr().cast(), self.0);
 
         result
     }
 
     #[inline]
-    #[target_feature(enable = "avx2")]
-    #[allow(unused)]
-    unsafe fn from_128i(low: __m128i, high: __m128i) -> Self {
-        Self(_mm256_inserti128_si256(
-            _mm256_castsi128_si256(low),
-            high,
-            1,
-        ))
+    #[target_feature(enable = "avx512f")]
+    unsafe fn load_from_ptr(ptr: *const u8) -> Self {
+        Self(_mm512_loadu_si512(ptr as *const __m512i))
     }
 
     #[inline]
-    #[target_feature(enable = "avx2")]
-    unsafe fn to_128i_low(self) -> __m128i {
-        _mm256_castsi256_si128(self.0)
+    #[target_feature(enable = "avx512f")]
+    unsafe fn to_128i_extract<const INDEX: i32>(self) -> __m128i {
+        _mm512_extracti32x4_epi32(self.0, INDEX)
     }
 
     #[inline]
-    #[target_feature(enable = "avx2")]
-    unsafe fn to_128i_high(self) -> __m128i {
-        _mm256_extracti128_si256(self.0, 1)
-    }
-
-    #[inline]
-    #[target_feature(enable = "avx2")]
+    #[target_feature(enable = "avx512f")]
     unsafe fn xor(&self, other: &Self) -> Self {
-        Self(_mm256_xor_si256(self.0, other.0))
+        Self(_mm512_xor_si512(self.0, other.0))
     }
 
     #[inline]
-    #[target_feature(enable = "avx2")]
+    #[target_feature(enable = "avx512f")]
     #[allow(unused)]
     unsafe fn print_hex(&self, prefix: &str) {
         let values = self.extract_u64s();
         println!(
-            "{}={:#016x}_{:016x}_{:016x}_{:016x}",
-            prefix, values[3], values[2], values[1], values[0]
+            "{}={:#016x}_{:016x}_{:016x}_{:016x}_{:016x}_{:016x}_{:016x}_{:016x}",
+            prefix,
+            values[7],
+            values[6],
+            values[5],
+            values[4],
+            values[3],
+            values[2],
+            values[1],
+            values[0]
         );
-    }
-
-    #[inline]
-    #[target_feature(enable = "avx2,sse2,sse4.1")]
-    #[allow(unused)]
-    unsafe fn from_m128i_pair(high: __m128i, low: __m128i) -> Self {
-        // Extract u64 values from the __m128i registers
-        let mut high_u64s = [0u64; 2];
-        let mut low_u64s = [0u64; 2];
-
-        _mm_storeu_si128(high_u64s.as_mut_ptr() as *mut __m128i, high);
-        _mm_storeu_si128(low_u64s.as_mut_ptr() as *mut __m128i, low);
-
-        // Create Simd256 using the extracted u64 values
-        // The order matters to ensure consistent data representation:
-        // high_u64s[1], high_u64s[0], low_u64s[1], low_u64s[0]
-        Self::new(high_u64s[1], high_u64s[0], low_u64s[1], low_u64s[0])
     }
 }
 
-// VPCLMULQDQ-optimized implementation for large inputs
-impl VpclmulqdqOps {
-    /// Process aligned blocks using VPCLMULQDQ
+impl Vpclmulqdq512Ops {
+    /// Process aligned blocks using VPCLMULQDQ with 4 x 512-bit registers
+    ///
+    /// Note that #[inline(always)] loses the inlining performance boost, despite no native
+    /// target_features being used directly. Odd since that's not how Rust's docs make it sound...
     #[inline]
-    #[target_feature(enable = "avx2,vpclmulqdq,sse2,sse4.1,pclmulqdq,avx512f,avx512vl")]
-    unsafe fn process_vpclmulqdq_blocks<W: EnhancedCrcWidth>(
+    #[target_feature(
+        enable = "avx,avx2,avx512f,avx512vl,avx512bw,vpclmulqdq,sse,sse2,sse4.1,pclmulqdq"
+    )]
+    unsafe fn process_blocks<W: EnhancedCrcWidth>(
         &self,
-        state: &mut CrcState<<VpclmulqdqOps as ArchOps>::Vector>,
+        state: &mut CrcState<<Vpclmulqdq512Ops as ArchOps>::Vector>,
         first: &[__m128i; 8],
         rest: &[[__m128i; 8]],
-        keys: [u64; 21],
+        keys: [u64; 23],
         reflected: bool,
     ) -> W::Value
     where
@@ -133,214 +119,282 @@ impl VpclmulqdqOps {
     {
         let state_u64s = self.extract_u64s(state.value);
 
-        // Position the state correctly based on reflection mode
         let positioned_state = if reflected {
-            // For reflected mode, state goes in the low bits of the low 64-bit word
-            Simd256::new(0, 0, 0, state_u64s[0])
+            Simd512::new(0, 0, 0, 0, 0, 0, 0, state_u64s[0])
         } else {
-            // For non-reflected mode, state goes in the high bits of the high 64-bit word
-            Simd256::new(state_u64s[1], 0, 0, 0)
+            Simd512::new(state_u64s[1], 0, 0, 0, 0, 0, 0, 0)
         };
 
-        let reflector = create_reflector256(reflected);
+        let reflector = create_reflector512(reflected);
 
-        // Initialize the 4 x 256-bit registers for first block
-        // Convert __m128i to Simd256 and apply reflection in a single step
-        let mut x: [Simd256; 4] = [
-            reflect_bytes256(&reflector, Simd256::from_m128i_pair(first[1], first[0])),
-            reflect_bytes256(&reflector, Simd256::from_m128i_pair(first[3], first[2])),
-            reflect_bytes256(&reflector, Simd256::from_m128i_pair(first[5], first[4])),
-            reflect_bytes256(&reflector, Simd256::from_m128i_pair(first[7], first[6])),
+        // Load first 256 bytes (2nd half is rest[0] since these are 128-byte blocks)
+        let first_ptr = first.as_ptr() as *const u8;
+        let first_rest_ptr = rest[0].as_ptr() as *const u8;
+
+        let mut x = [
+            reflect_bytes512(&reflector, Simd512::load_from_ptr(first_ptr)),
+            reflect_bytes512(&reflector, Simd512::load_from_ptr(first_ptr.add(64))),
+            reflect_bytes512(&reflector, Simd512::load_from_ptr(first_rest_ptr)),
+            reflect_bytes512(&reflector, Simd512::load_from_ptr(first_rest_ptr.add(64))),
         ];
 
         x[0] = positioned_state.xor(&x[0]);
 
-        // Create the folding coefficient
-        let coeff = self.create_vpclmulqdq_coefficient(keys, reflected);
+        let coeff = self.create_avx512_256byte_coefficient(keys, reflected);
 
-        // Process remaining blocks
-        for block in rest {
-            for (i, chunk) in x.iter_mut().enumerate() {
-                let reflected_chunk = reflect_bytes256(
-                    &reflector,
-                    Simd256::from_m128i_pair(block[i * 2 + 1], block[i * 2]),
-                );
+        let remaining_rest = &rest[1..];
+        let pair_count = remaining_rest.len() / 2;
 
-                *chunk = chunk.fold_32(&coeff, &reflected_chunk);
-            }
+        for i in 0..pair_count {
+            let block1_ptr = remaining_rest[i * 2].as_ptr() as *const u8;
+            let block2_ptr = remaining_rest[i * 2 + 1].as_ptr() as *const u8;
+
+            x[0] = x[0].fold_64(
+                &coeff,
+                &reflect_bytes512(&reflector, Simd512::load_from_ptr(block1_ptr)),
+            );
+            x[1] = x[1].fold_64(
+                &coeff,
+                &reflect_bytes512(&reflector, Simd512::load_from_ptr(block1_ptr.add(64))),
+            );
+            x[2] = x[2].fold_64(
+                &coeff,
+                &reflect_bytes512(&reflector, Simd512::load_from_ptr(block2_ptr)),
+            );
+            x[3] = x[3].fold_64(
+                &coeff,
+                &reflect_bytes512(&reflector, Simd512::load_from_ptr(block2_ptr.add(64))),
+            );
         }
 
-        // Fold from 4 x 256-bit to 1 x 128-bit
-        let folded = self.fold_from_256_to_128(x, keys, reflected);
+        let processed_pairs = pair_count * 2;
+        let remaining_single_count = remaining_rest.len() - processed_pairs;
 
-        // leverage existing 128-bit code to finalize
+        if remaining_single_count > 0 {
+            // We have 1 unprocessed block (128 bytes)
+            // Fold 4×512 down to 2×512 and process the remaining block with 2-register mode
+            let folded_2reg = self.fold_from_4x512_to_2x256(x, keys, reflected);
+            let coeff_2reg = self.create_avx512_128byte_coefficient(keys, reflected);
+
+            let last_block_ptr = remaining_rest[processed_pairs].as_ptr() as *const u8;
+
+            let final_x = [
+                folded_2reg[0].fold_64(
+                    &coeff_2reg,
+                    &reflect_bytes512(&reflector, Simd512::load_from_ptr(last_block_ptr)),
+                ),
+                folded_2reg[1].fold_64(
+                    &coeff_2reg,
+                    &reflect_bytes512(&reflector, Simd512::load_from_ptr(last_block_ptr.add(64))),
+                ),
+            ];
+
+            let folded = self.fold_from_2x512_to_1x128(final_x, keys, reflected);
+
+            return W::perform_final_reduction(folded, reflected, keys, self);
+        }
+
+        // All blocks processed in pairs - fold from 4 x 512-bit to 1 x 128-bit
+        let folded = self.fold_from_4x512_to_1x128(x, keys, reflected);
+
         W::perform_final_reduction(folded, reflected, keys, self)
     }
 
-    /// Create a folding coefficient for VPCLMULQDQ
-    #[inline]
-    #[target_feature(enable = "avx2")]
-    unsafe fn create_vpclmulqdq_coefficient(&self, keys: [u64; 21], reflected: bool) -> Simd256 {
+    /// Create a folding coefficient for AVX-512 for 128-byte folding distances
+    #[inline(always)]
+    unsafe fn create_avx512_128byte_coefficient(
+        &self,
+        keys: [u64; 23],
+        reflected: bool,
+    ) -> Simd512 {
         let (k1, k2) = if reflected {
             (keys[3], keys[4])
         } else {
             (keys[4], keys[3])
         };
 
-        Simd256::new(k1, k2, k1, k2)
+        // Replicate the coefficient pair
+        Simd512::new(k1, k2, k1, k2, k1, k2, k1, k2)
     }
 
-    /// Fold from 4 x 256-bit to 1 x 128-bit
-    #[inline]
-    #[target_feature(enable = "avx2,sse2,sse4.1,pclmulqdq,avx512f,avx512vl,vpclmulqdq")]
-    unsafe fn fold_from_256_to_128(
+    /// Create a folding coefficient for AVX-512 for 256-byte folding distances
+    #[inline(always)]
+    unsafe fn create_avx512_256byte_coefficient(
         &self,
-        x: [Simd256; 4],
-        keys: [u64; 21],
+        keys: [u64; 23],
+        reflected: bool,
+    ) -> Simd512 {
+        let (k1, k2) = if reflected {
+            (keys[21], keys[22])
+        } else {
+            (keys[22], keys[21])
+        };
+
+        // Replicate the coefficient pair
+        Simd512::new(k1, k2, k1, k2, k1, k2, k1, k2)
+    }
+
+    /// Fold from 4 x 512-bit to 1 x 128-bit
+    #[inline(always)]
+    unsafe fn fold_from_4x512_to_1x128(
+        &self,
+        x: [Simd512; 4],
+        keys: [u64; 23],
+        reflected: bool,
+    ) -> __m128i {
+        // Step 1: Fold 4 x 512-bit to 2 x 512-bit
+        let x2 = self.fold_from_4x512_to_2x256(x, keys, reflected);
+
+        // Step 2: Fold 2 x 512-bit to 1 x 128-bit
+        self.fold_from_2x512_to_1x128(x2, keys, reflected)
+    }
+
+    /// Fold from 4 x 512-bit to 2 x 512-bit
+    #[inline(always)]
+    unsafe fn fold_from_4x512_to_2x256(
+        &self,
+        x: [Simd512; 4],
+        keys: [u64; 23],
+        reflected: bool,
+    ) -> [Simd512; 2] {
+        // This folds registers that are 128 bytes apart (x[0] with x[2], x[1] with x[3])
+        let coeff = self.create_avx512_128byte_coefficient(keys, reflected);
+
+        // Fold pairs:
+        // x[0] (bytes 0-63) + x[2] (bytes 128-191) → result[0]
+        // x[1] (bytes 64-127) + x[3] (bytes 192-255) → result[1]
+        [x[0].fold_64(&coeff, &x[2]), x[1].fold_64(&coeff, &x[3])]
+    }
+
+    /// Fold from 2 x 512-bit to 1 x 128-bit
+    #[inline(always)]
+    unsafe fn fold_from_2x512_to_1x128(
+        &self,
+        x: [Simd512; 2],
+        keys: [u64; 23],
         reflected: bool,
     ) -> __m128i {
         // Create the fold coefficients for different distances
         let fold_coefficients = [
-            // 112, 96, 80, 64, 48, 32, 16 bytes
-            self.create_vector_from_u64_pair(keys[10], keys[9], reflected),
-            self.create_vector_from_u64_pair(keys[12], keys[11], reflected),
-            self.create_vector_from_u64_pair(keys[14], keys[13], reflected),
-            self.create_vector_from_u64_pair(keys[16], keys[15], reflected),
-            self.create_vector_from_u64_pair(keys[18], keys[17], reflected),
-            self.create_vector_from_u64_pair(keys[20], keys[19], reflected),
-            self.create_vector_from_u64_pair(keys[2], keys[1], reflected),
+            self.create_vector_from_u64_pair(keys[10], keys[9], reflected), // 112 bytes
+            self.create_vector_from_u64_pair(keys[12], keys[11], reflected), // 96 bytes
+            self.create_vector_from_u64_pair(keys[14], keys[13], reflected), // 80 bytes
+            self.create_vector_from_u64_pair(keys[16], keys[15], reflected), // 64 bytes
+            self.create_vector_from_u64_pair(keys[18], keys[17], reflected), // 48 bytes
+            self.create_vector_from_u64_pair(keys[20], keys[19], reflected), // 32 bytes
+            self.create_vector_from_u64_pair(keys[2], keys[1], reflected),  // 16 bytes
         ];
 
-        // Extract the 8 x 128-bit vectors from the 4 x 256-bit vectors
+        // Extract the 8 x 128-bit vectors from the 2 x 512-bit vectors (this is faster than
+        // using 256-bit intrinsics for 1KiB payloads)
         let v128 = if reflected {
             [
-                x[0].to_128i_low(),
-                x[0].to_128i_high(),
-                x[1].to_128i_low(),
-                x[1].to_128i_high(),
-                x[2].to_128i_low(),
-                x[2].to_128i_high(),
-                x[3].to_128i_low(),
-                x[3].to_128i_high(),
+                x[0].to_128i_extract::<0>(), // 256-x0.low
+                x[0].to_128i_extract::<1>(), // 256-x0.high
+                x[0].to_128i_extract::<2>(), // 256-x1.low
+                x[0].to_128i_extract::<3>(), // 256-x1.high
+                x[1].to_128i_extract::<0>(), // 256-x2.low
+                x[1].to_128i_extract::<1>(), // 256-x2.high
+                x[1].to_128i_extract::<2>(), // 256-x3.low
+                x[1].to_128i_extract::<3>(), // 256-x3.high
             ]
         } else {
             [
-                x[0].to_128i_high(),
-                x[0].to_128i_low(),
-                x[1].to_128i_high(),
-                x[1].to_128i_low(),
-                x[2].to_128i_high(),
-                x[2].to_128i_low(),
-                x[3].to_128i_high(),
-                x[3].to_128i_low(),
+                x[0].to_128i_extract::<3>(), // 256-x1.high
+                x[0].to_128i_extract::<2>(), // 256-x1.low
+                x[0].to_128i_extract::<1>(), // 256-x0.high
+                x[0].to_128i_extract::<0>(), // 256-x0.low
+                x[1].to_128i_extract::<3>(), // 256-x3.high
+                x[1].to_128i_extract::<2>(), // 256-x3.low
+                x[1].to_128i_extract::<1>(), // 256-x2.high
+                x[1].to_128i_extract::<0>(), // 256-x2.low
             ]
         };
 
-        // Fold to a single 128-bit vector
-        let mut acc = v128[7];
-        for i in 0..7 {
-            // Fold and XOR
-            let folded = self.carryless_mul_00(v128[i], fold_coefficients[i]);
-            let folded2 = self.carryless_mul_11(v128[i], fold_coefficients[i]);
-            acc = self.xor3_vectors(acc, folded, folded2);
+        // Fold the 8 xmm registers to 1 xmm register
+        let mut res = v128[7];
+
+        for (i, &coeff) in fold_coefficients.iter().enumerate() {
+            let folded_h = self.carryless_mul_00(v128[i], coeff);
+            let folded_l = self.carryless_mul_11(v128[i], coeff);
+            res = self.xor3_vectors(folded_h, folded_l, res);
         }
 
-        acc
+        res
     }
 }
 
-// First, define a 256-bit version of the Reflector
+// 512-bit version of the Reflector
 #[derive(Clone, Copy)]
-enum Reflector256 {
+enum Reflector512 {
     NoReflector,
-    ForwardReflector { smask: Simd256 },
+    ForwardReflector { smask: Simd512 },
 }
 
 // Function to create the appropriate reflector based on CRC parameters
-#[inline]
-#[target_feature(enable = "avx2")]
-unsafe fn create_reflector256(reflected: bool) -> Reflector256 {
+#[inline(always)]
+unsafe fn create_reflector512(reflected: bool) -> Reflector512 {
     if reflected {
-        Reflector256::NoReflector
+        Reflector512::NoReflector
     } else {
-        // Load shuffle mask similar to the 128-bit implementation
-        // Using the same constants from Width64::load_constants
-        let smask = Simd256::new(
+        // Load shuffle mask
+        let smask = Simd512::new(
+            0x08090a0b0c0d0e0f,
+            0x0001020304050607,
+            0x08090a0b0c0d0e0f,
+            0x0001020304050607,
             0x08090a0b0c0d0e0f,
             0x0001020304050607,
             0x08090a0b0c0d0e0f,
             0x0001020304050607,
         );
-        Reflector256::ForwardReflector { smask }
+        Reflector512::ForwardReflector { smask }
     }
 }
 
-// Function to apply reflection to a 256-bit vector
-#[inline]
-#[target_feature(enable = "avx2,sse2,sse4.1")]
-unsafe fn reflect_bytes256(reflector: &Reflector256, data: Simd256) -> Simd256 {
+// Function to apply reflection to a 512-bit vector
+#[inline(always)]
+unsafe fn reflect_bytes512(reflector: &Reflector512, data: Simd512) -> Simd512 {
     match reflector {
-        Reflector256::NoReflector => data,
-        Reflector256::ForwardReflector { smask } => {
-            // Perform shuffle at the byte level
-            // This would require implementing a 256-bit shuffle operation
-            // Either using existing AVX2 instructions or two 128-bit shuffles
-            shuffle_bytes256(data, *smask)
-        }
+        Reflector512::NoReflector => data,
+        Reflector512::ForwardReflector { smask } => shuffle_bytes512(data, *smask),
     }
 }
 
-// Implement a 256-bit byte shuffle function with correct u64 block ordering
+// pre-compute the reverse indices for 512-bit shuffling
+static REVERSE_INDICES_512: __m512i =
+    unsafe { std::mem::transmute([7u64, 6u64, 5u64, 4u64, 3u64, 2u64, 1u64, 0u64]) };
+
+// Implement a 512-bit byte shuffle function
 #[inline]
-#[target_feature(enable = "avx2,sse2,sse4.1")]
-unsafe fn shuffle_bytes256(data: Simd256, mask: Simd256) -> Simd256 {
-    let ops = X86Ops;
-
-    // Extract the u64 values
-    let values = data.extract_u64s(); // [u64_0, u64_1, u64_2, u64_3]
-
-    let shuffled_low = ops.shuffle_bytes(
-        ops.create_vector_from_u64_pair(values[1], values[0], false),
-        mask.to_128i_low(),
-    );
-    let shuffled_high = ops.shuffle_bytes(
-        ops.create_vector_from_u64_pair(values[3], values[2], false),
-        mask.to_128i_high(),
-    );
-
-    // Extract the shuffled u64 values
-    let shuffled_values_low = ops.extract_u64s(shuffled_low);
-    let shuffled_values_high = ops.extract_u64s(shuffled_high);
-
-    // Recombine in the correct order
-    Simd256::new(
-        shuffled_values_low[0],  // u64_0
-        shuffled_values_low[1],  // u64_1
-        shuffled_values_high[0], // u64_2
-        shuffled_values_high[1], // u64_3
-    )
+#[target_feature(enable = "avx512f,avx512bw")]
+unsafe fn shuffle_bytes512(data: Simd512, mask: Simd512) -> Simd512 {
+    Simd512(_mm512_permutexvar_epi64(
+        // Reverse the order using 512-bit permutation
+        REVERSE_INDICES_512,                 // reverse indices
+        _mm512_shuffle_epi8(data.0, mask.0), // shuffled data
+    ))
 }
 
 // Delegate all ArchOps methods to the inner X86Ops instance
-impl ArchOps for VpclmulqdqOps {
+impl ArchOps for Vpclmulqdq512Ops {
     type Vector = __m128i;
 
-    #[inline]
-    #[target_feature(enable = "avx2,vpclmulqdq,sse2,sse4.1,pclmulqdq,avx512f,avx512vl")]
+    #[inline(always)]
     unsafe fn process_enhanced_simd_blocks<W: EnhancedCrcWidth>(
         &self,
         state: &mut CrcState<Self::Vector>,
         first: &[Self::Vector; 8],
         rest: &[[Self::Vector; 8]],
         _reflector: &Reflector<Self::Vector>,
-        keys: [u64; 21],
+        keys: [u64; 23],
     ) -> bool
     where
         Self::Vector: Copy,
     {
         // Update the state with the result
         *state = W::create_state(
-            self.process_vpclmulqdq_blocks::<W>(state, first, rest, keys, state.reflected),
+            self.process_blocks::<W>(state, first, rest, keys, state.reflected),
             state.reflected,
             self,
         );
@@ -349,6 +403,7 @@ impl ArchOps for VpclmulqdqOps {
         true
     }
 
+    // Delegate all other methods to X86Ops
     #[inline]
     #[target_feature(enable = "sse2,sse4.1")]
     unsafe fn create_vector_from_u64_pair(
@@ -538,13 +593,16 @@ impl ArchOps for VpclmulqdqOps {
     }
 
     #[inline]
-    #[target_feature(enable = "avx2,vpclmulqdq,avx512f,avx512vl")]
+    #[target_feature(enable = "avx512f,avx512vl")]
     unsafe fn xor3_vectors(
         &self,
         a: Self::Vector,
         b: Self::Vector,
         c: Self::Vector,
     ) -> Self::Vector {
-        self.0.xor3_vectors(a, b, c)
+        // Use AVX-512 ternary logic when available
+        _mm_ternarylogic_epi64(
+            a, b, c, 0x96, // XOR3
+        )
     }
 }

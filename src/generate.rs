@@ -4,13 +4,64 @@
 
 #![allow(dead_code)]
 
-use crate::consts::{CRC32_EXPONENTS, CRC64_EXPONENTS};
 use std::ops::{BitAnd, BitOr, Shl, Shr};
+
+const CRC32_EXPONENTS: [u64; 23] = [
+    0, // unused, just aligns indexes with the literature
+    32 * 3,
+    32 * 5,
+    32 * 31,
+    32 * 33,
+    32 * 3,
+    32 * 2,
+    0, // mu, generate separately
+    0, // poly, generate separately
+    32 * 27,
+    32 * 29,
+    32 * 23,
+    32 * 25,
+    32 * 19,
+    32 * 21,
+    32 * 15,
+    32 * 17,
+    32 * 11,
+    32 * 13,
+    32 * 7,
+    32 * 9,
+    32 * 63, // for 256 byte distances (2048 - 32)
+    32 * 65, // for 256 byte distances (2048 + 32)
+];
+
+const CRC64_EXPONENTS: [u64; 23] = [
+    0, // unused, just aligns indexes with the literature
+    64 * 2,
+    64 * 3,
+    64 * 16,
+    64 * 17,
+    64 * 2,
+    64,
+    0, // mu, generate separately
+    0, // poly, generate separately
+    64 * 14,
+    64 * 15,
+    64 * 12,
+    64 * 13,
+    64 * 10,
+    64 * 11,
+    64 * 8,
+    64 * 9,
+    64 * 6,
+    64 * 7,
+    64 * 4,
+    64 * 5,
+    64 * 32, // for 256 byte distances (2048)
+    64 * 33, // for 256 byte distances (2048 + 64)
+];
 
 /// Generates the 20 keys needed to calculate CRCs for a given polynomial using PCLMULQDQ when
 /// folding by 8.
-pub(crate) fn keys(width: u8, poly: u64, reflected: bool) -> [u64; 21] {
-    let mut keys: [u64; 21] = [0; 21];
+pub fn keys(width: u8, poly: u64, reflected: bool) -> [u64; 23] {
+    let mut keys: [u64; 23] = [0; 23];
 
     let exponents = if 32 == width {
         CRC32_EXPONENTS
@@ -26,7 +77,7 @@ pub(crate) fn keys(width: u8, poly: u64, reflected: bool) -> [u64; 21] {
         poly
     };
 
-    for i in 1..21 {
+    for i in 1..23 {
         keys[i] = key(width, poly, reflected, exponents[i]);
     }
 

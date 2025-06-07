@@ -90,7 +90,7 @@ impl ArchOps for X86Ops {
     }
 
     #[inline]
-    #[target_feature(enable = "sse2,sse4.1")]
+    #[target_feature(enable = "sse2,sse4.1,ssse3")]
     unsafe fn shuffle_bytes(&self, data: Self::Vector, mask: Self::Vector) -> Self::Vector {
         // x86 uses specific SSSE3 instruction
         _mm_shuffle_epi8(data, mask)

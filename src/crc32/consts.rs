@@ -183,7 +183,7 @@ pub const CRC32_XFER: CrcParams = CrcParams {
 };
 
 // CRC-32/AIXM
-pub const KEYS_814141AB_FORWARD: [u64; 21] = [
+pub const KEYS_814141AB_FORWARD: [u64; 23] = [
     0x0000000000000000,
     0x9be9878f00000000,
     0x85b2a6e400000000,
@@ -205,10 +205,12 @@ pub const KEYS_814141AB_FORWARD: [u64; 21] = [
     0x361f380200000000,
     0x6757ee2f00000000,
     0xffc42e7700000000,
+    0xd12a88300000000,
+    0x93a03b8800000000,
 ];
 
 // CRC-32/AUTOSAR
-pub const KEYS_F4ACFB13_REFLECTED: [u64; 21] = [
+pub const KEYS_F4ACFB13_REFLECTED: [u64; 23] = [
     0x0000000000000000,
     0x000000016130902a,
     0x0000000050428a9c,
@@ -230,10 +232,12 @@ pub const KEYS_F4ACFB13_REFLECTED: [u64; 21] = [
     0x0000000049cb6c68,
     0x00000000c9d55d76,
     0x0000000022919656,
+    0x00000001e97b6a9e,
+    0x00000000000cbd7c,
 ];
 
 // CRC-32/BASE91-D
-pub const KEYS_A833982B_REFLECTED: [u64; 21] = [
+pub const KEYS_A833982B_REFLECTED: [u64; 23] = [
     0x0000000000000000,
     0x00000001e065d896,
     0x00000001aca6d990,
@@ -255,10 +259,12 @@ pub const KEYS_A833982B_REFLECTED: [u64; 21] = [
     0x00000001942367fa,
     0x00000000c2044564,
     0x00000001a07ba234,
+    0x000000010ffc58e6,
+    0x000000015920d7a6,
 ];
 
 // CRC-32/CD-ROM-EDC
-pub const KEYS_8001801B_REFLECTED: [u64; 21] = [
+pub const KEYS_8001801B_REFLECTED: [u64; 23] = [
     0x0000000000000000,
     0x00000001d5934102,
     0x000000006c90c100,
@@ -280,10 +286,12 @@ pub const KEYS_8001801B_REFLECTED: [u64; 21] = [
     0x00000001517f91c2,
     0x00000001f75a6182,
     0x00000000bd01c000,
+    0x00000001bcb30820,
+    0x000000010d925102,
 ];
 
 // CRC-32/MEF
-pub const KEYS_741B8CD7_REFLECTED: [u64; 21] = [
+pub const KEYS_741B8CD7_REFLECTED: [u64; 23] = [
     0x0000000000000000,
     0x000000014b0602f8,
     0x000000007b4bc878,
@@ -305,10 +313,12 @@ pub const KEYS_741B8CD7_REFLECTED: [u64; 21] = [
     0x0000000097259f1a,
     0x00000000adfa5198,
     0x000000009c899030,
+    0x00000001adf2908e,
+    0x00000001f91b48f0,
 ];
 
 // CRC-32/XFER
-pub const KEYS_000000AF_FORWARD: [u64; 21] = [
+pub const KEYS_000000AF_FORWARD: [u64; 23] = [
     0x0000000000000000,
     0x00295f2300000000,
     0xfafa517900000000,
@@ -330,10 +340,12 @@ pub const KEYS_000000AF_FORWARD: [u64; 21] = [
     0x784a483800000000,
     0x7d21bf2000000000,
     0xfaebd3d300000000,
+    0x25ed382b00000000,
+    0x6d2b811a00000000,
 ];
 
 // CRC-32/ISO-HDLC (aka 'crc32'), CRC-32/JAMCRC
-const KEYS_04C11DB7_REFLECTED: [u64; 21] = [
+const KEYS_04C11DB7_REFLECTED: [u64; 23] = [
     0x0000000000000000, // unused placeholder to match 1-based indexing
     0x00000000ccaa009e, // (2^(32* 3) mod P(x))' << 1
     0x00000001751997d0, // (2^(32* 5) mod P(x))' << 1
@@ -355,10 +367,12 @@ const KEYS_04C11DB7_REFLECTED: [u64; 21] = [
     0x000000003db1ecdc, // (2^(32*13) mod P(x))' << 1
     0x000000015a546366, // (2^(32* 7) mod P(x))' << 1
     0x00000000f1da05aa, // (2^(32* 9) mod P(x))' << 1
+    0x00000001322d1430,
+    0x000000011542778a,
 ];
 
 // CRC-32/ISCSI (aka 'crc32c')
-const KEYS_1EDC6F41_REFLECTED: [u64; 21] = [
+const KEYS_1EDC6F41_REFLECTED: [u64; 23] = [
     0x0000000000000000, // unused placeholder to match 1-based indexing
     0x000000014cd00bd6, // (2^(32* 3) mod P(x))' << 1
     0x00000000f20c0dfe, // (2^(32* 5) mod P(x))' << 1
@@ -380,10 +394,12 @@ const KEYS_1EDC6F41_REFLECTED: [u64; 21] = [
     0x000000001c291d04, // (2^(32*13) mod P(x))' << 1
     0x00000000ba4fc28e, // (2^(32* 7) mod P(x))' << 1
     0x00000001384aa63a, // (2^(32* 9) mod P(x))' << 1
+    0x00000000b9e02b86,
+    0x00000000dcb17aa4,
 ];
 
 // CRC-32/BZIP2, CRC-32/CKSUM, CRC-32/MPEG-2
-const KEYS_04C11DB7_FORWARD: [u64; 21] = [
+const KEYS_04C11DB7_FORWARD: [u64; 23] = [
     0x0000000000000000, // unused placeholder to match 1-based indexing
     0xf200aa6600000000, // 2^(32* 3) mod P(x) << 32
     0x17d3315d00000000, // 2^(32* 5) mod P(x) << 32
@@ -405,6 +421,8 @@ const KEYS_04C11DB7_FORWARD: [u64; 21] = [
     0x766f1b7800000000, // 2^(32*13) mod P(x) << 32
     0xcd8c54b500000000, // 2^(32* 7) mod P(x) << 32
     0xab40b71e00000000, // 2^(32* 9) mod P(x) << 32
+    0x1851689900000000,
+    0xa3dc855100000000,
 ];
 
 pub(crate) const SIMD_CONSTANTS: [[u64; 2]; 4] = [

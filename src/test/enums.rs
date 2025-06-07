@@ -53,7 +53,7 @@ impl AnyCrcTestConfig {
         self.get_params().name
     }
 
-    pub fn get_keys(&self) -> [u64; 21] {
+    pub fn get_keys(&self) -> [u64; 23] {
         self.get_params().keys
     }
 

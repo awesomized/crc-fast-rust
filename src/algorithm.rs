@@ -90,7 +90,7 @@ unsafe fn process_by_strategy<T: ArchOps, W: EnhancedCrcWidth>(
     data: &[u8],
     state: &mut CrcState<T::Vector>,
     reflector: Reflector<T::Vector>,
-    keys: [u64; 21],
+    keys: [u64; 23],
     ops: &T,
 ) -> W::Value
 where
@@ -129,7 +129,7 @@ unsafe fn process_large_aligned<T: ArchOps, W: EnhancedCrcWidth>(
     bytes: &[u8],
     state: &mut CrcState<T::Vector>,
     reflector: Reflector<T::Vector>,
-    keys: [u64; 21],
+    keys: [u64; 23],
     ops: &T,
 ) -> W::Value
 where
@@ -149,7 +149,9 @@ where
         }
 
         // try to use the enhanced SIMD implementation first, fall back to non-enhanced if necessary
-        if !ops.process_enhanced_simd_blocks::<W>(state, first, rest, &reflector, keys) {
+        if rest.is_empty()
+            || !ops.process_enhanced_simd_blocks::<W>(state, first, rest, &reflector, keys)
+        {
             process_simd_chunks::<T, W>(state, first, rest, &reflector, keys, ops);
         }
 
@@ -181,7 +183,7 @@ unsafe fn process_simd_chunks<T: ArchOps, W: EnhancedCrcWidth>(
     first: &[T::Vector; 8],
     rest: &[[T::Vector; 8]],
     reflector: &Reflector<T::Vector>,
-    keys: [u64; 21],
+    keys: [u64; 23],
     ops: &T,
 ) where
     T::Vector: Copy,
@@ -260,7 +262,7 @@ unsafe fn process_exactly_16<T: ArchOps, W: EnhancedCrcWidth>(
     data: &[u8],
     state: &mut CrcState<T::Vector>,
     reflector: &Reflector<T::Vector>,
-    keys: [u64; 21],
+    keys: [u64; 23],
     ops: &T,
 ) -> W::Value
 where
@@ -360,7 +362,7 @@ unsafe fn process_17_to_31<T: ArchOps, W: EnhancedCrcWidth>(
     data: &[u8],
     state: &mut CrcState<T::Vector>,
     reflector: &Reflector<T::Vector>,
-    keys: [u64; 21],
+    keys: [u64; 23],
     ops: &T,
 ) -> W::Value
 where
@@ -399,7 +401,7 @@ unsafe fn process_32_to_255<T: ArchOps, W: EnhancedCrcWidth>(
     data: &[u8],
     state: &mut CrcState<T::Vector>,
     reflector: &Reflector<T::Vector>,
-    keys: [u64; 21],
+    keys: [u64; 23],
     ops: &T,
 ) -> W::Value
 where
@@ -461,7 +463,7 @@ unsafe fn get_last_two_xmms<T: ArchOps, W: EnhancedCrcWidth>(
     data: &[u8],
     remaining_len: usize,
     current_state: T::Vector,
-    keys: [u64; 21],
+    keys: [u64; 23],
     reflector: &Reflector<T::Vector>,
     reflected: bool,
     ops: &T,

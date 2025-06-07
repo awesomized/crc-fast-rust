@@ -43,54 +43,6 @@ pub const CRC_64_NVME: Algorithm<u64> = Algorithm {
     residue: 0xf310303b2b6f6e42,
 };
 
-pub(crate) const CRC32_EXPONENTS: [u64; 21] = [
-    0, // unused, just aligns indexes with the literature
-    32 * 3,
-    32 * 5,
-    32 * 31,
-    32 * 33,
-    32 * 3,
-    32 * 2,
-    0, // mu, generate separately
-    0, // poly, generate separately
-    32 * 27,
-    32 * 29,
-    32 * 23,
-    32 * 25,
-    32 * 19,
-    32 * 21,
-    32 * 15,
-    32 * 17,
-    32 * 11,
-    32 * 13,
-    32 * 7,
-    32 * 9,
-];
-
-pub(crate) const CRC64_EXPONENTS: [u64; 21] = [
-    0, // unused, just aligns indexes with the literature
-    64 * 2,
-    64 * 3,
-    64 * 16,
-    64 * 17,
-    64 * 2,
-    64,
-    0, // mu, generate separately
-    0, // poly, generate separately
-    64 * 14,
-    64 * 15,
-    64 * 12,
-    64 * 13,
-    64 * 10,
-    64 * 11,
-    64 * 8,
-    64 * 9,
-    64 * 6,
-    64 * 7,
-    64 * 4,
-    64 * 5,
-];
-
 // for software fallbacks and testing
 pub(crate) const RUST_CRC32_AIXM: crc::Crc<u32> = crc::Crc::<u32>::new(&crc::CRC_32_AIXM);
 

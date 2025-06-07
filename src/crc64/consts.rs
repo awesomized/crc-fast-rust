@@ -18,7 +18,7 @@ pub const CRC64_ECMA_182: CrcParams = CrcParams {
     refout: CRC_64_ECMA_182.refout, // false
     xorout: CRC_64_ECMA_182.xorout,
     check: CRC_64_ECMA_182.check,
-    keys: KEYS_FORWARD_42F0E1EBA9EA3693,
+    keys: KEYS_42F0E1EBA9EA3693_FORWARD,
 };
 
 // width=64 poly=0x000000000000001b init=0xffffffffffffffff refin=true refout=true xorout=0xffffffffffffffff check=0xb90956c775a41001 residue=0x5300000000000000 name="CRC-64/GO-ISO"
@@ -32,7 +32,7 @@ pub const CRC64_GO_ISO: CrcParams = CrcParams {
     refout: CRC_64_GO_ISO.refout, // true
     xorout: CRC_64_GO_ISO.xorout,
     check: CRC_64_GO_ISO.check,
-    keys: KEYS_REVERSE_000000000000001B,
+    keys: KEYS_000000000000001B_REFLECTED,
 };
 
 // width=64 poly=0x259c84cba6426349 init=0xffffffffffffffff refin=true refout=true xorout=0x0000000000000000 check=0x75d4b74f024eceea residue=0x0000000000000000 name="CRC-64/MS"
@@ -46,7 +46,7 @@ pub const CRC64_MS: CrcParams = CrcParams {
     refout: CRC_64_MS.refout, // true
     xorout: CRC_64_MS.xorout,
     check: CRC_64_MS.check,
-    keys: KEYS_REVERSE_259C84CBA6426349,
+    keys: KEYS_259C84CBA6426349_REFLECTED,
 };
 
 // https://reveng.sourceforge.io/crc-catalogue/all.htm#crc.cat.crc-64-nvme
@@ -61,7 +61,7 @@ pub const CRC64_NVME: CrcParams = CrcParams {
     refout: CRC_64_NVME.refout, // true
     xorout: CRC_64_NVME.xorout,
     check: CRC_64_NVME.check,
-    keys: KEYS_REVERSE_AD93D23594C93659,
+    keys: KEYS_AD93D23594C93659_REFLECTED,
 };
 
 // width=64 poly=0xad93d23594c935a9 init=0x0000000000000000 refin=true refout=true xorout=0x0000000000000000 check=0xe9c6d914c4b8d9ca residue=0x0000000000000000 name="CRC-64/REDIS"
@@ -75,7 +75,7 @@ pub const CRC64_REDIS: CrcParams = CrcParams {
     refout: CRC_64_REDIS.refout, // true
     xorout: CRC_64_REDIS.xorout,
     check: CRC_64_REDIS.check,
-    keys: KEYS_REVERSE_AD93D23594C935A9,
+    keys: KEYS_AD93D23594C935A9_REFLECTED,
 };
 
 // width=64 poly=0x42f0e1eba9ea3693 init=0xffffffffffffffff refin=false refout=false xorout=0xffffffffffffffff check=0x62ec59e3f1a4f00a residue=0xfcacbebd5931a992 name="CRC-64/WE"
@@ -89,7 +89,7 @@ pub const CRC64_WE: CrcParams = CrcParams {
     refout: CRC_64_WE.refout, // false
     xorout: CRC_64_WE.xorout,
     check: CRC_64_WE.check,
-    keys: KEYS_FORWARD_42F0E1EBA9EA3693,
+    keys: KEYS_42F0E1EBA9EA3693_FORWARD,
 };
 
 // width=64 poly=0x42f0e1eba9ea3693 init=0xffffffffffffffff refin=true refout=true xorout=0xffffffffffffffff check=0x995dc9bbdf1939fa residue=0x49958c9abd7d353f name="CRC-64/XZ"
@@ -103,11 +103,11 @@ pub const CRC64_XZ: CrcParams = CrcParams {
     refout: CRC_64_XZ.refout, // true
     xorout: CRC_64_XZ.xorout,
     check: CRC_64_XZ.check,
-    keys: KEYS_REVERSE_42F0E1EBA9EA3693,
+    keys: KEYS_42F0E1EBA9EA3693_REFLECTED,
 };
 
 // CRC-64/MS
-const KEYS_REVERSE_259C84CBA6426349: [u64; 21] = [
+const KEYS_259C84CBA6426349_REFLECTED: [u64; 23] = [
     0x0000000000000000,
     0xcef05cca14bbf4df,
     0xfd5d7a0700b5ba38,
@@ -129,10 +129,12 @@ const KEYS_REVERSE_259C84CBA6426349: [u64; 21] = [
     0x717984ed338c465f,
     0x70bd522114faceb8,
     0x2188097f5687b43c,
+    0xb7c2f9fa47c4fe55,
+    0x8dccaf9d6169d0fa,
 ];
 
 // CRC-64/REDIS
-const KEYS_REVERSE_AD93D23594C935A9: [u64; 21] = [
+const KEYS_AD93D23594C935A9_REFLECTED: [u64; 23] = [
     0x0000000000000000,
     0x381d0015c96f4444,
     0xd9d7be7d505da32c,
@@ -154,10 +156,12 @@ const KEYS_REVERSE_AD93D23594C935A9: [u64; 21] = [
     0xa062b2319d66692f,
     0xef3d1d18ed889ed2,
     0x6ba4d760ab38201e,
+    0x9471a5389095fe44,
+    0x9a8908341a6d6d52,
 ];
 
 // CRC-64/ECMA-182, CRC-64/WE
-const KEYS_FORWARD_42F0E1EBA9EA3693: [u64; 21] = [
+const KEYS_42F0E1EBA9EA3693_FORWARD: [u64; 23] = [
     0x0000000000000000, // unused placeholder to match 1-based indexing
     0x05f5c3c7eb52fab6, // 2^(64* 2) mod P(x)
     0x4eb938a7d257740e, // 2^(64* 3) mod P(x)
@@ -179,10 +183,12 @@ const KEYS_FORWARD_42F0E1EBA9EA3693: [u64; 21] = [
     0x4a6b90073eb0af5a, // 2^(64* 7) mod P(x)
     0x571bee0a227ef92b, // 2^(64* 4) mod P(x)
     0x44bef2a201b5200c, // 2^(64* 5) mod P(x)
+    0x7f52691a60ddc70d,
+    0x7036b0389f6a0c82,
 ];
 
 // CRC-64/XZ
-const KEYS_REVERSE_42F0E1EBA9EA3693: [u64; 21] = [
+const KEYS_42F0E1EBA9EA3693_REFLECTED: [u64; 23] = [
     0x0000000000000000, // unused placeholder to match 1-based indexing
     0xdabe95afc7875f40, // 2^((64* 2)-1) mod P(x)
     0xe05dd497ca393ae4, // 2^((64* 3)-1) mod P(x)
@@ -204,10 +210,12 @@ const KEYS_REVERSE_42F0E1EBA9EA3693: [u64; 21] = [
     0xb5ea1af9c013aca4, // 2^((64* 7)-1) mod P(x)
     0x3be653a30fe1af51, // 2^((64* 4)-1) mod P(x)
     0x60095b008a9efa44, // 2^((64* 5)-1) mod P(x)
+    0xf31fd9271e228b79,
+    0x8260adf2381ad81c,
 ];
 
 // CRC-64/GO-ISO
-const KEYS_REVERSE_000000000000001B: [u64; 21] = [
+const KEYS_000000000000001B_REFLECTED: [u64; 23] = [
     0x0000000000000000, // unused placeholder to match 1-based indexing
     0xf500000000000001, // 2^((64* 2)-1) mod P(x)
     0x6b70000000000001, // 2^((64* 3)-1) mod P(x)
@@ -229,10 +237,12 @@ const KEYS_REVERSE_000000000000001B: [u64; 21] = [
     0x76db6c7000000001, // 2^((64* 7)-1) mod P(x)
     0xa011000000000001, // 2^((64* 4)-1) mod P(x)
     0x1b1ab00000000001, // 2^((64* 5)-1) mod P(x)
+    0x45000000b0000000,
+    0x6b700000f5000000,
 ];
 
 // CRC-64/NVME
-const KEYS_REVERSE_AD93D23594C93659: [u64; 21] = [
+const KEYS_AD93D23594C93659_REFLECTED: [u64; 23] = [
     0x0000000000000000, // unused placeholder to match 1-based indexing
     0x21e9_761e_2526_21ac,
     0xeadc_41fd_2ba3_d420,
@@ -254,6 +264,8 @@ const KEYS_REVERSE_AD93D23594C93659: [u64; 21] = [
     0xbdd7_ac0e_e1a4_a0f0,
     0xe1e0_bb9d_45d7_a44c,
     0xb0bc_2e58_9204_f500,
+    0xa043_808c_0f78_2663,
+    0x37cc_d3e1_4069_cabc,
 ];
 
 pub const SIMD_CONSTANTS: [[u64; 2]; 4] = [
