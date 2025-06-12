@@ -20,16 +20,14 @@
 use std::arch::x86_64::*;
 
 /// Safe wrapper for CRC32 iSCSI calculation using AVX-512
-//#[rustversion::before(1.89)]
+#[rustversion::before(1.89)]
 #[inline(always)]
-#[cfg(not(feature = "vpclmulqdq"))]
 pub fn crc32_iscsi(crc: u32, data: &[u8]) -> u32 {
     unsafe { crc32_iscsi_sse_v4s3x3(crc, data.as_ptr(), data.len()) }
 }
 
-//#[rustversion::since(1.89)]
+#[rustversion::since(1.89)]
 #[inline(always)]
-#[cfg(feature = "vpclmulqdq")]
 pub fn crc32_iscsi(crc: u32, data: &[u8]) -> u32 {
     if is_x86_feature_detected!("vpclmulqdq")
         && is_x86_feature_detected!("avx512f")
@@ -49,17 +47,15 @@ pub fn crc32_iscsi(crc: u32, data: &[u8]) -> u32 {
     unsafe { crc32_iscsi_sse_v4s3x3(crc, data.as_ptr(), data.len()) }
 }
 
-//#[rustversion::since(1.89)]
+#[rustversion::since(1.89)]
 #[inline]
-#[cfg(feature = "vpclmulqdq")]
 #[target_feature(enable = "avx512f,avx512vl,vpclmulqdq")]
 unsafe fn clmul_lo_avx512_vpclmulqdq(a: __m512i, b: __m512i) -> __m512i {
     _mm512_clmulepi64_epi128(a, b, 0)
 }
 
-//#[rustversion::since(1.89)]
+#[rustversion::since(1.89)]
 #[inline]
-#[cfg(feature = "vpclmulqdq")]
 #[target_feature(enable = "avx512f,avx512vl,vpclmulqdq")]
 unsafe fn clmul_hi_avx512_vpclmulqdq(a: __m512i, b: __m512i) -> __m512i {
     _mm512_clmulepi64_epi128(a, b, 17)
@@ -142,9 +138,8 @@ unsafe fn mm_crc32_u64(crc: u32, val: u64) -> u32 {
 /// using:
 ///
 /// ./generate -i avx512_vpclmulqdq -p crc32c -a v3x2
-//#[rustversion::since(1.89)]
+#[rustversion::since(1.89)]
 #[inline]
-#[cfg(feature = "vpclmulqdq")]
 #[target_feature(enable = "avx512f,avx512vl,vpclmulqdq,sse4.2")]
 pub unsafe fn crc32_iscsi_avx512_vpclmulqdq_v3x2(
     mut crc0: u32,
@@ -341,9 +336,8 @@ pub unsafe fn crc32_iscsi_avx512_vpclmulqdq_v3x2(
 /// using:
 ///
 /// ./generate -i avx512 -p crc32c -a v4s3x3
-//#[rustversion::since(1.89)]
+#[rustversion::since(1.89)]
 #[inline]
-#[cfg(feature = "vpclmulqdq")]
 #[target_feature(enable = "avx2,avx512f,avx512vl,pclmulqdq")]
 pub unsafe fn crc32_iscsi_avx512_v4s3x3(mut crc0: u32, mut buf: *const u8, mut len: usize) -> u32 {
     // Align to 8-byte boundary using hardware CRC32C instructions
@@ -689,8 +683,7 @@ mod tests {
         }
     }
 
-    //#[rustversion::since(1.89)]
-    #[cfg(feature = "vpclmulqdq")]
+    #[rustversion::since(1.89)]
     fn test_crc32_iscsi_random(len: usize) {
         let mut data = vec![0u8; len];
         rng().fill(&mut data[..]);
@@ -728,8 +721,7 @@ mod tests {
         }
     }
 
-    //#[rustversion::before(1.89)]
-    #[cfg(not(feature = "vpclmulqdq"))]
+    #[rustversion::before(1.89)]
     fn test_crc32_iscsi_random(len: usize) {
         let mut data = vec![0u8; len];
         rng().fill(&mut data[..]);

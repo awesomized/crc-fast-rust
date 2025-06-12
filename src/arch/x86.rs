@@ -227,9 +227,8 @@ impl ArchOps for X86Ops {
         _mm_clmulepi64_si128(a, b, 0x11)
     }
 
-    //#[rustversion::since(1.89)]
+    #[rustversion::since(1.89)]
     #[inline]
-    #[cfg(feature = "vpclmulqdq")]
     #[target_feature(enable = "avx512f,avx512vl")]
     unsafe fn xor3_vectors(
         &self,
@@ -244,9 +243,8 @@ impl ArchOps for X86Ops {
         self.xor3_vectors_sse(a, b, c)
     }
 
-    //#[rustversion::before(1.89)]
+    #[rustversion::before(1.89)]
     #[inline]
-    #[cfg(not(feature = "vpclmulqdq"))]
     #[target_feature(enable = "sse4.1")]
     unsafe fn xor3_vectors(
         &self,
@@ -321,9 +319,8 @@ impl X86Ops {
         }
     }
 
-    //#[rustversion::since(1.89)]
+    #[rustversion::since(1.89)]
     #[inline]
-    #[cfg(feature = "vpclmulqdq")]
     #[target_feature(enable = "avx512f,avx512vl")]
     unsafe fn xor3_vectors_avx512(&self, a: __m128i, b: __m128i, c: __m128i) -> __m128i {
         _mm_ternarylogic_epi64(

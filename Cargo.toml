@@ -24,6 +24,7 @@ digest = {  version = "0.10", features = ["alloc"] }
 rand = "0.9"
 libc = "0.2.171"
 regex = "1.11.1"
+rustversion = "1.0"
 
 [dev-dependencies]
 criterion = "0.5"
@@ -44,10 +45,8 @@ harness = false
 [features]
 alloc = []
 
-# enable experimental VPCLMULQDQ support, which landed in Rust 1.89.0-nightly, will deprecate after 1.89.0 is stable
-vpclmulqdq = []
-
 # the features below aren't in use, are deprecated, and will be removed in the next MAJOR version
+vpclmulqdq = [] # depreated, VPCLMULQDQ stabilized in Rust 1.89.0
 optimize_crc32_auto = [] # deprecated
 optimize_crc32_neon_eor3_v9s3x2e_s3 = [] # deprecated
 optimize_crc32_neon_v12e_v1 = [] # deprecated
