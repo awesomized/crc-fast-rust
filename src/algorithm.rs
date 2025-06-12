@@ -17,9 +17,9 @@
 
 use crate::consts::CRC_CHUNK_SIZE;
 use crate::enums::{DataChunkProcessor, Reflector};
-use crate::structs::{CrcParams, CrcState};
+use crate::structs::CrcState;
 use crate::traits::{ArchOps, EnhancedCrcWidth};
-use crate::{crc32, crc64};
+use crate::{crc32, crc64, CrcParams};
 
 /// Main entry point that works for both CRC-32 and CRC-64
 #[inline]

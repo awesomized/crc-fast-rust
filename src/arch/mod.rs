@@ -11,7 +11,7 @@ use std::arch::is_aarch64_feature_detected;
 #[cfg(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64"))]
 use crate::algorithm;
 
-use crate::structs::CrcParams;
+use crate::CrcParams;
 
 #[cfg(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64"))]
 use crate::structs::{Width32, Width64};

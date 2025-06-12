@@ -3,9 +3,9 @@
 #![cfg(test)]
 #![allow(dead_code)]
 
-use crate::structs::CrcParams;
 use crate::test::structs::*;
 use crate::CrcAlgorithm;
+use crate::CrcParams;
 use crc::Crc;
 
 pub enum AnyCrcTestConfig {

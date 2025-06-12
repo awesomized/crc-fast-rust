@@ -5,9 +5,9 @@
 #![cfg(not(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64")))]
 
 use crate::consts::CRC_64_NVME;
-use crate::structs::CrcParams;
 use crate::CrcAlgorithm;
-use crc::Table;
+use crate::CrcParams;
+use crc::{Algorithm, Table};
 
 const RUST_CRC32_AIXM: crc::Crc<u32, Table<16>> =
     crc::Crc::<u32, Table<16>>::new(&crc::CRC_32_AIXM);
@@ -78,6 +78,23 @@ pub(crate) fn update(state: u64, data: &[u8], params: CrcParams) -> u64 {
                 CrcAlgorithm::Crc32Mef => RUST_CRC32_MEF,
                 CrcAlgorithm::Crc32Mpeg2 => RUST_CRC32_MPEG_2,
                 CrcAlgorithm::Crc32Xfer => RUST_CRC32_XFER,
+                CrcAlgorithm::Crc32Custom => {
+                    let algorithm: Algorithm<u32> = Algorithm {
+                        width: params.width as u8,
+                        poly: params.poly as u32,
+                        init: params.init as u32,
+                        refin: params.refin,
+                        refout: params.refout,
+                        xorout: params.xorout as u32,
+                        check: params.check as u32,
+                        residue: 0x00000000, // unused in this context
+                    };
+
+                    // ugly, but the crc crate is difficult to work with...
+                    let static_algorithm = Box::leak(Box::new(algorithm));
+
+                    crc::Crc::<u32, Table<16>>::new(static_algorithm)
+                }
                 _ => panic!("Invalid algorithm for u32 CRC"),
             };
             update_u32(state as u32, data, params) as u64
@@ -91,6 +108,23 @@ pub(crate) fn update(state: u64, data: &[u8], params: CrcParams) -> u64 {
                 CrcAlgorithm::Crc64Redis => RUST_CRC64_REDIS,
                 CrcAlgorithm::Crc64We => RUST_CRC64_WE,
                 CrcAlgorithm::Crc64Xz => RUST_CRC64_XZ,
+                CrcAlgorithm::Crc64Custom => {
+                    let algorithm: Algorithm<u64> = Algorithm {
+                        width: params.width as u8,
+                        poly: params.poly as u64,
+                        init: params.init as u64,
+                        refin: params.refin,
+                        refout: params.refout,
+                        xorout: params.xorout as u64,
+                        check: params.check as u64,
+                        residue: 0x0000000000000000, // unused in this context
+                    };
+
+                    // ugly, but the crc crate is difficult to work with...
+                    let static_algorithm = Box::leak(Box::new(algorithm));
+
+                    crc::Crc::<u64, Table<16>>::new(static_algorithm)
+                }
                 _ => panic!("Invalid algorithm for u64 CRC"),
             };
             update_u64(state, data, params)

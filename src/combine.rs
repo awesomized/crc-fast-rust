@@ -50,7 +50,7 @@
      http://reveng.sourceforge.net/crc-catalogue/all.htm
 */
 
-use crate::structs::CrcParams;
+use crate::CrcParams;
 
 /* Multiply the GF(2) vector vec by the GF(2) matrix mat, returning the
 resulting vector.  The vector is stored as bits in a crc_t.  The matrix is

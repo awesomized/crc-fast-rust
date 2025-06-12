@@ -3,8 +3,8 @@
 #![allow(dead_code)]
 
 use crate::consts::*;
-use crate::structs::CrcParams;
 use crate::CrcAlgorithm;
+use crate::CrcParams;
 use crc::{CRC_64_ECMA_182, CRC_64_GO_ISO, CRC_64_MS, CRC_64_REDIS, CRC_64_WE, CRC_64_XZ};
 
 // width=64 poly=0x42f0e1eba9ea3693 init=0x0000000000000000 refin=false refout=false xorout=0x0000000000000000 check=0x6c40df5f0b497347 residue=0x0000000000000000 name="CRC-64/ECMA-182"

@@ -54,7 +54,7 @@
 //! Implements the [std::io::Write](https://doc.rust-lang.org/std/io/trait.Write.html) trait for
 //! easier integration with existing code.
 //!
-//! ```no_run
+//! ```rust
 //! use std::env;
 //! use std::fs::File;
 //! use crc_fast::{Digest, CrcAlgorithm::Crc32IsoHdlc};
@@ -116,7 +116,7 @@ use crate::crc32::fusion;
 use crate::crc64::consts::{
     CRC64_ECMA_182, CRC64_GO_ISO, CRC64_MS, CRC64_NVME, CRC64_REDIS, CRC64_WE, CRC64_XZ,
 };
-use crate::structs::{Calculator, CrcParams};
+use crate::structs::Calculator;
 use crate::traits::CrcCalculator;
 use digest::{DynDigest, InvalidBufferSize};
 use std::fs::File;
@@ -144,12 +144,14 @@ pub enum CrcAlgorithm {
     Crc32Bzip2,
     Crc32CdRomEdc,
     Crc32Cksum,
+    Crc32Custom, // Custom CRC-32 implementation, not defined in consts
     Crc32Iscsi,
     Crc32IsoHdlc,
     Crc32Jamcrc,
     Crc32Mef,
     Crc32Mpeg2,
     Crc32Xfer,
+    Crc64Custom, // Custom CRC-64 implementation, not defined in consts
     Crc64Ecma182,
     Crc64GoIso,
     Crc64Ms,
@@ -157,6 +159,21 @@ pub enum CrcAlgorithm {
     Crc64Redis,
     Crc64We,
     Crc64Xz,
+}
+
+/// Parameters for CRC computation, including polynomial, initial value, and other settings.
+#[derive(Clone, Copy, Debug)]
+pub struct CrcParams {
+    pub algorithm: CrcAlgorithm,
+    pub name: &'static str,
+    pub width: u8,
+    pub poly: u64,
+    pub init: u64,
+    pub refin: bool,
+    pub refout: bool,
+    pub xorout: u64,
+    pub check: u64,
+    pub keys: [u64; 23],
 }
 
 /// Type alias for a function pointer that represents a CRC calculation function.
@@ -252,6 +269,19 @@ impl Digest {
     #[inline(always)]
     pub fn new(algorithm: CrcAlgorithm) -> Self {
         let (calculator, params) = get_calculator_params(algorithm);
+
+        Self {
+            state: params.init,
+            amount: 0,
+            params,
+            calculator,
+        }
+    }
+
+    /// Creates a new `Digest` instance with custom parameters.
+    #[inline(always)]
+    pub fn new_with_params(params: CrcParams) -> Self {
+        let calculator = Calculator::calculate as CalculatorFn;
 
         Self {
             state: params.init,
@@ -361,6 +391,13 @@ pub fn checksum(algorithm: CrcAlgorithm, buf: &[u8]) -> u64 {
     calculator(params.init, buf, params) ^ params.xorout
 }
 
+/// Computes the CRC checksum for the given data using the custom specified parameters.
+pub fn checksum_with_params(params: CrcParams, buf: &[u8]) -> u64 {
+    let calculator = Calculator::calculate as CalculatorFn;
+
+    calculator(params.init, buf, params) ^ params.xorout
+}
+
 /// Computes the CRC checksum for the given file using the specified algorithm.
 ///
 /// Appears to be much faster (~2X) than using Writer and io::*, at least on Apple M2 Ultra
@@ -371,7 +408,7 @@ pub fn checksum(algorithm: CrcAlgorithm, buf: &[u8]) -> u64 {
 ///
 /// # Examples
 /// ### checksum_file
-///```no_run
+///```rust
 /// use std::env;
 /// use crc_fast::{checksum_file, CrcAlgorithm::Crc32IsoHdlc};
 ///
@@ -389,7 +426,32 @@ pub fn checksum_file(
     path: &str,
     chunk_size: Option<usize>,
 ) -> Result<u64, std::io::Error> {
-    let mut digest = Digest::new(algorithm);
+    checksum_file_with_digest(Digest::new(algorithm), path, chunk_size)
+}
+
+/// Computes the CRC checksum for the given file using the custom specified parameters.
+///
+/// # Errors
+///
+/// This function will return an error if the file cannot be read.
+pub fn checksum_file_with_params(
+    params: CrcParams,
+    path: &str,
+    chunk_size: Option<usize>,
+) -> Result<u64, std::io::Error> {
+    checksum_file_with_digest(Digest::new_with_params(params), path, chunk_size)
+}
+
+/// Computes the CRC checksum for the given file using the specified Digest.
+///
+/// # Errors
+///
+/// This function will return an error if the file cannot be read.
+fn checksum_file_with_digest(
+    mut digest: Digest,
+    path: &str,
+    chunk_size: Option<usize>,
+) -> Result<u64, std::io::Error> {
     let mut file = File::open(path)?;
 
     // 512KiB KiB was fastest in my benchmarks on an Apple M2 Ultra
@@ -435,6 +497,16 @@ pub fn checksum_combine(
     combine::checksums(checksum1, checksum2, checksum2_len, params)
 }
 
+/// Combines two CRC checksums using the custom specified parameters.
+pub fn checksum_combine_with_custom_params(
+    params: CrcParams,
+    checksum1: u64,
+    checksum2: u64,
+    checksum2_len: u64,
+) -> u64 {
+    combine::checksums(checksum1, checksum2, checksum2_len, params)
+}
+
 /// Returns the target used to calculate the CRC checksum for the specified algorithm.
 ///
 /// These strings are informational only, not stable, and shouldn't be relied on to match across
@@ -460,12 +532,18 @@ fn get_calculator_params(algorithm: CrcAlgorithm) -> (CalculatorFn, CrcParams) {
         CrcAlgorithm::Crc32Bzip2 => (Calculator::calculate as CalculatorFn, CRC32_BZIP2),
         CrcAlgorithm::Crc32CdRomEdc => (Calculator::calculate as CalculatorFn, CRC32_CD_ROM_EDC),
         CrcAlgorithm::Crc32Cksum => (Calculator::calculate as CalculatorFn, CRC32_CKSUM),
+        CrcAlgorithm::Crc32Custom => {
+            panic!("Custom CRC-32 requires parameters via CrcParams::new()")
+        }
         CrcAlgorithm::Crc32Iscsi => (crc32_iscsi_calculator as CalculatorFn, CRC32_ISCSI),
         CrcAlgorithm::Crc32IsoHdlc => (crc32_iso_hdlc_calculator as CalculatorFn, CRC32_ISO_HDLC),
         CrcAlgorithm::Crc32Jamcrc => (Calculator::calculate as CalculatorFn, CRC32_JAMCRC),
         CrcAlgorithm::Crc32Mef => (Calculator::calculate as CalculatorFn, CRC32_MEF),
         CrcAlgorithm::Crc32Mpeg2 => (Calculator::calculate as CalculatorFn, CRC32_MPEG_2),
         CrcAlgorithm::Crc32Xfer => (Calculator::calculate as CalculatorFn, CRC32_XFER),
+        CrcAlgorithm::Crc64Custom => {
+            panic!("Custom CRC-64 requires parameters via CrcParams::new()")
+        }
         CrcAlgorithm::Crc64Ecma182 => (Calculator::calculate as CalculatorFn, CRC64_ECMA_182),
         CrcAlgorithm::Crc64GoIso => (Calculator::calculate as CalculatorFn, CRC64_GO_ISO),
         CrcAlgorithm::Crc64Ms => (Calculator::calculate as CalculatorFn, CRC64_MS),
@@ -515,7 +593,7 @@ mod lib {
     use super::*;
     use crate::test::consts::{TEST_ALL_CONFIGS, TEST_CHECK_STRING};
     use crate::test::enums::AnyCrcTestConfig;
-    use cbindgen::Language::{Cxx, C};
+    use cbindgen::Language::C;
     use cbindgen::Style::Both;
     use rand::{rng, Rng};
     use std::fs::{read, write};
@@ -541,16 +619,94 @@ mod lib {
     }
 
     #[test]
+    fn test_checksum_with_custom_params() {
+        // CRC-32 reflected
+        assert_eq!(
+            checksum_with_params(get_custom_crc32_reflected(), TEST_CHECK_STRING),
+            CRC32_ISCSI.check,
+        );
+
+        // CRC-32 forward
+        assert_eq!(
+            checksum_with_params(get_custom_crc32_forward(), TEST_CHECK_STRING),
+            CRC32_BZIP2.check,
+        );
+
+        // CRC-64 reflected
+        assert_eq!(
+            checksum_with_params(get_custom_crc64_reflected(), TEST_CHECK_STRING),
+            CRC64_NVME.check,
+        );
+
+        // CRC-64 forward
+        assert_eq!(
+            checksum_with_params(get_custom_crc64_forward(), TEST_CHECK_STRING),
+            CRC64_ECMA_182.check,
+        );
+    }
+
+    #[test]
+    fn test_get_custom_params() {
+        assert_eq!(
+            checksum_with_params(get_custom_crc32_reflected(), TEST_CHECK_STRING),
+            CRC32_ISCSI.check,
+        );
+
+        assert_eq!(
+            checksum_with_params(get_custom_crc32_forward(), TEST_CHECK_STRING),
+            CRC32_BZIP2.check,
+        );
+
+        assert_eq!(
+            checksum_with_params(get_custom_crc64_reflected(), TEST_CHECK_STRING),
+            CRC64_NVME.check,
+        );
+
+        assert_eq!(
+            checksum_with_params(get_custom_crc64_forward(), TEST_CHECK_STRING),
+            CRC64_ECMA_182.check,
+        );
+    }
+
+    #[test]
     fn test_digest_updates_check() {
         for config in TEST_ALL_CONFIGS {
-            let mut digest = Digest::new(config.get_algorithm());
-            digest.update(b"123");
-            digest.update(b"456");
-            digest.update(b"789");
-            let result = digest.finalize();
-
-            assert_eq!(result, config.get_check());
+            check_digest(Digest::new(config.get_algorithm()), config.get_check());
         }
+    }
+
+    #[test]
+    fn test_digest_updates_check_with_custom_params() {
+        // CRC-32 reflected
+        check_digest(
+            Digest::new_with_params(get_custom_crc32_reflected()),
+            CRC32_ISCSI.check,
+        );
+
+        // CRC-32 forward
+        check_digest(
+            Digest::new_with_params(get_custom_crc32_forward()),
+            CRC32_BZIP2.check,
+        );
+
+        // CRC-64 reflected
+        check_digest(
+            Digest::new_with_params(get_custom_crc64_reflected()),
+            CRC64_NVME.check,
+        );
+
+        // CRC-64 forward
+        check_digest(
+            Digest::new_with_params(get_custom_crc64_forward()),
+            CRC64_ECMA_182.check,
+        );
+    }
+
+    fn check_digest(mut digest: Digest, check: u64) {
+        digest.update(b"123");
+        digest.update(b"456");
+        digest.update(b"789");
+        assert_eq!(digest.finalize(), check,);
     }
 
     #[test]
@@ -630,11 +786,50 @@ mod lib {
     }
 
     #[test]
+    fn test_combine_with_custom_params() {
+        // CRC-32 reflected
+        let crc32_params = get_custom_crc32_reflected();
+        let checksum1 = checksum_with_params(crc32_params, "1234".as_ref());
+        let checksum2 = checksum_with_params(crc32_params, "56789".as_ref());
+        assert_eq!(
+            checksum_combine_with_custom_params(crc32_params, checksum1, checksum2, 5),
+            CRC32_ISCSI.check,
+        );
+
+        // CRC-32 forward
+        let crc32_params = get_custom_crc32_forward();
+        let checksum1 = checksum_with_params(crc32_params, "1234".as_ref());
+        let checksum2 = checksum_with_params(crc32_params, "56789".as_ref());
+        assert_eq!(
+            checksum_combine_with_custom_params(crc32_params, checksum1, checksum2, 5),
+            CRC32_BZIP2.check,
+        );
+
+        // CRC-64 reflected
+        let crc64_params = get_custom_crc64_reflected();
+        let checksum1 = checksum_with_params(crc64_params, "1234".as_ref());
+        let checksum2 = checksum_with_params(crc64_params, "56789".as_ref());
+        assert_eq!(
+            checksum_combine_with_custom_params(crc64_params, checksum1, checksum2, 5),
+            CRC64_NVME.check,
+        );
+
+        // CRC-64 forward
+        let crc64_params = get_custom_crc64_forward();
+        let checksum1 = checksum_with_params(crc64_params, "1234".as_ref());
+        let checksum2 = checksum_with_params(crc64_params, "56789".as_ref());
+        assert_eq!(
+            checksum_combine_with_custom_params(crc64_params, checksum1, checksum2, 5),
+            CRC64_ECMA_182.check,
+        );
+    }
+
+    #[test]
     fn test_checksum_file() {
         // Create a test file with repeating zeros
         let test_file_path = "test/test_crc32_hash_file.bin";
         let data = vec![0u8; 1024 * 1024]; // 1 MiB of zeros
-        if let Err(e) = std::fs::write(test_file_path, &data) {
+        if let Err(e) = write(test_file_path, &data) {
             eprintln!("Skipping test due to write error: {}", e);
             return;
         }
@@ -645,6 +840,52 @@ mod lib {
         }
 
         std::fs::remove_file(test_file_path).unwrap();
+    }
+
+    #[test]
+    fn test_checksum_file_with_custom_params() {
+        // Create a test file with repeating zeros
+        let test_file_path = "test/test_crc32_hash_file_custom.bin";
+        let data = vec![0u8; 1024 * 1024]; // 1 MiB of zeros
+        if let Err(e) = write(test_file_path, &data) {
+            eprintln!("Skipping test due to write error: {}", e);
+            return;
+        }
+
+        // CRC-32 reflected
+        check_file(
+            get_custom_crc32_reflected(),
+            test_file_path,
+            CRC32_ISCSI.check,
+        );
+
+        // CRC-32 forward
+        check_file(
+            get_custom_crc32_forward(),
+            test_file_path,
+            CRC32_BZIP2.check,
+        );
+
+        // CRC-64 reflected
+        check_file(
+            get_custom_crc64_reflected(),
+            test_file_path,
+            CRC64_NVME.check,
+        );
+
+        // CRC-64 forward
+        check_file(
+            get_custom_crc64_forward(),
+            test_file_path,
+            CRC64_ECMA_182.check,
+        );
+
+        std::fs::remove_file(test_file_path).unwrap();
+    }
+
+    fn check_file(params: CrcParams, file_path: &str, check: u64) {
+        let result = checksum_file_with_params(params, file_path, None).unwrap();
+        assert_eq!(result, check);
     }
 
     #[test]
@@ -799,5 +1040,53 @@ mod lib {
         }
 
         Ok(())
+    }
+
+    fn get_custom_crc32_reflected() -> CrcParams {
+        CrcParams::new(
+            "Custom CRC-32/ISCSI",
+            32,
+            CRC32_ISCSI.poly,
+            CRC32_ISCSI.init,
+            CRC32_ISCSI.refin,
+            CRC32_ISCSI.xorout,
+            CRC32_ISCSI.check,
+        )
+    }
+
+    fn get_custom_crc32_forward() -> CrcParams {
+        CrcParams::new(
+            "Custom CRC-32/BZIP2",
+            32,
+            CRC32_BZIP2.poly,
+            CRC32_BZIP2.init,
+            CRC32_BZIP2.refin,
+            CRC32_BZIP2.xorout,
+            CRC32_BZIP2.check,
+        )
+    }
+
+    fn get_custom_crc64_reflected() -> CrcParams {
+        CrcParams::new(
+            "Custom CRC-64/NVME",
+            64,
+            CRC64_NVME.poly,
+            CRC64_NVME.init,
+            CRC64_NVME.refin,
+            CRC64_NVME.xorout,
+            CRC64_NVME.check,
+        )
+    }
+
+    fn get_custom_crc64_forward() -> CrcParams {
+        CrcParams::new(
+            "Custom CRC-64/ECMA-182",
+            64,
+            CRC64_ECMA_182.poly,
+            CRC64_ECMA_182.init,
+            CRC64_ECMA_182.refin,
+            CRC64_ECMA_182.xorout,
+            CRC64_ECMA_182.check,
+        )
     }
 }

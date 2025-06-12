@@ -3,7 +3,7 @@
 #![cfg(test)]
 #![allow(dead_code)]
 
-use crate::structs::CrcParams;
+use crate::CrcParams;
 use crc::{Crc, Table};
 
 pub struct CrcTestConfig<T: crc::Width, I: crc::Implementation + 'static> {
