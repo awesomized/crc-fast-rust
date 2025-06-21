@@ -28,7 +28,6 @@ regex = "1.11.1"
 [dev-dependencies]
 criterion = "0.5"
 cbindgen = "0.28"
-bindgen = "0.70" # 0.70 is the last version that supports Rust 1.81 due to 'unsafe extern' blocks
 
 # lto=true has a big improvement in performance
 [profile.release]
