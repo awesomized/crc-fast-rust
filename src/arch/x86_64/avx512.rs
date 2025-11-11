@@ -6,21 +6,15 @@
 
 #![cfg(target_arch = "x86_64")]
 
-#[rustversion::since(1.89)]
-use std::arch::x86_64::*;
-
-#[rustversion::since(1.89)]
 use crate::arch::x86::sse::X86SsePclmulqdqOps;
-#[rustversion::since(1.89)]
 use crate::traits::ArchOps;
+use std::arch::x86_64::*;
 
 /// x86_64-only AVX512+PCLMULQDQ tier - delegates to SSE tier and overrides XOR3 operations
 /// Uses AVX512 ternary logic for XOR3 operations with PCLMULQDQ
-#[rustversion::since(1.89)]
 #[derive(Debug, Copy, Clone)]
 pub struct X86_64Avx512PclmulqdqOps(X86SsePclmulqdqOps);
 
-#[rustversion::since(1.89)]
 impl X86_64Avx512PclmulqdqOps {
     #[inline(always)]
     pub fn new() -> Self {
@@ -28,7 +22,6 @@ impl X86_64Avx512PclmulqdqOps {
     }
 }
 
-#[rustversion::since(1.89)]
 impl ArchOps for X86_64Avx512PclmulqdqOps {
     type Vector = __m128i;
 
@@ -192,7 +185,6 @@ impl ArchOps for X86_64Avx512PclmulqdqOps {
         self.0.carryless_mul_11(a, b)
     }
 
-    #[rustversion::since(1.89)]
     #[inline]
     #[target_feature(enable = "avx512vl")]
     unsafe fn xor3_vectors(
@@ -203,18 +195,5 @@ impl ArchOps for X86_64Avx512PclmulqdqOps {
     ) -> Self::Vector {
         // AVX512 tier always uses ternary logic
         _mm_ternarylogic_epi64(a, b, c, 0x96) // XOR3 operation
-    }
-
-    // Fallback for older Rust versions
-    #[rustversion::before(1.89)]
-    #[inline(always)]
-    unsafe fn xor3_vectors(
-        &self,
-        a: Self::Vector,
-        b: Self::Vector,
-        c: Self::Vector,
-    ) -> Self::Vector {
-        // Rust < 1.89 doesn't have _mm_ternarylogic_epi64, fall back to SSE
-        self.0.xor3_vectors(a, b, c)
     }
 }

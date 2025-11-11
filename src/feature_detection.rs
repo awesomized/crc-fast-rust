@@ -41,9 +41,6 @@ pub struct ArchCapabilities {
     pub has_pclmulqdq: bool,
     pub has_avx512vl: bool, // implicitly enables avx512f, has XOR3 operations
     pub has_vpclmulqdq: bool,
-
-    // Rust version gates
-    pub rust_version_supports_avx512: bool,
 }
 
 /// Helper function to convert a performance tier to a human-readable target string
@@ -86,7 +83,6 @@ unsafe fn detect_arch_capabilities() -> ArchCapabilities {
             has_pclmulqdq: false,
             has_avx512vl: false,
             has_vpclmulqdq: false,
-            rust_version_supports_avx512: false,
         }
     }
 }
@@ -114,7 +110,6 @@ unsafe fn detect_aarch64_features() -> ArchCapabilities {
         has_pclmulqdq: false,
         has_avx512vl: false,
         has_vpclmulqdq: false,
-        rust_version_supports_avx512: false,
     }
 }
 
@@ -124,18 +119,12 @@ unsafe fn detect_aarch64_features() -> ArchCapabilities {
 unsafe fn detect_x86_features() -> ArchCapabilities {
     use std::arch::is_x86_feature_detected;
 
-    // Check Rust version support for VPCLMULQDQ (requires 1.89+)
-    let rust_version_supports_avx512 = check_rust_version_supports_avx512();
-
     // SSE 4.1 and PCLMULQDQ support are the baseline for hardware acceleration
     let has_sse41 = is_x86_feature_detected!("sse4.1");
     let has_pclmulqdq = has_sse41 && is_x86_feature_detected!("pclmulqdq");
 
-    // After Rust 1.89, AVX-512VL and VPCLMULQDQ can be used if available
-    let has_avx512vl =
-        has_pclmulqdq && rust_version_supports_avx512 && is_x86_feature_detected!("avx512vl");
-    let has_vpclmulqdq =
-        has_avx512vl && rust_version_supports_avx512 && is_x86_feature_detected!("vpclmulqdq");
+    let has_avx512vl = has_pclmulqdq && is_x86_feature_detected!("avx512vl");
+    let has_vpclmulqdq = has_avx512vl && is_x86_feature_detected!("vpclmulqdq");
 
     ArchCapabilities {
         has_aes: false,
@@ -144,26 +133,7 @@ unsafe fn detect_x86_features() -> ArchCapabilities {
         has_pclmulqdq,
         has_avx512vl,
         has_vpclmulqdq,
-        rust_version_supports_avx512,
     }
-}
-
-/// Check if the current Rust version supports VPCLMULQDQ intrinsics
-/// VPCLMULQDQ intrinsics were stabilized in Rust 1.89
-#[rustversion::since(1.89)]
-#[inline(always)]
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-pub(crate) fn check_rust_version_supports_avx512() -> bool {
-    true
-}
-
-/// Check if the current Rust version supports VPCLMULQDQ intrinsics
-/// VPCLMULQDQ intrinsics were stabilized in Rust 1.89
-#[rustversion::before(1.89)]
-#[inline(always)]
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-pub(crate) fn check_rust_version_supports_avx512() -> bool {
-    false
 }
 
 /// Select the appropriate performance tier based on detected capabilities
@@ -207,7 +177,6 @@ pub(crate) fn select_performance_tier(capabilities: &ArchCapabilities) -> Perfor
 
 /// Enum that holds the different ArchOps implementations for compile-time dispatch
 /// This avoids the need for trait objects while still providing factory-based selection
-#[rustversion::since(1.89)]
 #[derive(Debug, Clone, Copy)]
 pub enum ArchOpsInstance {
     #[cfg(target_arch = "aarch64")]
@@ -224,22 +193,8 @@ pub enum ArchOpsInstance {
     SoftwareFallback,
 }
 
-#[rustversion::before(1.89)]
-#[derive(Debug, Clone, Copy)]
-pub enum ArchOpsInstance {
-    #[cfg(target_arch = "aarch64")]
-    Aarch64Aes(crate::arch::aarch64::aes::Aarch64AesOps),
-    #[cfg(target_arch = "aarch64")]
-    Aarch64AesSha3(crate::arch::aarch64::aes_sha3::Aarch64AesSha3Ops),
-    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-    X86SsePclmulqdq(crate::arch::x86::sse::X86SsePclmulqdqOps),
-    /// Software fallback - no ArchOps struct needed
-    SoftwareFallback,
-}
-
 impl ArchOpsInstance {
     #[inline(always)]
-    #[rustversion::since(1.89)]
     pub fn get_tier(&self) -> PerformanceTier {
         match self {
             #[cfg(target_arch = "aarch64")]
@@ -252,20 +207,6 @@ impl ArchOpsInstance {
             ArchOpsInstance::X86_64Avx512Pclmulqdq(_) => PerformanceTier::X86_64Avx512Pclmulqdq,
             #[cfg(target_arch = "x86_64")]
             ArchOpsInstance::X86_64Avx512Vpclmulqdq(_) => PerformanceTier::X86_64Avx512Vpclmulqdq,
-            ArchOpsInstance::SoftwareFallback => PerformanceTier::SoftwareTable,
-        }
-    }
-
-    #[inline(always)]
-    #[rustversion::before(1.89)]
-    pub fn get_tier(&self) -> PerformanceTier {
-        match self {
-            #[cfg(target_arch = "aarch64")]
-            ArchOpsInstance::Aarch64Aes(_) => PerformanceTier::AArch64Aes,
-            #[cfg(target_arch = "aarch64")]
-            ArchOpsInstance::Aarch64AesSha3(_) => PerformanceTier::AArch64AesSha3,
-            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-            ArchOpsInstance::X86SsePclmulqdq(_) => PerformanceTier::X86SsePclmulqdq,
             ArchOpsInstance::SoftwareFallback => PerformanceTier::SoftwareTable,
         }
     }
@@ -298,9 +239,7 @@ fn create_arch_ops() -> ArchOpsInstance {
     create_arch_ops_from_tier(tier)
 }
 
-/// Helper function to create ArchOpsInstance from a performance tier for Rust 1.89+ (when AVX512
-/// stabilized)
-#[rustversion::since(1.89)]
+/// Helper function to create ArchOpsInstance from a performance tier
 fn create_arch_ops_from_tier(tier: PerformanceTier) -> ArchOpsInstance {
     match tier {
         #[cfg(target_arch = "aarch64")]
@@ -340,48 +279,6 @@ fn create_arch_ops_from_tier(tier: PerformanceTier) -> ArchOpsInstance {
     }
 }
 
-/// Helper function to create ArchOpsInstance from a performance tier for Rust <1.89 (before AVX512
-/// stabilized)
-#[rustversion::before(1.89)]
-fn create_arch_ops_from_tier(tier: PerformanceTier) -> ArchOpsInstance {
-    match tier {
-        #[cfg(target_arch = "aarch64")]
-        PerformanceTier::AArch64AesSha3 => {
-            use crate::arch::aarch64::aes_sha3::Aarch64AesSha3Ops;
-            ArchOpsInstance::Aarch64AesSha3(Aarch64AesSha3Ops::new())
-        }
-        #[cfg(target_arch = "aarch64")]
-        PerformanceTier::AArch64Aes => {
-            use crate::arch::aarch64::aes::Aarch64AesOps;
-            ArchOpsInstance::Aarch64Aes(Aarch64AesOps)
-        }
-        #[cfg(target_arch = "x86_64")]
-        PerformanceTier::X86_64Avx512Vpclmulqdq => {
-            // VPCLMULQDQ and AVX512 not available in older Rust versions, fall back to SSE
-            create_x86_sse_pclmulqdq_ops()
-        }
-        #[cfg(target_arch = "x86_64")]
-        PerformanceTier::X86_64Avx512Pclmulqdq => {
-            // AVX512 not available in older Rust versions, fall back to SSE
-            create_x86_sse_pclmulqdq_ops()
-        }
-        #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-        PerformanceTier::X86_64SsePclmulqdq | PerformanceTier::X86SsePclmulqdq => {
-            create_x86_sse_pclmulqdq_ops()
-        }
-        PerformanceTier::SoftwareTable => {
-            // Use software fallback
-            ArchOpsInstance::SoftwareFallback
-        }
-        // Handle cases where the performance tier doesn't match the current architecture
-        _ => {
-            // This can happen when a tier is selected for a different architecture
-            // Fall back to software implementation
-            ArchOpsInstance::SoftwareFallback
-        }
-    }
-}
-
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 fn create_x86_sse_pclmulqdq_ops() -> ArchOpsInstance {
     use crate::arch::x86::sse::X86SsePclmulqdqOps;
@@ -400,18 +297,12 @@ pub fn select_performance_tier_for_test(capabilities: &ArchCapabilities) -> Perf
     }
 
     // x86_64 tier selection - VPCLMULQDQ requires AVX512VL
-    if capabilities.has_vpclmulqdq
-        && capabilities.has_avx512vl
-        && capabilities.rust_version_supports_avx512
-    {
+    if capabilities.has_vpclmulqdq && capabilities.has_avx512vl {
         return PerformanceTier::X86_64Avx512Vpclmulqdq;
     }
 
     // AVX512VL requires PCLMULQDQ and SSE4.1
-    if capabilities.has_avx512vl
-        && capabilities.has_pclmulqdq
-        && capabilities.rust_version_supports_avx512
-    {
+    if capabilities.has_avx512vl && capabilities.has_pclmulqdq {
         return PerformanceTier::X86_64Avx512Pclmulqdq;
     }
 
@@ -429,15 +320,6 @@ mod tests {
     use super::*;
 
     #[test]
-    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-    fn test_rust_version_check() {
-        let supports_vpclmulqdq = check_rust_version_supports_avx512();
-
-        // Should return a boolean without panicking
-        let _ = supports_vpclmulqdq;
-    }
-
-    #[test]
     fn test_aarch64_tier_selection() {
         // Test that aarch64 tier selection follows the expected hierarchy
 
@@ -449,7 +331,6 @@ mod tests {
             has_pclmulqdq: false,
             has_avx512vl: false,
             has_vpclmulqdq: false,
-            rust_version_supports_avx512: false,
         };
         assert_eq!(
             select_performance_tier_for_test(&capabilities_sha3),
@@ -464,7 +345,6 @@ mod tests {
             has_pclmulqdq: false,
             has_avx512vl: false,
             has_vpclmulqdq: false,
-            rust_version_supports_avx512: false,
         };
         assert_eq!(
             select_performance_tier_for_test(&capabilities_aes),
@@ -479,7 +359,6 @@ mod tests {
             has_pclmulqdq: false,
             has_avx512vl: false,
             has_vpclmulqdq: false,
-            rust_version_supports_avx512: false,
         };
         assert_eq!(
             select_performance_tier_for_test(&capabilities_no_aes),
@@ -501,7 +380,6 @@ mod tests {
             has_pclmulqdq: false,
             has_avx512vl: false,
             has_vpclmulqdq: false,
-            rust_version_supports_avx512: false,
         };
 
         // AES support means we have PMULL instructions available for CRC calculations
@@ -515,7 +393,6 @@ mod tests {
             has_pclmulqdq: false,
             has_avx512vl: false,
             has_vpclmulqdq: false,
-            rust_version_supports_avx512: false,
         };
 
         assert!(capabilities_with_sha3.has_aes);
@@ -527,7 +404,7 @@ mod tests {
     fn test_x86_64_tier_selection() {
         // Test that x86_64 tier selection follows the expected hierarchy
 
-        // Test VPCLMULQDQ + AVX512 (highest tier) on Rust 1.89+
+        // Test VPCLMULQDQ + AVX512 (highest tier)
         let capabilities_vpclmulqdq = ArchCapabilities {
             has_aes: false,
             has_sha3: false,
@@ -535,14 +412,13 @@ mod tests {
             has_pclmulqdq: true,
             has_avx512vl: true,
             has_vpclmulqdq: true,
-            rust_version_supports_avx512: true,
         };
         assert_eq!(
             select_performance_tier_for_test(&capabilities_vpclmulqdq),
             PerformanceTier::X86_64Avx512Vpclmulqdq
         );
 
-        // Test AVX512 + PCLMULQDQ (mid-tier) on Rust 1.89+
+        // Test AVX512 + PCLMULQDQ (mid-tier)
         let capabilities_avx512 = ArchCapabilities {
             has_aes: false,
             has_sha3: false,
@@ -550,41 +426,10 @@ mod tests {
             has_pclmulqdq: true,
             has_avx512vl: true,
             has_vpclmulqdq: false,
-            rust_version_supports_avx512: true,
         };
         assert_eq!(
             select_performance_tier_for_test(&capabilities_avx512),
             PerformanceTier::X86_64Avx512Pclmulqdq
-        );
-
-        // Test VPCLMULQDQ + AVX512 (highest tier) on Rust < 1.89
-        let capabilities_vpclmulqdq = ArchCapabilities {
-            has_aes: false,
-            has_sha3: false,
-            has_sse41: true,
-            has_pclmulqdq: true,
-            has_avx512vl: true,
-            has_vpclmulqdq: true,
-            rust_version_supports_avx512: false,
-        };
-        assert_eq!(
-            select_performance_tier_for_test(&capabilities_vpclmulqdq),
-            PerformanceTier::X86_64SsePclmulqdq
-        );
-
-        // Test AVX512 + PCLMULQDQ (mid-tier) on Rust < 1.89
-        let capabilities_avx512 = ArchCapabilities {
-            has_aes: false,
-            has_sha3: false,
-            has_sse41: true,
-            has_pclmulqdq: true,
-            has_avx512vl: true,
-            has_vpclmulqdq: false,
-            rust_version_supports_avx512: false,
-        };
-        assert_eq!(
-            select_performance_tier_for_test(&capabilities_avx512),
-            PerformanceTier::X86_64SsePclmulqdq
         );
 
         // Test SSE + PCLMULQDQ (baseline tier)
@@ -595,7 +440,6 @@ mod tests {
             has_pclmulqdq: true,
             has_avx512vl: false,
             has_vpclmulqdq: false,
-            rust_version_supports_avx512: false,
         };
         assert_eq!(
             select_performance_tier_for_test(&capabilities_sse),
@@ -610,7 +454,6 @@ mod tests {
             has_pclmulqdq: false,
             has_avx512vl: false,
             has_vpclmulqdq: false,
-            rust_version_supports_avx512: false,
         };
         assert_eq!(
             select_performance_tier_for_test(&capabilities_no_pclmul),
@@ -631,7 +474,6 @@ mod tests {
             has_pclmulqdq: true,
             has_avx512vl: false,
             has_vpclmulqdq: false,
-            rust_version_supports_avx512: false,
         };
         assert_eq!(
             select_performance_tier_for_test(&capabilities_sse),
@@ -647,7 +489,6 @@ mod tests {
             has_pclmulqdq: true,
             has_avx512vl: false, // No AVX512 on 32-bit x86
             has_vpclmulqdq: false,
-            rust_version_supports_avx512: false,
         };
         // This should select x86_64 tier since we're testing the general case
         assert_eq!(
@@ -663,7 +504,6 @@ mod tests {
             has_pclmulqdq: false,
             has_avx512vl: false,
             has_vpclmulqdq: false,
-            rust_version_supports_avx512: false,
         };
         assert_eq!(
             select_performance_tier_for_test(&capabilities_no_pclmul),
@@ -676,7 +516,7 @@ mod tests {
         // Test that x86 feature hierarchy is properly maintained
         // SSE4.1 is required for PCLMULQDQ
         // AVX512VL requires PCLMULQDQ
-        // VPCLMULQDQ requires AVX512VL and Rust 1.89+
+        // VPCLMULQDQ requires AVX512VL
 
         // Test feature dependencies are enforced
         let capabilities_full = ArchCapabilities {
@@ -686,7 +526,6 @@ mod tests {
             has_pclmulqdq: true,
             has_avx512vl: true,
             has_vpclmulqdq: true,
-            rust_version_supports_avx512: true,
         };
 
         // All x86 features should be available when hierarchy is satisfied
@@ -694,45 +533,11 @@ mod tests {
         assert!(capabilities_full.has_pclmulqdq);
         assert!(capabilities_full.has_avx512vl);
         assert!(capabilities_full.has_vpclmulqdq);
-        assert!(capabilities_full.rust_version_supports_avx512);
-    }
-
-    #[test]
-    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-    fn test_rust_version_gating() {
-        // Test that VPCLMULQDQ is properly gated by Rust version
-        let rust_support = check_rust_version_supports_avx512();
-
-        // Should return a boolean based on Rust version
-        // This will be true for Rust 1.89+ and false for earlier versions
-        assert!(rust_support == true || rust_support == false);
     }
 
     // Mock tests for compile-time and runtime feature agreement scenarios
     mod mock_feature_agreement_tests {
         use super::*;
-
-        #[test]
-        fn test_rust_version_gating_scenarios() {
-            // Test VPCLMULQDQ with different Rust version scenarios
-
-            // All features available but Rust version too old
-            let capabilities_old_rust = ArchCapabilities {
-                has_aes: false,
-                has_sha3: false,
-                has_sse41: true,
-                has_pclmulqdq: true,
-                has_avx512vl: true,
-                has_vpclmulqdq: true,                // Hardware supports it
-                rust_version_supports_avx512: false, // But Rust version is too old
-            };
-
-            // Should not select VPCLMULQDQ or AVX512 tiers due to Rust version constraint
-            let tier = select_performance_tier_for_test(&capabilities_old_rust);
-            assert_ne!(tier, PerformanceTier::X86_64Avx512Vpclmulqdq);
-            assert_ne!(tier, PerformanceTier::X86_64Avx512Pclmulqdq);
-            assert_eq!(tier, PerformanceTier::X86_64SsePclmulqdq);
-        }
 
         #[test]
         fn test_feature_dependency_validation() {
@@ -746,7 +551,6 @@ mod tests {
                 has_pclmulqdq: false,
                 has_avx512vl: false,
                 has_vpclmulqdq: false,
-                rust_version_supports_avx512: false,
             };
 
             // Should fall back to software since AES is required for SHA3
@@ -763,7 +567,6 @@ mod tests {
                 has_pclmulqdq: true,
                 has_avx512vl: false,  // Missing required dependency
                 has_vpclmulqdq: true, // This should be impossible in real detection
-                rust_version_supports_avx512: true,
             };
 
             // Should fall back to SSE tier since AVX512VL is required for VPCLMULQDQ
@@ -790,7 +593,6 @@ mod tests {
                 has_pclmulqdq: false,
                 has_avx512vl: false,
                 has_vpclmulqdq: false,
-                rust_version_supports_avx512: false,
             };
             assert_eq!(
                 select_performance_tier_for_test(&no_features),
@@ -805,7 +607,6 @@ mod tests {
                 has_pclmulqdq: false,
                 has_avx512vl: false,
                 has_vpclmulqdq: false,
-                rust_version_supports_avx512: false,
             };
             assert_eq!(
                 select_performance_tier_for_test(&aes_only),
@@ -820,7 +621,6 @@ mod tests {
                 has_pclmulqdq: false,
                 has_avx512vl: false,
                 has_vpclmulqdq: false,
-                rust_version_supports_avx512: false,
             };
             assert_eq!(
                 select_performance_tier_for_test(&aes_sha3),
@@ -840,7 +640,6 @@ mod tests {
                 has_pclmulqdq: false,
                 has_avx512vl: false,
                 has_vpclmulqdq: false,
-                rust_version_supports_avx512: false,
             };
             assert_eq!(
                 select_performance_tier_for_test(&no_features),
@@ -855,7 +654,6 @@ mod tests {
                 has_pclmulqdq: false,
                 has_avx512vl: false,
                 has_vpclmulqdq: false,
-                rust_version_supports_avx512: false,
             };
             assert_eq!(
                 select_performance_tier_for_test(&sse_only),
@@ -870,29 +668,13 @@ mod tests {
                 has_pclmulqdq: true,
                 has_avx512vl: false,
                 has_vpclmulqdq: false,
-                rust_version_supports_avx512: false,
             };
             assert_eq!(
                 select_performance_tier_for_test(&sse_pclmul),
                 PerformanceTier::X86_64SsePclmulqdq
             );
 
-            // SSE4.1 + PCLMULQDQ + AVX512VL but old Rust - should fall back to SSE tier
-            let avx512_pclmul_old_rust = ArchCapabilities {
-                has_aes: false,
-                has_sha3: false,
-                has_sse41: true,
-                has_pclmulqdq: true,
-                has_avx512vl: true,
-                has_vpclmulqdq: false,
-                rust_version_supports_avx512: false, // Old Rust version
-            };
-            assert_eq!(
-                select_performance_tier_for_test(&avx512_pclmul_old_rust),
-                PerformanceTier::X86_64SsePclmulqdq
-            );
-
-            // SSE4.1 + PCLMULQDQ + AVX512VL with new Rust - mid-tier
+            // SSE4.1 + PCLMULQDQ + AVX512VL - mid-tier
             let avx512_pclmul_new_rust = ArchCapabilities {
                 has_aes: false,
                 has_sha3: false,
@@ -900,29 +682,13 @@ mod tests {
                 has_pclmulqdq: true,
                 has_avx512vl: true,
                 has_vpclmulqdq: false,
-                rust_version_supports_avx512: true, // New Rust version
             };
             assert_eq!(
                 select_performance_tier_for_test(&avx512_pclmul_new_rust),
                 PerformanceTier::X86_64Avx512Pclmulqdq
             );
 
-            // All features + old Rust - should fall back to SSE tier
-            let all_features_old_rust = ArchCapabilities {
-                has_aes: false,
-                has_sha3: false,
-                has_sse41: true,
-                has_pclmulqdq: true,
-                has_avx512vl: true,
-                has_vpclmulqdq: true,
-                rust_version_supports_avx512: false, // Old Rust version
-            };
-            assert_eq!(
-                select_performance_tier_for_test(&all_features_old_rust),
-                PerformanceTier::X86_64SsePclmulqdq
-            );
-
-            // All features + new Rust - highest tier
+            // All features - highest tier
             let all_features_new_rust = ArchCapabilities {
                 has_aes: false,
                 has_sha3: false,
@@ -930,7 +696,6 @@ mod tests {
                 has_pclmulqdq: true,
                 has_avx512vl: true,
                 has_vpclmulqdq: true,
-                rust_version_supports_avx512: true, // New Rust version
             };
             assert_eq!(
                 select_performance_tier_for_test(&all_features_new_rust),
@@ -950,7 +715,6 @@ mod tests {
                 has_pclmulqdq: false,
                 has_avx512vl: false,
                 has_vpclmulqdq: false,
-                rust_version_supports_avx512: false,
             };
             assert_eq!(
                 select_performance_tier_for_test(&no_features),
@@ -966,7 +730,6 @@ mod tests {
                 has_pclmulqdq: true,
                 has_avx512vl: false, // AVX512 not available on 32-bit x86
                 has_vpclmulqdq: false,
-                rust_version_supports_avx512: false,
             };
             // The test function will return x86_64 tier since it doesn't distinguish architectures
             assert_eq!(
@@ -1017,7 +780,6 @@ mod tests {
                 has_pclmulqdq: false,
                 has_avx512vl: false,
                 has_vpclmulqdq: false,
-                rust_version_supports_avx512: false,
             };
 
             // Should select highest tier
@@ -1053,7 +815,6 @@ mod tests {
                 has_pclmulqdq: true,
                 has_avx512vl: true,
                 has_vpclmulqdq: true,
-                rust_version_supports_avx512: true,
             };
 
             // Should select highest tier
@@ -1092,27 +853,6 @@ mod tests {
         }
 
         #[test]
-        fn test_rust_version_degradation() {
-            // Test degradation when Rust version doesn't support VPCLMULQDQ
-
-            let capabilities_with_vpclmulqdq = ArchCapabilities {
-                has_aes: false,
-                has_sha3: false,
-                has_sse41: true,
-                has_pclmulqdq: true,
-                has_avx512vl: true,
-                has_vpclmulqdq: true,
-                rust_version_supports_avx512: false, // Old Rust version
-            };
-
-            // Should degrade from VPCLMULQDQ tier to SSE tier due to Rust version
-            assert_eq!(
-                select_performance_tier_for_test(&capabilities_with_vpclmulqdq),
-                PerformanceTier::X86_64SsePclmulqdq
-            );
-        }
-
-        #[test]
         fn test_partial_feature_availability() {
             // Test scenarios where only some features in a tier are available
 
@@ -1124,7 +864,6 @@ mod tests {
                 has_pclmulqdq: false,
                 has_avx512vl: false,
                 has_vpclmulqdq: false,
-                rust_version_supports_avx512: false,
             };
             // Should fall back to software since AES is required for SHA3
             assert_eq!(
@@ -1140,7 +879,6 @@ mod tests {
                 has_pclmulqdq: true,
                 has_avx512vl: false,
                 has_vpclmulqdq: true, // This would be impossible in real detection
-                rust_version_supports_avx512: true,
             };
             // Should fall back to SSE tier since AVX512VL is required for VPCLMULQDQ
             assert_eq!(
@@ -1164,7 +902,6 @@ mod software_fallback_tests {
             has_pclmulqdq: false,
             has_avx512vl: false,
             has_vpclmulqdq: false,
-            rust_version_supports_avx512: false,
         };
 
         let tier = select_performance_tier_for_test(&capabilities_no_aes);
@@ -1185,7 +922,6 @@ mod software_fallback_tests {
             has_pclmulqdq: false, // But PCLMULQDQ not available
             has_avx512vl: false,
             has_vpclmulqdq: false,
-            rust_version_supports_avx512: false,
         };
 
         let tier = select_performance_tier_for_test(&capabilities_no_pclmul);
@@ -1203,7 +939,6 @@ mod software_fallback_tests {
             has_pclmulqdq: false, // PCLMULQDQ requires SSE4.1
             has_avx512vl: false,
             has_vpclmulqdq: false,
-            rust_version_supports_avx512: false,
         };
 
         let tier = select_performance_tier_for_test(&capabilities_no_sse);

@@ -6,31 +6,18 @@
 
 #![cfg(target_arch = "x86_64")]
 
-#[rustversion::since(1.89)]
 use crate::arch::x86::sse::X86SsePclmulqdqOps;
-
-#[rustversion::since(1.89)]
 use crate::enums::Reflector;
-
-#[rustversion::since(1.89)]
 use crate::structs::CrcState;
-
-#[rustversion::since(1.89)]
 use crate::traits::{ArchOps, EnhancedCrcWidth};
-
-#[rustversion::since(1.89)]
 use std::arch::x86_64::*;
-
-#[rustversion::since(1.89)]
 use std::ops::BitXor;
 
 /// Implements the ArchOps trait using 512-bit AVX-512 and VPCLMULQDQ instructions at 512 bits.
 /// Delegates to X86SsePclmulqdqOps for standard 128-bit operations
-#[rustversion::since(1.89)]
 #[derive(Debug, Copy, Clone)]
 pub struct X86_64Avx512VpclmulqdqOps(X86SsePclmulqdqOps);
 
-#[rustversion::since(1.89)]
 impl X86_64Avx512VpclmulqdqOps {
     #[inline(always)]
     pub fn new() -> Self {
@@ -39,11 +26,9 @@ impl X86_64Avx512VpclmulqdqOps {
 }
 
 // Wrapper for __m512i to make it easier to work with
-#[rustversion::since(1.89)]
 #[derive(Debug, Copy, Clone)]
 struct Simd512(__m512i);
 
-#[rustversion::since(1.89)]
 impl Simd512 {
     #[inline]
     #[target_feature(enable = "avx512f")]
@@ -113,7 +98,6 @@ impl Simd512 {
     }
 }
 
-#[rustversion::since(1.89)]
 impl X86_64Avx512VpclmulqdqOps {
     /// Process aligned blocks using VPCLMULQDQ with 4 x 512-bit registers
     ///
@@ -340,7 +324,6 @@ impl X86_64Avx512VpclmulqdqOps {
 }
 
 // 512-bit version of the Reflector
-#[rustversion::since(1.89)]
 #[derive(Clone, Copy)]
 enum Reflector512 {
     NoReflector,
@@ -348,7 +331,6 @@ enum Reflector512 {
 }
 
 // Function to create the appropriate reflector based on CRC parameters
-#[rustversion::since(1.89)]
 #[inline(always)]
 unsafe fn create_reflector512(reflected: bool) -> Reflector512 {
     if reflected {
@@ -370,7 +352,6 @@ unsafe fn create_reflector512(reflected: bool) -> Reflector512 {
 }
 
 // Function to apply reflection to a 512-bit vector
-#[rustversion::since(1.89)]
 #[inline(always)]
 unsafe fn reflect_bytes512(reflector: &Reflector512, data: Simd512) -> Simd512 {
     match reflector {
@@ -380,12 +361,10 @@ unsafe fn reflect_bytes512(reflector: &Reflector512, data: Simd512) -> Simd512 {
 }
 
 // pre-compute the reverse indices for 512-bit shuffling
-#[rustversion::since(1.89)]
 static REVERSE_INDICES_512: __m512i =
     unsafe { std::mem::transmute([7u64, 6u64, 5u64, 4u64, 3u64, 2u64, 1u64, 0u64]) };
 
 // Implement a 512-bit byte shuffle function
-#[rustversion::since(1.89)]
 #[inline]
 #[target_feature(enable = "avx512f,avx512bw")]
 unsafe fn shuffle_bytes512(data: Simd512, mask: Simd512) -> Simd512 {
@@ -397,7 +376,6 @@ unsafe fn shuffle_bytes512(data: Simd512, mask: Simd512) -> Simd512 {
 }
 
 // Delegate all ArchOps methods to the inner X86SsePclmulqdqOps instance
-#[rustversion::since(1.89)]
 impl ArchOps for X86_64Avx512VpclmulqdqOps {
     type Vector = __m128i;
 

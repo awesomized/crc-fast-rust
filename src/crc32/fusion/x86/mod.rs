@@ -18,36 +18,19 @@ mod iscsi;
 use iscsi::sse_pclmulqdq::crc32_iscsi_sse_v4s3x3;
 
 #[cfg(target_arch = "x86_64")]
-#[rustversion::since(1.89)]
 use iscsi::avx512_pclmulqdq::crc32_iscsi_avx512_v4s3x3;
 #[cfg(target_arch = "x86_64")]
-#[rustversion::since(1.89)]
 use iscsi::avx512_vpclmulqdq::crc32_iscsi_avx512_vpclmulqdq_v3x2;
 #[cfg(target_arch = "x86")]
 use std::arch::x86::*;
 #[cfg(target_arch = "x86_64")]
 use std::arch::x86_64::*;
 
-/// CRC32 iSCSI calculation for Rust versions before 1.89 (pre-AVX-512 support)
-///
-///
-/// This function is called by the wrapper layer after feature detection has been performed.
-/// For older Rust versions, only SSE implementation is available.
-#[rustversion::before(1.89)]
-#[inline(always)]
-pub fn crc32_iscsi(crc: u32, data: &[u8]) -> u32 {
-    // Only SSE implementation is available for Rust versions before 1.89
-    // Runtime feature detection is handled by the wrapper layer
-    unsafe { crc32_iscsi_sse_v4s3x3(crc, data.as_ptr(), data.len()) }
-}
-
-/// CRC32 iSCSI calculation using the highest available instruction set after Rust 1.89
-/// (post-AVX-512 support)
+/// CRC32 iSCSI calculation using the highest available instruction set (post-AVX-512 support)
 ///
 /// This function is called by the wrapper layer after feature detection has been performed.
 /// The wrapper layer ensures that only the appropriate implementation is called based on
 /// cached feature detection results, removing runtime checks from the hot path.
-#[rustversion::since(1.89)]
 #[inline(always)]
 pub fn crc32_iscsi(crc: u32, data: &[u8]) -> u32 {
     #[cfg(target_arch = "x86_64")]
@@ -72,7 +55,6 @@ pub fn crc32_iscsi(crc: u32, data: &[u8]) -> u32 {
     unsafe { crc32_iscsi_sse_v4s3x3(crc, data.as_ptr(), data.len()) }
 }
 
-#[rustversion::since(1.89)]
 #[cfg(target_arch = "x86_64")]
 #[inline]
 #[target_feature(enable = "avx512vl,vpclmulqdq")]
@@ -80,7 +62,6 @@ unsafe fn clmul_lo_avx512_vpclmulqdq(a: __m512i, b: __m512i) -> __m512i {
     _mm512_clmulepi64_epi128(a, b, 0)
 }
 
-#[rustversion::since(1.89)]
 #[cfg(target_arch = "x86_64")]
 #[inline]
 #[target_feature(enable = "avx512vl,vpclmulqdq")]
@@ -236,7 +217,6 @@ mod tests {
         }
     }
 
-    #[rustversion::since(1.89)]
     fn test_crc32_iscsi_random(len: usize) {
         let mut data = vec![0u8; len];
         rng().fill(&mut data[..]);
@@ -277,25 +257,6 @@ mod tests {
                 crc32_iscsi_sse_v4s3x3(0xffffffff, data.as_ptr(), data.len()) ^ 0xffffffff,
                 checksum
             );
-        }
-    }
-
-    #[rustversion::before(1.89)]
-    fn test_crc32_iscsi_random(len: usize) {
-        let mut data = vec![0u8; len];
-        rng().fill(&mut data[..]);
-
-        let checksum = RUST_CRC32_ISCSI.checksum(&data);
-
-        if is_x86_feature_detected!("sse4.2") && is_x86_feature_detected!("pclmulqdq") {
-            assert_eq!(crc32_iscsi(0xffffffff, &data) ^ 0xffffffff, checksum);
-
-            unsafe {
-                assert_eq!(
-                    crc32_iscsi_sse_v4s3x3(0xffffffff, data.as_ptr(), data.len()) ^ 0xffffffff,
-                    checksum
-                );
-            }
         }
     }
 }

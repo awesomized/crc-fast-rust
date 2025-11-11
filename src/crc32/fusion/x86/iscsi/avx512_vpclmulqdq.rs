@@ -12,9 +12,7 @@
 ///
 /// Modified as necessary for this Rust implementation.
 ///
-/// Uses AVX-512 VPCLMULQDQ instructions, so only available after Rust 1.89 (when AVX-512
-/// stabilized)
-#[rustversion::since(1.89)]
+/// Uses AVX-512 VPCLMULQDQ instructions
 #[inline]
 #[target_feature(enable = "avx512vl,vpclmulqdq")]
 pub unsafe fn crc32_iscsi_avx512_vpclmulqdq_v3x2(

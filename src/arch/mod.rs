@@ -85,11 +85,10 @@ unsafe fn update_aarch64_aes_sha3(
     }
 }
 
-/// Main entry point for x86/x86_64 (Rust 1.89+ which supports AVX-512)
+/// Main entry point for x86/x86_64
 ///
 /// # Safety
 /// May use native CPU features
-#[rustversion::since(1.89)]
 #[inline(always)]
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 pub(crate) unsafe fn update(state: u64, bytes: &[u8], params: CrcParams) -> u64 {
@@ -108,26 +107,6 @@ pub(crate) unsafe fn update(state: u64, bytes: &[u8], params: CrcParams) -> u64 
             32 => algorithm::update::<_, Width32>(state as u32, bytes, params, ops) as u64,
             _ => panic!("Unsupported CRC width: {}", params.width),
         },
-        ArchOpsInstance::X86SsePclmulqdq(ops) => match params.width {
-            64 => algorithm::update::<_, Width64>(state, bytes, params, ops),
-            32 => algorithm::update::<_, Width32>(state as u32, bytes, params, ops) as u64,
-            _ => panic!("Unsupported CRC width: {}", params.width),
-        },
-        ArchOpsInstance::SoftwareFallback => crate::arch::software::update(state, bytes, params),
-    }
-}
-
-/// Main entry point for x86/x86_64 (Rust < 1.89 with no AVX-512 support)
-///
-/// # Safety
-/// May use native CPU features
-#[rustversion::before(1.89)]
-#[inline(always)]
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-pub(crate) unsafe fn update(state: u64, bytes: &[u8], params: CrcParams) -> u64 {
-    use crate::feature_detection::{get_arch_ops, ArchOpsInstance};
-
-    match get_arch_ops() {
         ArchOpsInstance::X86SsePclmulqdq(ops) => match params.width {
             64 => algorithm::update::<_, Width64>(state, bytes, params, ops),
             32 => algorithm::update::<_, Width32>(state as u32, bytes, params, ops) as u64,

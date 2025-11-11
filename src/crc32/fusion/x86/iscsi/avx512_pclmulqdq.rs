@@ -12,8 +12,7 @@
 ///
 /// Modified as necessary for this Rust implementation.
 ///
-/// Uses AVX-512 instructions so only available after Rust 1.89 (when AVX-512 stabilized)
-#[rustversion::since(1.89)]
+/// Uses AVX-512 instructions
 #[inline]
 #[target_feature(enable = "avx512vl,pclmulqdq")]
 pub unsafe fn crc32_iscsi_avx512_v4s3x3(mut crc0: u32, mut buf: *const u8, mut len: usize) -> u32 {

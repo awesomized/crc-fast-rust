@@ -12,8 +12,7 @@ jobs:
       matrix:
         os: [ubuntu-22.04-arm, ubuntu-24.04-arm, macos-14, macos-15, macos-26, macos-latest, windows-11-arm]
         rust-toolchain:
-          - "1.81" # minimum for this crate
-          - "1.89" # when AVX-512 VPCLMULQDQ was stabilized
+          - "1.89" # minimum for this crate, when AVX-512 VPCLMULQDQ was stabilized
           - "stable"
           - "nightly"
     runs-on: ${{ matrix.os }}
@@ -43,8 +42,7 @@ jobs:
       matrix:
         os: [ ubuntu-latest, ubuntu-22.04, ubuntu-24.04, macos-15-intel, windows-2022, windows-2025, windows-latest ]
         rust-toolchain:
-          - "1.81" # minimum for this crate
-          - "1.89" # when AVX-512 VPCLMULQDQ was stabilized
+          - "1.89" # minimum for this crate, when AVX-512 VPCLMULQDQ was stabilized
           - "stable"
           - "nightly"
     runs-on: ${{ matrix.os }}
@@ -75,8 +73,7 @@ jobs:
       matrix:
         target: [i586-unknown-linux-gnu, i686-unknown-linux-gnu]
         rust-toolchain:
-          - "1.81" # minimum for this crate
-          - "1.89" # when AVX-512 VPCLMULQDQ was stabilized
+          - "1.89" # minimum for this crate, when AVX-512 VPCLMULQDQ was stabilized
           - "stable"
           - "nightly"
     steps:
@@ -101,8 +98,7 @@ jobs:
       matrix:
         target: [powerpc-unknown-linux-gnu, powerpc64-unknown-linux-gnu]
         rust-toolchain:
-          - "1.81" # minimum for this crate
-          - "1.89" # when AVX-512 VPCLMULQDQ was stabilized
+          - "1.89" # minimum for this crate, when AVX-512 VPCLMULQDQ was stabilized
           - "stable"
           - "nightly"
     steps:
