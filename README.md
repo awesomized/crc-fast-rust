@@ -474,6 +474,12 @@ In theory, much of the "heavy lifting" has been done, so it should be possible t
 
 PRs welcome!
 
+## Memory Safety
+
+Given the heavy use of hardware intrinsics, this crate uses a decent amount of `unsafe` code.
+
+To help ensure memory safety, this crate is validated using [Miri](https://github.com/rust-lang/miri) on `x86_64` as well as fuzz tested using [libFuzzer](https://github.com/rust-fuzz/libfuzzer) over millions of iterations.
+
 ## References
 
 * [Catalogue of parametrised CRC algorithms](https://reveng.sourceforge.io/crc-catalogue/all.htm)
