@@ -6,8 +6,39 @@ on:
   workflow_dispatch:
 
 jobs:
+  check-previous-run:
+    name: Check for previous successful run
+    runs-on: ubuntu-latest
+    outputs:
+      should_skip: ${{ steps.check.outputs.should_skip }}
+    steps:
+      - name: Check if commit was already tested
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Current commit: ${{ github.sha }}"
+          echo "Current ref: ${{ github.ref }}"
+          
+          # Check if there's a previous successful workflow run for this exact commit
+          PREVIOUS_RUN=$(gh api \
+            -H "Accept: application/vnd.github+json" \
+            "/repos/${{ github.repository }}/actions/workflows/tests.yml/runs?status=success&per_page=5" \
+            --jq '.workflow_runs[] | select(.head_sha == "${{ github.sha }}") | .id' \
+            | head -n 1)
+          
+          if [ -n "$PREVIOUS_RUN" ] && [ "$PREVIOUS_RUN" != "${{ github.run_id }}" ]; then
+            echo "Found previous successful run: $PREVIOUS_RUN"
+            echo "should_skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "No previous successful run found for this commit"
+            echo "should_skip=false" >> $GITHUB_OUTPUT
+          fi
+
   test-aarch64:
     name: Test aarch64
+    needs: check-previous-run
+    if: needs.check-previous-run.outputs.should_skip != 'true'
     strategy:
       matrix:
         os: [ubuntu-22.04-arm, ubuntu-24.04-arm, macos-14, macos-15, macos-26, macos-latest, windows-11-arm]
@@ -38,6 +69,8 @@ jobs:
 
   test-x86_64:
     name: Test x86_64
+    needs: check-previous-run
+    if: needs.check-previous-run.outputs.should_skip != 'true'
     strategy:
       matrix:
         os: [ ubuntu-latest, ubuntu-22.04, ubuntu-24.04, macos-15-intel, windows-2022, windows-2025, windows-latest ]
@@ -69,6 +102,8 @@ jobs:
 
   test-x86-linux:
     name:  Test x86 Linux
+    needs: check-previous-run
+    if: needs.check-previous-run.outputs.should_skip != 'true'
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -94,6 +129,8 @@ jobs:
 
   test-x86-windows:
     name: Test x86 Windows
+    needs: check-previous-run
+    if: needs.check-previous-run.outputs.should_skip != 'true'
     runs-on: windows-2022
     strategy:
       matrix:
@@ -124,6 +161,8 @@ jobs:
 
   test-software:
     name: Test software fallback
+    needs: check-previous-run
+    if: needs.check-previous-run.outputs.should_skip != 'true'
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -149,7 +188,8 @@ jobs:
 
   miri-test-x86_64:
     name: Miri Test x86_64
-    needs: test-x86_64
+    needs: [check-previous-run, test-x86_64]
+    if: needs.check-previous-run.outputs.should_skip != 'true'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -177,6 +217,8 @@ jobs:
 
   test-no-std:
     name: Test no_std
+    needs: check-previous-run
+    if: needs.check-previous-run.outputs.should_skip != 'true'
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -207,6 +249,8 @@ jobs:
 
   test-wasm:
     name: Test WASM
+    needs: check-previous-run
+    if: needs.check-previous-run.outputs.should_skip != 'true'
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -253,3 +297,35 @@ jobs:
       - if: ${{ matrix.target == 'wasm32-unknown-unknown' && matrix.rust-toolchain == 'stable' }}
         name: Build WASM package with wasm-pack
         run: wasm-pack build --target web --no-default-features --features alloc,panic-handler
+
+  tests-complete:
+    name: All tests complete
+    needs: [check-previous-run, test-aarch64, test-x86_64, test-x86-linux, test-x86-windows, test-software, miri-test-x86_64, test-no-std, test-wasm]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check test results
+        run: |
+          echo "Checking test results..."
+          echo "Previous run check: ${{ needs.check-previous-run.result }}"
+          echo "Should skip: ${{ needs.check-previous-run.outputs.should_skip }}"
+          
+          if [ "${{ needs.check-previous-run.outputs.should_skip }}" == "true" ]; then
+            echo "✓ Tests were skipped because this commit was already tested successfully"
+            exit 0
+          fi
+          
+          # Check if any test job failed
+          if [ "${{ needs.test-aarch64.result }}" == "failure" ] || \
+             [ "${{ needs.test-x86_64.result }}" == "failure" ] || \
+             [ "${{ needs.test-x86-linux.result }}" == "failure" ] || \
+             [ "${{ needs.test-x86-windows.result }}" == "failure" ] || \
+             [ "${{ needs.test-software.result }}" == "failure" ] || \
+             [ "${{ needs.miri-test-x86_64.result }}" == "failure" ] || \
+             [ "${{ needs.test-no-std.result }}" == "failure" ] || \
+             [ "${{ needs.test-wasm.result }}" == "failure" ]; then
+            echo "✗ One or more test jobs failed"
+            exit 1
+          fi
+          
+          echo "✓ All test jobs passed"
