@@ -34,7 +34,7 @@ pub(crate) struct Calculator {}
 
 impl CrcCalculator for Calculator {
     #[inline(always)]
-    fn calculate(state: u64, data: &[u8], params: CrcParams) -> u64 {
+    fn calculate(state: u64, data: &[u8], params: &CrcParams) -> u64 {
         unsafe { arch::update(state, data, params) }
     }
 }

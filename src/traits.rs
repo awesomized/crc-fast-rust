@@ -21,15 +21,15 @@ pub trait CrcWidth {
 }
 
 pub(crate) trait CrcCalculator {
-    fn update(data: &[u8], state: u64, params: CrcParams) -> u64 {
+    fn update(data: &[u8], state: u64, params: &CrcParams) -> u64 {
         Self::calculate(state, data, params)
     }
 
-    fn checksum(data: &[u8], params: CrcParams) -> u64 {
+    fn checksum(data: &[u8], params: &CrcParams) -> u64 {
         Self::calculate(params.init, data, params) ^ params.xorout
     }
 
-    fn calculate(state: u64, data: &[u8], params: CrcParams) -> u64;
+    fn calculate(state: u64, data: &[u8], params: &CrcParams) -> u64;
 }
 
 #[cfg(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64"))]

@@ -370,10 +370,13 @@ pub struct CrcParams {
 /// - `params`: The parameters for the CRC computation, such as polynomial, initial value, etc.
 ///
 /// The function returns the updated state after processing the data.
+///
+/// Note: CrcParams is passed by reference to avoid copying the large struct (200+ bytes)
+/// which causes significant overhead for small data sizes.
 type CalculatorFn = fn(
-    u64,       // state
-    &[u8],     // data
-    CrcParams, // CRC implementation parameters
+    u64,        // state
+    &[u8],      // data
+    &CrcParams, // CRC implementation parameters
 ) -> u64;
 
 /// Represents a CRC Digest, which is used to compute CRC checksums.
@@ -551,7 +554,7 @@ impl Digest {
     /// Updates the CRC state with the given data.
     #[inline(always)]
     pub fn update(&mut self, data: &[u8]) {
-        self.state = (self.calculator)(self.state, data, self.params);
+        self.state = (self.calculator)(self.state, data, &self.params);
         self.amount += data.len() as u64;
     }
 
@@ -665,9 +668,74 @@ impl Write for Digest {
 /// ```
 #[inline(always)]
 pub fn checksum(algorithm: CrcAlgorithm, buf: &[u8]) -> u64 {
-    let (calculator, params) = get_calculator_params(algorithm);
-
-    calculator(params.init, buf, params) ^ params.xorout
+    // avoid using get_calculator_params() here to reduce overhead for small data sizes
+    match algorithm {
+        CrcAlgorithm::Crc32Aixm => {
+            Calculator::calculate(CRC32_AIXM.init, buf, &CRC32_AIXM) ^ CRC32_AIXM.xorout
+        }
+        CrcAlgorithm::Crc32Autosar => {
+            Calculator::calculate(CRC32_AUTOSAR.init, buf, &CRC32_AUTOSAR) ^ CRC32_AUTOSAR.xorout
+        }
+        CrcAlgorithm::Crc32Base91D => {
+            Calculator::calculate(CRC32_BASE91_D.init, buf, &CRC32_BASE91_D) ^ CRC32_BASE91_D.xorout
+        }
+        CrcAlgorithm::Crc32Bzip2 => {
+            Calculator::calculate(CRC32_BZIP2.init, buf, &CRC32_BZIP2) ^ CRC32_BZIP2.xorout
+        }
+        CrcAlgorithm::Crc32CdRomEdc => {
+            Calculator::calculate(CRC32_CD_ROM_EDC.init, buf, &CRC32_CD_ROM_EDC)
+                ^ CRC32_CD_ROM_EDC.xorout
+        }
+        CrcAlgorithm::Crc32Cksum => {
+            Calculator::calculate(CRC32_CKSUM.init, buf, &CRC32_CKSUM) ^ CRC32_CKSUM.xorout
+        }
+        CrcAlgorithm::Crc32Custom => {
+            panic!("Custom CRC-32 requires parameters via CrcParams::new()")
+        }
+        CrcAlgorithm::Crc32Iscsi => {
+            crc32_iscsi_calculator(CRC32_ISCSI.init, buf, &CRC32_ISCSI) ^ CRC32_ISCSI.xorout
+        }
+        CrcAlgorithm::Crc32IsoHdlc => {
+            crc32_iso_hdlc_calculator(CRC32_ISO_HDLC.init, buf, &CRC32_ISO_HDLC)
+                ^ CRC32_ISO_HDLC.xorout
+        }
+        CrcAlgorithm::Crc32Jamcrc => {
+            Calculator::calculate(CRC32_JAMCRC.init, buf, &CRC32_JAMCRC) ^ CRC32_JAMCRC.xorout
+        }
+        CrcAlgorithm::Crc32Mef => {
+            Calculator::calculate(CRC32_MEF.init, buf, &CRC32_MEF) ^ CRC32_MEF.xorout
+        }
+        CrcAlgorithm::Crc32Mpeg2 => {
+            Calculator::calculate(CRC32_MPEG_2.init, buf, &CRC32_MPEG_2) ^ CRC32_MPEG_2.xorout
+        }
+        CrcAlgorithm::Crc32Xfer => {
+            Calculator::calculate(CRC32_XFER.init, buf, &CRC32_XFER) ^ CRC32_XFER.xorout
+        }
+        CrcAlgorithm::Crc64Custom => {
+            panic!("Custom CRC-64 requires parameters via CrcParams::new()")
+        }
+        CrcAlgorithm::Crc64Ecma182 => {
+            Calculator::calculate(CRC64_ECMA_182.init, buf, &CRC64_ECMA_182) ^ CRC64_ECMA_182.xorout
+        }
+        CrcAlgorithm::Crc64GoIso => {
+            Calculator::calculate(CRC64_GO_ISO.init, buf, &CRC64_GO_ISO) ^ CRC64_GO_ISO.xorout
+        }
+        CrcAlgorithm::Crc64Ms => {
+            Calculator::calculate(CRC64_MS.init, buf, &CRC64_MS) ^ CRC64_MS.xorout
+        }
+        CrcAlgorithm::Crc64Nvme => {
+            Calculator::calculate(CRC64_NVME.init, buf, &CRC64_NVME) ^ CRC64_NVME.xorout
+        }
+        CrcAlgorithm::Crc64Redis => {
+            Calculator::calculate(CRC64_REDIS.init, buf, &CRC64_REDIS) ^ CRC64_REDIS.xorout
+        }
+        CrcAlgorithm::Crc64We => {
+            Calculator::calculate(CRC64_WE.init, buf, &CRC64_WE) ^ CRC64_WE.xorout
+        }
+        CrcAlgorithm::Crc64Xz => {
+            Calculator::calculate(CRC64_XZ.init, buf, &CRC64_XZ) ^ CRC64_XZ.xorout
+        }
+    }
 }
 
 /// Computes the CRC checksum for the given data using custom CRC parameters.
@@ -695,7 +763,7 @@ pub fn checksum(algorithm: CrcAlgorithm, buf: &[u8]) -> u64 {
 pub fn checksum_with_params(params: CrcParams, buf: &[u8]) -> u64 {
     let calculator = Calculator::calculate as CalculatorFn;
 
-    calculator(params.init, buf, params) ^ params.xorout
+    calculator(params.init, buf, &params) ^ params.xorout
 }
 
 /// Computes the CRC checksum for the given file using the specified algorithm.
@@ -947,7 +1015,7 @@ fn get_calculator_params(algorithm: CrcAlgorithm) -> (CalculatorFn, CrcParams) {
 /// Because both aarch64 and x86 have native hardware support for CRC-32/ISCSI, we can use
 /// fusion techniques to accelerate the calculation beyond what SIMD can do alone.
 #[inline(always)]
-fn crc32_iscsi_calculator(state: u64, data: &[u8], _params: CrcParams) -> u64 {
+fn crc32_iscsi_calculator(state: u64, data: &[u8], _params: &CrcParams) -> u64 {
     #[cfg(all(target_arch = "aarch64", feature = "std"))]
     {
         use crate::feature_detection::PerformanceTier;
@@ -986,7 +1054,7 @@ fn crc32_iscsi_calculator(state: u64, data: &[u8], _params: CrcParams) -> u64 {
 /// to accelerate the calculation beyond what SIMD can do alone. x86 does not have native support,
 /// so we use the traditional calculation.
 #[inline(always)]
-fn crc32_iso_hdlc_calculator(state: u64, data: &[u8], _params: CrcParams) -> u64 {
+fn crc32_iso_hdlc_calculator(state: u64, data: &[u8], _params: &CrcParams) -> u64 {
     #[cfg(all(target_arch = "aarch64", feature = "std"))]
     {
         use crate::feature_detection::{get_arch_ops, PerformanceTier};

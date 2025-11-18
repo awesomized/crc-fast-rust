@@ -32,7 +32,7 @@ pub mod x86_64;
 /// May use native CPU features
 #[inline(always)]
 #[cfg(target_arch = "aarch64")]
-pub(crate) unsafe fn update(state: u64, bytes: &[u8], params: CrcParams) -> u64 {
+pub(crate) unsafe fn update(state: u64, bytes: &[u8], params: &CrcParams) -> u64 {
     use crate::feature_detection::{get_arch_ops, ArchOpsInstance};
 
     match get_arch_ops() {
@@ -65,7 +65,7 @@ pub(crate) unsafe fn update(state: u64, bytes: &[u8], params: CrcParams) -> u64 
 unsafe fn update_aarch64_aes(
     state: u64,
     bytes: &[u8],
-    params: CrcParams,
+    params: &CrcParams,
     ops: Aarch64AesOps,
 ) -> u64 {
     match params.width {
@@ -81,7 +81,7 @@ unsafe fn update_aarch64_aes(
 unsafe fn update_aarch64_aes_sha3(
     state: u64,
     bytes: &[u8],
-    params: CrcParams,
+    params: &CrcParams,
     ops: Aarch64AesSha3Ops,
 ) -> u64 {
     match params.width {
@@ -168,7 +168,7 @@ mod tests {
         for config in TEST_ALL_CONFIGS {
             // direct update() call, which needs XOROUT applied
             let actual = unsafe {
-                update(config.get_init(), TEST_CHECK_STRING, *config.get_params())
+                update(config.get_init(), TEST_CHECK_STRING, config.get_params())
                     ^ config.get_xorout()
             };
 
@@ -190,7 +190,7 @@ mod tests {
                 update(
                     config.get_init(),
                     &create_aligned_data(TEST_256_BYTES_STRING),
-                    *config.get_params(),
+                    config.get_params(),
                 ) ^ config.get_xorout()
             };
 
@@ -214,7 +214,7 @@ mod tests {
                 update(
                     config.get_init(),
                     &create_aligned_data(test_string),
-                    *config.get_params(),
+                    config.get_params(),
                 ) ^ config.get_xorout()
             };
 
@@ -238,7 +238,7 @@ mod tests {
                 update(
                     config.get_init(),
                     &create_aligned_data(test_string),
-                    *config.get_params(),
+                    config.get_params(),
                 ) ^ config.get_xorout()
             };
 
@@ -287,7 +287,7 @@ mod tests {
 
         for (input, expected) in CASES {
             unsafe {
-                let actual = update(CRC64_NVME.init, input, CRC64_NVME) ^ CRC64_NVME.xorout;
+                let actual = update(CRC64_NVME.init, input, &CRC64_NVME) ^ CRC64_NVME.xorout;
 
                 assert_eq!(
                     actual, *expected,
@@ -314,7 +314,7 @@ mod tests {
 
         for (input, expected) in CASES {
             let bzip2_crc = unsafe {
-                (update(CRC32_BZIP2.init, input, CRC32_BZIP2) ^ CRC32_BZIP2.xorout) as u32
+                (update(CRC32_BZIP2.init, input, &CRC32_BZIP2) ^ CRC32_BZIP2.xorout) as u32
             };
 
             // PHP reverses the byte order of the CRC for some reason
@@ -379,7 +379,7 @@ mod tests {
 
         // direct update() call, which needs XOROUT applied
         let actual =
-            unsafe { update(config.get_init(), &data, *config.get_params()) ^ config.get_xorout() };
+            unsafe { update(config.get_init(), &data, config.get_params()) ^ config.get_xorout() };
 
         assert_eq!(
             actual,

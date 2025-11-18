@@ -24,7 +24,7 @@ use crate::{crc32, crc64, CrcParams};
 /// Extract keys from CrcParams using safe accessor methods
 /// This ensures bounds checking and future compatibility
 #[inline(always)]
-fn extract_keys_array(params: CrcParams) -> [u64; 23] {
+fn extract_keys_array(params: &CrcParams) -> [u64; 23] {
     [
         params.get_key(0),
         params.get_key(1),
@@ -57,7 +57,7 @@ fn extract_keys_array(params: CrcParams) -> [u64; 23] {
 pub unsafe fn update<T: ArchOps, W: EnhancedCrcWidth>(
     state: W::Value,
     bytes: &[u8],
-    params: CrcParams,
+    params: &CrcParams,
     ops: &T,
 ) -> W::Value
 where
