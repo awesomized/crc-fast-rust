@@ -5,5 +5,8 @@
 pub mod algorithm;
 pub mod consts;
 
-#[cfg(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64"))]
+#[cfg(all(
+    feature = "std",
+    any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64")
+))]
 pub(crate) mod fusion;

@@ -14,10 +14,6 @@ ifeq ($(UNAME_S),Linux)
     POST_INSTALL := ldconfig
 else ifeq ($(UNAME_S),Darwin)
     DESTDIR ?=
-    # on macOS, there's not really a default location, so require DESTDIR
-    ifeq ($(DESTDIR),)
-        $(error On macOS, DESTDIR must be set for installation. Common locations include /usr/local or /opt/homebrew)
-    endif
     LIB_EXTENSION := dylib
     STATIC_LIB_EXTENSION := a
     INSTALL_LIB_DIR := /lib
@@ -95,6 +91,16 @@ uninstall: print-paths
 	@if [ -z "$(DESTDIR)" ] && [ "$(UNAME_S)" = "Linux" ]; then \
 		ldconfig; \
 	fi
+
+# Run all code quality checks
+.PHONY: check
+check:
+	cargo fmt --all
+	cargo check --workspace --all-targets --all-features
+	cargo clippy --workspace --all-targets --all-features --fix --allow-dirty -- -D warnings
+#	cargo deny check all
+#	RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --all-features
+#	cargo audit
 
 # Clean build artifacts
 .PHONY: clean
