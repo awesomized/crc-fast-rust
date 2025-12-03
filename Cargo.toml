@@ -35,10 +35,21 @@ rustversion = "1.0"
 indexmap = { version = ">=2.11.0, <2.12.0", optional = true }
 
 # no_std support
-# spin is always required for no_std builds (feature detection synchronization)
-spin = { version = "0.10.0", default-features = false, features = ["once", "rwlock", "mutex", "spin_mutex"] }
+# spin is optional - only needed on architectures with SIMD (for feature detection)
+# or when cache feature is enabled
+spin = { version = "0.10.0", default-features = false, features = ["once", "rwlock", "mutex", "spin_mutex"], optional = true }
 # hashbrown is only needed when caching is enabled in no_std
 hashbrown = { version = "0.16.0", optional = true }
+
+# Target-specific dependencies: spin is needed for feature detection on SIMD-capable architectures
+[target.'cfg(target_arch = "aarch64")'.dependencies]
+spin = { version = "0.10.0", default-features = false, features = ["once", "rwlock", "mutex", "spin_mutex"] }
+
+[target.'cfg(target_arch = "x86")'.dependencies]
+spin = { version = "0.10.0", default-features = false, features = ["once", "rwlock", "mutex", "spin_mutex"] }
+
+[target.'cfg(target_arch = "x86_64")'.dependencies]
+spin = { version = "0.10.0", default-features = false, features = ["once", "rwlock", "mutex", "spin_mutex"] }
 
 [dev-dependencies]
 criterion = "0.7"
@@ -84,7 +95,7 @@ ffi = [] # C/C++ compatible dynamic/static library, planned to become optional i
 
 # optional features
 cli = ["std"] # command line interface binaries (checksum, arch-check, get-custom-params)
-cache = ["alloc", "hashbrown"] # no_std caching requires alloc + hashbrown HashMap
+cache = ["alloc", "hashbrown", "spin"] # no_std caching requires alloc + hashbrown HashMap + spin for synchronization
 
 # the features below are deprecated, aren't in use, and will be removed in the next MAJOR version (v2)
 vpclmulqdq = [] # deprecated, VPCLMULQDQ stabilized in Rust 1.89.0
