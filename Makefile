@@ -14,6 +14,10 @@ ifeq ($(UNAME_S),Linux)
     POST_INSTALL := ldconfig
 else ifeq ($(UNAME_S),Darwin)
     DESTDIR ?=
+    # on macOS, there's not really a default location, so require DESTDIR
+    ifeq ($(DESTDIR),)
+        $(error On macOS, DESTDIR must be set for installation. Common locations include /usr/local or /opt/homebrew)
+    endif
     LIB_EXTENSION := dylib
     STATIC_LIB_EXTENSION := a
     INSTALL_LIB_DIR := /lib
