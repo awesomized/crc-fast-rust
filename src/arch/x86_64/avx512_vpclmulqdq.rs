@@ -66,6 +66,7 @@ impl Simd512 {
         ))
     }
 
+    #[cfg(feature = "std")]
     #[inline]
     #[target_feature(enable = "avx512f")]
     unsafe fn extract_u64s(&self) -> [u64; 8] {
@@ -93,6 +94,7 @@ impl Simd512 {
         Self(_mm512_xor_si512(self.0, other.0))
     }
 
+    #[cfg(feature = "std")]
     #[inline]
     #[target_feature(enable = "avx512f")]
     #[allow(unused)]
@@ -382,7 +384,7 @@ unsafe fn reflect_bytes512(reflector: &Reflector512, data: Simd512) -> Simd512 {
 // pre-compute the reverse indices for 512-bit shuffling
 #[rustversion::since(1.89)]
 static REVERSE_INDICES_512: __m512i =
-    unsafe { std::mem::transmute([7u64, 6u64, 5u64, 4u64, 3u64, 2u64, 1u64, 0u64]) };
+    unsafe { core::mem::transmute([7u64, 6u64, 5u64, 4u64, 3u64, 2u64, 1u64, 0u64]) };
 
 // Implement a 512-bit byte shuffle function
 #[rustversion::since(1.89)]

@@ -1,5 +1,9 @@
 # Changes for crc-fast-rust
 
+## [1.8.2](https://github.com/awesomized/crc-fast-rust/releases/tag/1.8.2) - 2025-12-14
+* [Fix the crc dependency minimum](https://github.com/awesomized/crc-fast-rust/pull/33)
+* [Fix no_std build for embedded targets](https://github.com/awesomized/crc-fast-rust/pull/35)
+
 ## [1.8.1](https://github.com/awesomized/crc-fast-rust/releases/tag/1.8.1) - 2025-11-16
 * [Add support for fuzz testing using libFuzzer](https://github.com/awesomized/crc-fast-rust/pull/30)
 

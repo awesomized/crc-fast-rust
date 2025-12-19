@@ -96,6 +96,16 @@ uninstall: print-paths
 		ldconfig; \
 	fi
 
+# Run all code quality checks
+.PHONY: check
+check:
+	cargo fmt --all
+	cargo check --workspace --all-targets --all-features
+	cargo clippy --workspace --all-targets --all-features --fix --allow-dirty -- -D warnings
+#	cargo deny check all
+#	RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --all-features
+#	cargo audit
+
 # Clean build artifacts
 .PHONY: clean
 clean:
