@@ -7,7 +7,7 @@ use rand::{rng, RngCore};
 use std::hint::black_box;
 use std::time::Duration;
 
-pub const SIZES: &[(&str, i32); 2] = &[
+pub const SIZES: &[(&str, i32)] = &[
     ("1 MiB", 1024 * 1024),
     //("512 KiB", 512 * 1024),
     //("256 KiB", 256 * 1024),
@@ -31,7 +31,7 @@ pub const SIZES: &[(&str, i32); 2] = &[
 ];
 
 // these are the most important algorithms in popular use, with forward/reflected coverage
-pub const CRC32_ALGORITHMS: &[CrcAlgorithm; 4] = &[
+pub const CRC32_ALGORITHMS: &[CrcAlgorithm] = &[
     // benchmark both CRC-32/ISCSI and CRC-32/ISO-HDLC since they're special flowers with lots of
     // different acceleration targets.
     CrcAlgorithm::Crc32Autosar, // reflected
@@ -41,7 +41,7 @@ pub const CRC32_ALGORITHMS: &[CrcAlgorithm; 4] = &[
 ];
 
 // these are the most important algorithms in popular use, with forward/reflected coverage
-pub const CRC64_ALGORITHMS: &[CrcAlgorithm; 2] = &[
+pub const CRC64_ALGORITHMS: &[CrcAlgorithm] = &[
     CrcAlgorithm::Crc64Ecma182, // forward
     CrcAlgorithm::Crc64Nvme,    // reflected
 ];
