@@ -123,7 +123,7 @@ const RUST_CRC64_XZ: crc::Crc<u64, Table<16>> = crc::Crc::<u64, Table<16>>::new(
 
 #[allow(unused)]
 // Dispatch function that handles the generic case
-pub(crate) fn update(state: u64, data: &[u8], params: CrcParams) -> u64 {
+pub(crate) fn update(state: u64, data: &[u8], params: &CrcParams) -> u64 {
     match params.width {
         32 => {
             let params = match params.algorithm {

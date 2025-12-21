@@ -36,9 +36,18 @@ use iscsi::avx512_vpclmulqdq::crc32_iscsi_avx512_vpclmulqdq_v3x2;
 #[rustversion::before(1.89)]
 #[inline(always)]
 pub fn crc32_iscsi(crc: u32, data: &[u8]) -> u32 {
+    let data_len = data.len();
+
+    // SSE4.2 is required for native CRC32 instructions used in small buffer path
+    if data_len <= 256 && is_x86_feature_detected!("sse4.2") {
+        unsafe {
+            return crc32_iscsi_small_fast(crc, data);
+        }
+    }
+
     // Only SSE implementation is available for Rust versions before 1.89
     // Runtime feature detection is handled by the wrapper layer
-    unsafe { crc32_iscsi_sse_v4s3x3(crc, data.as_ptr(), data.len()) }
+    unsafe { crc32_iscsi_sse_v4s3x3(crc, data.as_ptr(), data_len) }
 }
 
 /// CRC32 iSCSI calculation using the highest available instruction set after Rust 1.89
@@ -50,26 +59,35 @@ pub fn crc32_iscsi(crc: u32, data: &[u8]) -> u32 {
 #[rustversion::since(1.89)]
 #[inline(always)]
 pub fn crc32_iscsi(crc: u32, data: &[u8]) -> u32 {
+    let data_len = data.len();
+
+    // SSE4.2 is required for native CRC32 instructions used in small buffer path
+    if data_len <= 256 && is_x86_feature_detected!("sse4.2") {
+        unsafe {
+            return crc32_iscsi_small_fast(crc, data);
+        }
+    }
+
     #[cfg(target_arch = "x86_64")]
     {
         // AVX512 + VPCLMULQDQ
 
         if is_x86_feature_detected!("avx512vl") && is_x86_feature_detected!("vpclmulqdq") {
             unsafe {
-                return crc32_iscsi_avx512_vpclmulqdq_v3x2(crc, data.as_ptr(), data.len());
+                return crc32_iscsi_avx512_vpclmulqdq_v3x2(crc, data.as_ptr(), data_len);
             }
         }
 
         // AVX512
         if is_x86_feature_detected!("avx512vl") {
             unsafe {
-                return crc32_iscsi_avx512_v4s3x3(crc, data.as_ptr(), data.len());
+                return crc32_iscsi_avx512_v4s3x3(crc, data.as_ptr(), data_len);
             }
         }
     }
 
     // Fallback to SSE implementation
-    unsafe { crc32_iscsi_sse_v4s3x3(crc, data.as_ptr(), data.len()) }
+    unsafe { crc32_iscsi_sse_v4s3x3(crc, data.as_ptr(), data_len) }
 }
 
 #[rustversion::since(1.89)]
@@ -188,6 +206,39 @@ unsafe fn mm_crc32_u64(crc: u32, val: u64) -> u32 {
     }
 }
 
+/// CRC-32/ISCSI calculation for small buffers (<= 256 bytes) using unrolled native CRC instructions
+#[inline]
+#[target_feature(enable = "sse4.2")]
+pub unsafe fn crc32_iscsi_small_fast(mut crc: u32, data: &[u8]) -> u32 {
+    let (prefix, aligned, suffix) = data.align_to::<u64>();
+
+    for &byte in prefix {
+        crc = _mm_crc32_u8(crc, byte);
+    }
+
+    let mut chunks = aligned.chunks_exact(8);
+    for chunk in &mut chunks {
+        crc = mm_crc32_u64(crc, chunk[0]);
+        crc = mm_crc32_u64(crc, chunk[1]);
+        crc = mm_crc32_u64(crc, chunk[2]);
+        crc = mm_crc32_u64(crc, chunk[3]);
+        crc = mm_crc32_u64(crc, chunk[4]);
+        crc = mm_crc32_u64(crc, chunk[5]);
+        crc = mm_crc32_u64(crc, chunk[6]);
+        crc = mm_crc32_u64(crc, chunk[7]);
+    }
+
+    for &val in chunks.remainder() {
+        crc = mm_crc32_u64(crc, val);
+    }
+
+    for &byte in suffix {
+        crc = _mm_crc32_u8(crc, byte);
+    }
+
+    crc
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -204,6 +255,43 @@ mod tests {
                 crc32_iscsi(0xffffffff, TEST_CHECK_STRING) ^ 0xffffffff,
                 0xe3069283
             );
+        }
+    }
+
+    #[test]
+    fn test_crc32_iscsi_small_fast_check() {
+        if is_x86_feature_detected!("sse4.2") {
+            unsafe {
+                assert_eq!(
+                    crc32_iscsi_small_fast(0xffffffff, TEST_CHECK_STRING) ^ 0xffffffff,
+                    0xe3069283
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn test_crc32_iscsi_small_fast_all_lengths() {
+        if is_x86_feature_detected!("sse4.2") {
+            for len in 1..=255 {
+                test_crc32_iscsi_small_fast_random(len);
+            }
+        }
+    }
+
+    fn test_crc32_iscsi_small_fast_random(len: usize) {
+        let mut data = vec![0u8; len];
+        rng().fill(&mut data[..]);
+
+        let checksum = RUST_CRC32_ISCSI.checksum(&data);
+
+        if is_x86_feature_detected!("sse4.2") {
+            unsafe {
+                assert_eq!(
+                    crc32_iscsi_small_fast(0xffffffff, &data) ^ 0xffffffff,
+                    checksum
+                );
+            }
         }
     }
 

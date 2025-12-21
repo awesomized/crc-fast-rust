@@ -98,7 +98,7 @@ unsafe fn update_aarch64_aes_sha3(
 #[rustversion::since(1.89)]
 #[inline(always)]
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-pub(crate) unsafe fn update(state: u64, bytes: &[u8], params: CrcParams) -> u64 {
+pub(crate) unsafe fn update(state: u64, bytes: &[u8], params: &CrcParams) -> u64 {
     use crate::feature_detection::{get_arch_ops, ArchOpsInstance};
 
     match get_arch_ops() {
@@ -130,7 +130,7 @@ pub(crate) unsafe fn update(state: u64, bytes: &[u8], params: CrcParams) -> u64 
 #[rustversion::before(1.89)]
 #[inline(always)]
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-pub(crate) unsafe fn update(state: u64, bytes: &[u8], params: CrcParams) -> u64 {
+pub(crate) unsafe fn update(state: u64, bytes: &[u8], params: &CrcParams) -> u64 {
     use crate::feature_detection::{get_arch_ops, ArchOpsInstance};
 
     match get_arch_ops() {
@@ -149,7 +149,7 @@ pub(crate) unsafe fn update(state: u64, bytes: &[u8], params: CrcParams) -> u64 
     not(target_arch = "x86_64"),
     not(target_arch = "aarch64")
 ))]
-pub(crate) unsafe fn update(state: u64, bytes: &[u8], params: CrcParams) -> u64 {
+pub(crate) unsafe fn update(state: u64, bytes: &[u8], params: &CrcParams) -> u64 {
     crate::arch::software::update(state, bytes, params)
 }
 

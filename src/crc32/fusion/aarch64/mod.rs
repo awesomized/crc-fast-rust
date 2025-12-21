@@ -26,7 +26,11 @@ use iso_hdlc::crc_pmull_sha3::crc32_iso_hdlc_eor3_v9s3x2e_s3;
 
 #[inline(always)]
 pub fn crc32_iscsi(crc: u32, data: &[u8]) -> u32 {
-    if data.len() <= 96 {
+    let data_len = data.len();
+
+    // there's some variance among different aarch64 CPUs (Applie Silicon, AWS Graviton, etc), but
+    // 127 bytes is the "small" threshold where this is generally faster
+    if data_len < 128 {
         return unsafe { crc32_iscsi_small_fast(crc, data) };
     }
 
@@ -36,15 +40,19 @@ pub fn crc32_iscsi(crc: u32, data: &[u8]) -> u32 {
     let has_sha3 = cfg!(target_feature = "sha3");
 
     if has_sha3 {
-        unsafe { crc32_iscsi_aes_sha3(crc, data) }
+        unsafe { crc32_iscsi_aes_sha3(crc, data, data_len) }
     } else {
-        unsafe { crc32_iscsi_aes(crc, data) }
+        unsafe { crc32_iscsi_aes(crc, data, data_len) }
     }
 }
 
 #[inline(always)]
 pub fn crc32_iso_hdlc(crc: u32, data: &[u8]) -> u32 {
-    if data.len() <= 96 {
+    let data_len = data.len();
+
+    // there's some variance among different aarch64 CPUs (Applie Silicon, AWS Graviton, etc), but
+    // 127 bytes is the "small" threshold where this is generally faster
+    if data_len < 128 {
         return unsafe { crc32_iso_hdlc_small_fast(crc, data) };
     }
 
@@ -54,54 +62,54 @@ pub fn crc32_iso_hdlc(crc: u32, data: &[u8]) -> u32 {
     let has_sha3 = cfg!(target_feature = "sha3");
 
     if has_sha3 {
-        unsafe { crc32_iso_hdlc_aes_sha3(crc, data) }
+        unsafe { crc32_iso_hdlc_aes_sha3(crc, data, data_len) }
     } else {
-        unsafe { crc32_iso_hdlc_aes(crc, data) }
+        unsafe { crc32_iso_hdlc_aes(crc, data, data_len) }
     }
 }
 
 /// Safe wrapper for CRC-32/ISCSI calculation with AES + SHA3 support
 #[inline]
 #[target_feature(enable = "crc,aes,sha3")]
-unsafe fn crc32_iscsi_aes_sha3(crc: u32, data: &[u8]) -> u32 {
+unsafe fn crc32_iscsi_aes_sha3(crc: u32, data: &[u8], data_len: usize) -> u32 {
     unsafe {
         const LARGE_BUFFER_THRESHOLD: usize = 1024;
 
         // Select implementation based on buffer size
-        if data.len() <= LARGE_BUFFER_THRESHOLD {
-            crc32_iscsi_v12e_v1(crc, data.as_ptr(), data.len())
+        if data_len <= LARGE_BUFFER_THRESHOLD {
+            crc32_iscsi_v12e_v1(crc, data.as_ptr(), data_len)
         } else {
-            crc32_iscsi_eor3_v9s3x2e_s3(crc, data.as_ptr(), data.len())
+            crc32_iscsi_eor3_v9s3x2e_s3(crc, data.as_ptr(), data_len)
         }
     }
 }
 
 #[inline]
 #[target_feature(enable = "crc,aes")]
-unsafe fn crc32_iscsi_aes(crc: u32, data: &[u8]) -> u32 {
-    unsafe { crc32_iscsi_v12e_v1(crc, data.as_ptr(), data.len()) }
+unsafe fn crc32_iscsi_aes(crc: u32, data: &[u8], data_len: usize) -> u32 {
+    unsafe { crc32_iscsi_v12e_v1(crc, data.as_ptr(), data_len) }
 }
 
 /// Safe wrapper for CRC32 ISO-HDLC calculation
 #[inline]
 #[target_feature(enable = "crc,aes,sha3")]
-unsafe fn crc32_iso_hdlc_aes_sha3(crc: u32, data: &[u8]) -> u32 {
+unsafe fn crc32_iso_hdlc_aes_sha3(crc: u32, data: &[u8], data_len: usize) -> u32 {
     unsafe {
         const LARGE_BUFFER_THRESHOLD: usize = 1024;
 
         // Select implementation based on buffer size
-        if data.len() <= LARGE_BUFFER_THRESHOLD {
-            crc32_iso_hdlc_v12e_v1(crc, data.as_ptr(), data.len())
+        if data_len <= LARGE_BUFFER_THRESHOLD {
+            crc32_iso_hdlc_v12e_v1(crc, data.as_ptr(), data_len)
         } else {
-            crc32_iso_hdlc_eor3_v9s3x2e_s3(crc, data.as_ptr(), data.len())
+            crc32_iso_hdlc_eor3_v9s3x2e_s3(crc, data.as_ptr(), data_len)
         }
     }
 }
 
 #[inline]
 #[target_feature(enable = "crc,aes")]
-unsafe fn crc32_iso_hdlc_aes(crc: u32, data: &[u8]) -> u32 {
-    unsafe { crc32_iso_hdlc_v12e_v1(crc, data.as_ptr(), data.len()) }
+unsafe fn crc32_iso_hdlc_aes(crc: u32, data: &[u8], data_len: usize) -> u32 {
+    unsafe { crc32_iso_hdlc_v12e_v1(crc, data.as_ptr(), data_len) }
 }
 
 #[inline]
@@ -140,7 +148,7 @@ unsafe fn clmul_hi_and_xor(a: uint64x2_t, b: uint64x2_t, c: uint64x2_t) -> uint6
     veorq_u64(clmul_hi(a, b), c)
 }
 
-/// CRC-32/ISCSI calculation for small buffers using unrolled native CRC instructions
+/// CRC-32/ISCSI calculation for small buffers (<= 96 bytes) using unrolled native CRC instructions
 #[inline]
 #[target_feature(enable = "crc")]
 pub unsafe fn crc32_iscsi_small_fast(mut crc: u32, data: &[u8]) -> u32 {
@@ -177,7 +185,7 @@ pub unsafe fn crc32_iscsi_small_fast(mut crc: u32, data: &[u8]) -> u32 {
     crc
 }
 
-/// CRC-32/ISO-HDLC calculation for small buffers using unrolled native CRC instructions
+/// CRC-32/ISO-HDLC calculation for small buffers (<= 96 bytes) using unrolled native CRC instructions
 #[inline]
 #[target_feature(enable = "crc")]
 pub unsafe fn crc32_iso_hdlc_small_fast(mut crc: u32, data: &[u8]) -> u32 {
