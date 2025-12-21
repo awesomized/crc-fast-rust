@@ -84,14 +84,14 @@ impl CrcParams {
     /// Gets a key at the specified index, returning 0 if out of bounds.
     /// This provides safe access regardless of internal key storage format.
     #[inline(always)]
-    pub fn get_key(self, index: usize) -> u64 {
+    pub fn get_key(&self, index: usize) -> u64 {
         self.keys.get_key(index)
     }
 
     /// Gets a key at the specified index, returning None if out of bounds.
     /// This provides optional key access for cases where bounds checking is needed.
     #[inline(always)]
-    pub fn get_key_checked(self, index: usize) -> Option<u64> {
+    pub fn get_key_checked(&self, index: usize) -> Option<u64> {
         if index < self.keys.key_count() {
             Some(self.keys.get_key(index))
         } else {
@@ -101,7 +101,7 @@ impl CrcParams {
 
     /// Returns the number of keys available in this CrcParams instance.
     #[inline(always)]
-    pub fn key_count(self) -> usize {
+    pub fn key_count(&self) -> usize {
         self.keys.key_count()
     }
 }

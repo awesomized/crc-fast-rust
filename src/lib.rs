@@ -666,7 +666,7 @@ impl Write for Digest {
 ///
 /// assert_eq!(checksum, 0xcbf43926);
 /// ```
-#[inline(always)]
+#[inline]
 pub fn checksum(algorithm: CrcAlgorithm, buf: &[u8]) -> u64 {
     // avoid using get_calculator_params() here to reduce overhead for small data sizes
     match algorithm {
@@ -1039,7 +1039,10 @@ fn crc32_iscsi_calculator(state: u64, data: &[u8], _params: &CrcParams) -> u64 {
             | PerformanceTier::X86_64Avx512Pclmulqdq
             | PerformanceTier::X86_64SsePclmulqdq
             | PerformanceTier::X86SsePclmulqdq => {
-                return fusion::crc32_iscsi(state as u32, data) as u64;
+                // fusion path requires both pclmulqdq (checked by tier) and sse4.2 (for CRC32 instructions)
+                if is_x86_feature_detected!("sse4.2") {
+                    return fusion::crc32_iscsi(state as u32, data) as u64;
+                }
             }
             _ => {}
         }
