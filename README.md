@@ -406,12 +406,12 @@ AKA `crc32c` in many, but not all, implementations.
 
 | Arch    | Brand | CPU             | System                    | Target            | 1KiB (GiB/s) | 1MiB (GiB/s) |
 |:--------|:------|:----------------|:--------------------------|:------------------|-------------:|-------------:|
-| x86_64  | Intel | Sapphire Rapids | EC2 c7i.metal-24xl        | avx512-vpclmulqdq |          ~52 |         ~111 |
-| x86_64  | AMD   | Genoa           | EC2 c7a.metal-48xl        | avx512-vpclmulqdq |          ~24 |          ~54 |
-| aarch64 | AWS   | Graviton4       | EC2 c8g.metal-48xl        | neon-pmull-eor3   |          ~21 |          ~53 |
+| x86_64  | Intel | Sapphire Rapids | EC2 c7i.metal-24xl        | avx512-vpclmulqdq |          ~61 |         ~111 |
+| x86_64  | AMD   | Genoa           | EC2 c7a.metal-48xl        | avx512-vpclmulqdq |          ~26 |          ~54 |
+| aarch64 | AWS   | Graviton4       | EC2 c8g.metal-48xl        | neon-pmull-sha3   |          ~23 |          ~54 |
 | aarch64 | AWS   | Graviton2       | EC2 c6g.metal             | neon-pmull        |          ~11 |          ~17 |
-| aarch64 | Apple | M3 Ultra        | Mac Studio (32 core)      | neon-pmull-eor3   |          ~49 |          ~99 |
-| aarch64 | Apple | M4 Max          | MacBook Pro 16" (16 core) | neon-pmull-eor3   |          ~56 |          ~94 |
+| aarch64 | Apple | M3 Ultra        | Mac Studio (32 core)      | neon-pmull-sha3   |          ~60 |          ~99 |
+| aarch64 | Apple | M4 Max          | MacBook Pro 16" (16 core) | neon-pmull-sha3   |          ~56 |          ~94 |
 
 ### CRC-32/ISO-HDLC (reflected)
 
@@ -419,12 +419,12 @@ AKA `crc32` in many, but not all, implementations.
 
 | Arch    | Brand | CPU             | System                    | Target            | 1KiB (GiB/s) | 1MiB (GiB/s) |
 |:--------|:------|:----------------|:--------------------------|:------------------|-------------:|-------------:|
-| x86_64  | Intel | Sapphire Rapids | EC2 c7i.metal-248xl       | avx512-vpclmulqdq |          ~20 |          ~88 |
-| x86_64  | AMD   | Genoa           | EC2 c7a.metal-48xl        | avx512-vpclmulqdq |          ~15 |          ~55 |
-| aarch64 | AWS   | Graviton4       | EC2 c8g.metal-48xl        | neon-pmull-eor3   |          ~21 |          ~53 |
+| x86_64  | Intel | Sapphire Rapids | EC2 c7i.metal-248xl       | avx512-vpclmulqdq |          ~27 |          ~88 |
+| x86_64  | AMD   | Genoa           | EC2 c7a.metal-48xl        | avx512-vpclmulqdq |          ~21 |          ~55 |
+| aarch64 | AWS   | Graviton4       | EC2 c8g.metal-48xl        | neon-pmull-sha3   |          ~23 |          ~54 |
 | aarch64 | AWS   | Graviton2       | EC2 c6g.metal             | neon-pmull        |          ~11 |          ~17 |
-| aarch64 | Apple | M3 Ultra        | Mac Studio (32 core)      | neon-pmull-eor3   |          ~48 |          ~98 |
-| aarch64 | Apple | M4 Max          | MacBook Pro 16" (16 core) | neon-pmull-eor3   |          ~56 |          ~94 |
+| aarch64 | Apple | M3 Ultra        | Mac Studio (32 core)      | neon-pmull-sha3   |          ~48 |          ~98 |
+| aarch64 | Apple | M4 Max          | MacBook Pro 16" (16 core) | neon-pmull-sha3   |          ~56 |          ~94 |
 
 ### CRC-64/NVME (reflected)
 
@@ -432,12 +432,12 @@ AKA `crc32` in many, but not all, implementations.
 
 | Arch    | Brand | CPU             | System                    | Target            | 1KiB (GiB/s) | 1MiB (GiB/s) |
 |:--------|:------|:----------------|:--------------------------|:------------------|-------------:|-------------:|
-| x86_64  | Intel | Sapphire Rapids | EC2 c7i.metal-24xl        | avx512-vpclmulqdq |          ~21 |         ~110 |
-| x86_64  | AMD   | Genoa           | EC2 c7a.metal-48xl        | avx512-vpclmulqdq |          ~16 |          ~55 |
-| aarch64 | AWS   | Graviton4       | EC2 c8g.metal-48xl        | neon-pmull-eor3   |          ~21 |          ~41 |
+| x86_64  | Intel | Sapphire Rapids | EC2 c7i.metal-24xl        | avx512-vpclmulqdq |          ~28 |          ~88 |
+| x86_64  | AMD   | Genoa           | EC2 c7a.metal-48xl        | avx512-vpclmulqdq |          ~22 |          ~55 |
+| aarch64 | AWS   | Graviton4       | EC2 c8g.metal-48xl        | neon-pmull-sha3   |          ~28 |          ~41 |
 | aarch64 | AWS   | Graviton2       | EC2 c6g.metal             | neon-pmull        |          ~11 |          ~16 |
-| aarch64 | Apple | M3 Ultra        | Mac Studio (32 core)      | neon-pmull-eor3   |          ~50 |          ~72 |
-| aarch64 | Apple | M4 Max          | MacBook Pro 16" (16 core) | neon-pmull-eor3   |          ~52 |          ~72 |
+| aarch64 | Apple | M3 Ultra        | Mac Studio (32 core)      | neon-pmull-sha3   |          ~58 |          ~72 |
+| aarch64 | Apple | M4 Max          | MacBook Pro 16" (16 core) | neon-pmull-sha3   |          ~52 |          ~72 |
 
 ### CRC-32/BZIP2 (forward)
 
