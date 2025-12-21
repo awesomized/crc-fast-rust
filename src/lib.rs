@@ -967,6 +967,57 @@ pub fn get_calculator_target(_algorithm: CrcAlgorithm) -> String {
     arch_ops.get_target_string()
 }
 
+
+/// Calculates the CRC-32/ISCSI ("crc32c" in many, but not all, implementations) checksum.
+///
+/// Nano-optimized to be faster than calling checksum() for this specific algorithm, since it avoids
+/// the match statement overhead.
+///
+/// # Examples
+///
+/// ```rust
+/// use crc_fast::crc32_iscsi;
+/// let checksum = crc32_iscsi(b"123456789");
+/// assert_eq!(checksum, 0xe3069283);
+/// ```
+#[inline(always)]
+pub fn crc32_iscsi(data: &[u8]) -> u32 {
+    crc32_iscsi_calculator(CRC32_ISCSI.init, data, &CRC32_ISCSI) as u32 ^ CRC32_ISCSI.xorout as u32
+}
+
+/// Calculates the CRC-32/ISO-HDLC ("crc32" in many, but not all, implementations) checksum.
+///
+/// Nano-optimized to be faster than calling checksum() for this specific algorithm, since it avoids
+/// the match statement overhead.
+///
+/// # Examples
+///
+/// ```rust
+/// use crc_fast::crc32_iso_hdlc;
+/// let checksum = crc32_iso_hdlc(b"123456789");
+/// assert_eq!(checksum, 0xcbf43926);
+/// ```
+pub fn crc32_iso_hdlc(data: &[u8]) -> u32 {
+    crc32_iso_hdlc_calculator(CRC32_ISO_HDLC.init, data, &CRC32_ISO_HDLC) as u32
+        ^ CRC32_ISO_HDLC.xorout as u32
+}
+
+/// Calculates the CRC-64/NVME checksum.
+///
+/// Nano-optimized to be faster than calling checksum() for this specific algorithm, since it avoids
+/// the match statement overhead.
+///
+/// # Examples
+///
+/// ```rust
+/// use crc_fast::crc64_nvme;
+/// let checksum = crc64_nvme(b"123456789");
+/// assert_eq!(checksum, 0xae8b14860a799888);
+/// ```
+pub fn crc64_nvme(data: &[u8]) -> u64 {
+    Calculator::calculate(CRC64_NVME.init, data, &CRC64_NVME) ^ CRC64_NVME.xorout
+}
+
 /// Fallback version of get_calculator_target for unsupported architectures
 #[cfg(all(
     feature = "alloc",
