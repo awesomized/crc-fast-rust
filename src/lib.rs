@@ -967,8 +967,9 @@ pub fn get_calculator_target(_algorithm: CrcAlgorithm) -> String {
     arch_ops.get_target_string()
 }
 
-
 /// Calculates the CRC-32/ISCSI ("crc32c" in many, but not all, implementations) checksum.
+///
+/// https://reveng.sourceforge.io/crc-catalogue/all.htm#crc.cat.crc-32-iscsi
 ///
 /// Nano-optimized to be faster than calling checksum() for this specific algorithm, since it avoids
 /// the match statement overhead.
@@ -987,6 +988,8 @@ pub fn crc32_iscsi(data: &[u8]) -> u32 {
 
 /// Calculates the CRC-32/ISO-HDLC ("crc32" in many, but not all, implementations) checksum.
 ///
+/// https://reveng.sourceforge.io/crc-catalogue/all.htm#crc.cat.crc-32-iso-hdlc
+///
 /// Nano-optimized to be faster than calling checksum() for this specific algorithm, since it avoids
 /// the match statement overhead.
 ///
@@ -1003,6 +1006,8 @@ pub fn crc32_iso_hdlc(data: &[u8]) -> u32 {
 }
 
 /// Calculates the CRC-64/NVME checksum.
+///
+/// https://reveng.sourceforge.io/crc-catalogue/all.htm#crc.cat.crc-64-nvme
 ///
 /// Nano-optimized to be faster than calling checksum() for this specific algorithm, since it avoids
 /// the match statement overhead.

@@ -776,6 +776,63 @@ pub extern "C" fn crc_fast_get_version() -> *const c_char {
     VERSION.as_ptr()
 }
 
+/// Calculates the CRC-32/ISCSI ("crc32c" in many, but not all, implementations) checksum.
+///
+/// https://reveng.sourceforge.io/crc-catalogue/all.htm#crc.cat.crc-32-iscsi
+///
+/// Returns 0 on error (e.g. null data pointer)
+#[no_mangle]
+pub extern "C" fn crc_fast_crc32_iscsi(data: *const c_char, len: usize) -> u32 {
+    if data.is_null() {
+        set_last_error(CrcFastError::NullPointer);
+        return 0;
+    }
+    clear_last_error();
+    unsafe {
+        #[allow(clippy::unnecessary_cast)]
+        let bytes = slice::from_raw_parts(data as *const u8, len);
+        crate::crc32_iscsi(bytes)
+    }
+}
+
+/// Calculates the CRC-32/ISO-HDLC ("crc32" in many, but not all, implementations) checksum.
+///
+/// https://reveng.sourceforge.io/crc-catalogue/all.htm#crc.cat.crc-32-iso-hdlc
+///
+/// Returns 0 on error (e.g. null data pointer)
+#[no_mangle]
+pub extern "C" fn crc_fast_crc32_iso_hdlc(data: *const c_char, len: usize) -> u32 {
+    if data.is_null() {
+        set_last_error(CrcFastError::NullPointer);
+        return 0;
+    }
+    clear_last_error();
+    unsafe {
+        #[allow(clippy::unnecessary_cast)]
+        let bytes = slice::from_raw_parts(data as *const u8, len);
+        crate::crc32_iso_hdlc(bytes)
+    }
+}
+
+/// Calculates the CRC-64/NVME checksum.
+///
+/// https://reveng.sourceforge.io/crc-catalogue/all.htm#crc.cat.crc-64-nvme
+///
+/// Returns 0 on error (e.g. null data pointer)
+#[no_mangle]
+pub extern "C" fn crc_fast_crc64_nvme(data: *const c_char, len: usize) -> u64 {
+    if data.is_null() {
+        set_last_error(CrcFastError::NullPointer);
+        return 0;
+    }
+    clear_last_error();
+    unsafe {
+        #[allow(clippy::unnecessary_cast)]
+        let bytes = slice::from_raw_parts(data as *const u8, len);
+        crate::crc64_nvme(bytes)
+    }
+}
+
 unsafe fn convert_to_string(data: *const u8, len: usize) -> String {
     if data.is_null() {
         return String::new();
