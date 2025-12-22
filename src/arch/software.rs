@@ -61,12 +61,122 @@ static CUSTOM_CRC32_CACHE: Once<Mutex<HashMap<Crc32Key, &'static Algorithm<u32>>
 static CUSTOM_CRC64_CACHE: Once<Mutex<HashMap<Crc64Key, &'static Algorithm<u64>>>> = Once::new();
 
 #[allow(unused)]
+const RUST_CRC16_ARC: crc::Crc<u16, Table<16>> = crc::Crc::<u16, Table<16>>::new(&crc::CRC_16_ARC);
+
+#[allow(unused)]
+const RUST_CRC16_CDMA2000: crc::Crc<u16, Table<16>> =
+    crc::Crc::<u16, Table<16>>::new(&crc::CRC_16_CDMA2000);
+
+#[allow(unused)]
+const RUST_CRC16_CMS: crc::Crc<u16, Table<16>> = crc::Crc::<u16, Table<16>>::new(&crc::CRC_16_CMS);
+
+#[allow(unused)]
+const RUST_CRC16_DDS_110: crc::Crc<u16, Table<16>> =
+    crc::Crc::<u16, Table<16>>::new(&crc::CRC_16_DDS_110);
+
+#[allow(unused)]
+const RUST_CRC16_DECT_R: crc::Crc<u16, Table<16>> =
+    crc::Crc::<u16, Table<16>>::new(&crc::CRC_16_DECT_R);
+
+#[allow(unused)]
+const RUST_CRC16_DECT_X: crc::Crc<u16, Table<16>> =
+    crc::Crc::<u16, Table<16>>::new(&crc::CRC_16_DECT_X);
+
+#[allow(unused)]
+const RUST_CRC16_DNP: crc::Crc<u16, Table<16>> = crc::Crc::<u16, Table<16>>::new(&crc::CRC_16_DNP);
+
+#[allow(unused)]
+const RUST_CRC16_EN_13757: crc::Crc<u16, Table<16>> =
+    crc::Crc::<u16, Table<16>>::new(&crc::CRC_16_EN_13757);
+
+#[allow(unused)]
+const RUST_CRC16_GENIBUS: crc::Crc<u16, Table<16>> =
+    crc::Crc::<u16, Table<16>>::new(&crc::CRC_16_GENIBUS);
+
+#[allow(unused)]
+const RUST_CRC16_GSM: crc::Crc<u16, Table<16>> = crc::Crc::<u16, Table<16>>::new(&crc::CRC_16_GSM);
+
+#[allow(unused)]
+const RUST_CRC16_IBM_3740: crc::Crc<u16, Table<16>> =
+    crc::Crc::<u16, Table<16>>::new(&crc::CRC_16_IBM_3740);
+
+#[allow(unused)]
 const RUST_CRC16_IBM_SDLC: crc::Crc<u16, Table<16>> =
     crc::Crc::<u16, Table<16>>::new(&crc::CRC_16_IBM_SDLC);
 
 #[allow(unused)]
+const RUST_CRC16_ISO_IEC_14443_3_A: crc::Crc<u16, Table<16>> =
+    crc::Crc::<u16, Table<16>>::new(&crc::CRC_16_ISO_IEC_14443_3_A);
+
+#[allow(unused)]
+const RUST_CRC16_KERMIT: crc::Crc<u16, Table<16>> =
+    crc::Crc::<u16, Table<16>>::new(&crc::CRC_16_KERMIT);
+
+#[allow(unused)]
+const RUST_CRC16_LJ1200: crc::Crc<u16, Table<16>> =
+    crc::Crc::<u16, Table<16>>::new(&crc::CRC_16_LJ1200);
+
+#[allow(unused)]
+const RUST_CRC16_M17: crc::Crc<u16, Table<16>> = crc::Crc::<u16, Table<16>>::new(&crc::CRC_16_M17);
+
+#[allow(unused)]
+const RUST_CRC16_MAXIM_DOW: crc::Crc<u16, Table<16>> =
+    crc::Crc::<u16, Table<16>>::new(&crc::CRC_16_MAXIM_DOW);
+
+#[allow(unused)]
+const RUST_CRC16_MCRF4XX: crc::Crc<u16, Table<16>> =
+    crc::Crc::<u16, Table<16>>::new(&crc::CRC_16_MCRF4XX);
+
+#[allow(unused)]
+const RUST_CRC16_MODBUS: crc::Crc<u16, Table<16>> =
+    crc::Crc::<u16, Table<16>>::new(&crc::CRC_16_MODBUS);
+
+#[allow(unused)]
+const RUST_CRC16_NRSC_5: crc::Crc<u16, Table<16>> =
+    crc::Crc::<u16, Table<16>>::new(&crc::CRC_16_NRSC_5);
+
+#[allow(unused)]
+const RUST_CRC16_OPENSAFETY_A: crc::Crc<u16, Table<16>> =
+    crc::Crc::<u16, Table<16>>::new(&crc::CRC_16_OPENSAFETY_A);
+
+#[allow(unused)]
+const RUST_CRC16_OPENSAFETY_B: crc::Crc<u16, Table<16>> =
+    crc::Crc::<u16, Table<16>>::new(&crc::CRC_16_OPENSAFETY_B);
+
+#[allow(unused)]
+const RUST_CRC16_PROFIBUS: crc::Crc<u16, Table<16>> =
+    crc::Crc::<u16, Table<16>>::new(&crc::CRC_16_PROFIBUS);
+
+#[allow(unused)]
+const RUST_CRC16_RIELLO: crc::Crc<u16, Table<16>> =
+    crc::Crc::<u16, Table<16>>::new(&crc::CRC_16_RIELLO);
+
+#[allow(unused)]
+const RUST_CRC16_SPI_FUJITSU: crc::Crc<u16, Table<16>> =
+    crc::Crc::<u16, Table<16>>::new(&crc::CRC_16_SPI_FUJITSU);
+
+#[allow(unused)]
 const RUST_CRC16_T10_DIF: crc::Crc<u16, Table<16>> =
     crc::Crc::<u16, Table<16>>::new(&crc::CRC_16_T10_DIF);
+
+#[allow(unused)]
+const RUST_CRC16_TELEDISK: crc::Crc<u16, Table<16>> =
+    crc::Crc::<u16, Table<16>>::new(&crc::CRC_16_TELEDISK);
+
+#[allow(unused)]
+const RUST_CRC16_TMS37157: crc::Crc<u16, Table<16>> =
+    crc::Crc::<u16, Table<16>>::new(&crc::CRC_16_TMS37157);
+
+#[allow(unused)]
+const RUST_CRC16_UMTS: crc::Crc<u16, Table<16>> =
+    crc::Crc::<u16, Table<16>>::new(&crc::CRC_16_UMTS);
+
+#[allow(unused)]
+const RUST_CRC16_USB: crc::Crc<u16, Table<16>> = crc::Crc::<u16, Table<16>>::new(&crc::CRC_16_USB);
+
+#[allow(unused)]
+const RUST_CRC16_XMODEM: crc::Crc<u16, Table<16>> =
+    crc::Crc::<u16, Table<16>>::new(&crc::CRC_16_XMODEM);
 
 #[allow(unused)]
 const RUST_CRC32_AIXM: crc::Crc<u32, Table<16>> =
@@ -145,8 +255,37 @@ pub(crate) fn update(state: u64, data: &[u8], params: &CrcParams) -> u64 {
     match params.width {
         16 => {
             let params = match params.algorithm {
+                CrcAlgorithm::Crc16Arc => RUST_CRC16_ARC,
+                CrcAlgorithm::Crc16Cdma2000 => RUST_CRC16_CDMA2000,
+                CrcAlgorithm::Crc16Cms => RUST_CRC16_CMS,
+                CrcAlgorithm::Crc16Dds110 => RUST_CRC16_DDS_110,
+                CrcAlgorithm::Crc16DectR => RUST_CRC16_DECT_R,
+                CrcAlgorithm::Crc16DectX => RUST_CRC16_DECT_X,
+                CrcAlgorithm::Crc16Dnp => RUST_CRC16_DNP,
+                CrcAlgorithm::Crc16En13757 => RUST_CRC16_EN_13757,
+                CrcAlgorithm::Crc16Genibus => RUST_CRC16_GENIBUS,
+                CrcAlgorithm::Crc16Gsm => RUST_CRC16_GSM,
+                CrcAlgorithm::Crc16Ibm3740 => RUST_CRC16_IBM_3740,
                 CrcAlgorithm::Crc16IbmSdlc => RUST_CRC16_IBM_SDLC,
+                CrcAlgorithm::Crc16IsoIec144433A => RUST_CRC16_ISO_IEC_14443_3_A,
+                CrcAlgorithm::Crc16Kermit => RUST_CRC16_KERMIT,
+                CrcAlgorithm::Crc16Lj1200 => RUST_CRC16_LJ1200,
+                CrcAlgorithm::Crc16M17 => RUST_CRC16_M17,
+                CrcAlgorithm::Crc16MaximDow => RUST_CRC16_MAXIM_DOW,
+                CrcAlgorithm::Crc16Mcrf4xx => RUST_CRC16_MCRF4XX,
+                CrcAlgorithm::Crc16Modbus => RUST_CRC16_MODBUS,
+                CrcAlgorithm::Crc16Nrsc5 => RUST_CRC16_NRSC_5,
+                CrcAlgorithm::Crc16OpensafetyA => RUST_CRC16_OPENSAFETY_A,
+                CrcAlgorithm::Crc16OpensafetyB => RUST_CRC16_OPENSAFETY_B,
+                CrcAlgorithm::Crc16Profibus => RUST_CRC16_PROFIBUS,
+                CrcAlgorithm::Crc16Riello => RUST_CRC16_RIELLO,
+                CrcAlgorithm::Crc16SpiFujitsu => RUST_CRC16_SPI_FUJITSU,
                 CrcAlgorithm::Crc16T10Dif => RUST_CRC16_T10_DIF,
+                CrcAlgorithm::Crc16Teledisk => RUST_CRC16_TELEDISK,
+                CrcAlgorithm::Crc16Tms37157 => RUST_CRC16_TMS37157,
+                CrcAlgorithm::Crc16Umts => RUST_CRC16_UMTS,
+                CrcAlgorithm::Crc16Usb => RUST_CRC16_USB,
+                CrcAlgorithm::Crc16Xmodem => RUST_CRC16_XMODEM,
                 CrcAlgorithm::Crc16Custom => {
                     #[cfg(feature = "alloc")]
                     {
