@@ -247,13 +247,15 @@ mod structs;
 mod test;
 mod traits;
 
-/// Supported CRC-32 and CRC-64 variants
+/// Supported CRC-16, CRC-32, and CRC-64 variants
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum CrcAlgorithm {
+    /// Generic custom CRC variant that works with any supported width (16, 32, 64).
+    /// The actual width is determined by the `width` field in `CrcParams`.
+    CrcCustom,
     Crc16Arc,
     Crc16Cdma2000,
     Crc16Cms,
-    Crc16Custom, // Custom CRC-16 implementation, not defined in consts
     Crc16Dds110,
     Crc16DectR,
     Crc16DectX,
@@ -288,6 +290,10 @@ pub enum CrcAlgorithm {
     Crc32Bzip2,
     Crc32CdRomEdc,
     Crc32Cksum,
+    #[deprecated(
+        since = "1.9.0",
+        note = "Use CrcCustom instead, which works with any supported width (16, 32, 64)"
+    )]
     Crc32Custom, // Custom CRC-32 implementation, not defined in consts
     Crc32Iscsi,
     Crc32IsoHdlc,
@@ -295,6 +301,10 @@ pub enum CrcAlgorithm {
     Crc32Mef,
     Crc32Mpeg2,
     Crc32Xfer,
+    #[deprecated(
+        since = "1.9.0",
+        note = "Use CrcCustom instead, which works with any supported width (16, 32, 64)"
+    )]
     Crc64Custom, // Custom CRC-64 implementation, not defined in consts
     Crc64Ecma182,
     Crc64GoIso,
@@ -715,6 +725,7 @@ impl Write for Digest {
 /// assert_eq!(checksum, 0xcbf43926);
 /// ```
 #[inline]
+#[allow(deprecated)]
 pub fn checksum(algorithm: CrcAlgorithm, buf: &[u8]) -> u64 {
     // avoid using get_calculator_params() here to reduce overhead for small data sizes
     match algorithm {
@@ -726,9 +737,6 @@ pub fn checksum(algorithm: CrcAlgorithm, buf: &[u8]) -> u64 {
         }
         CrcAlgorithm::Crc16Cms => {
             Calculator::calculate(CRC16_CMS.init, buf, &CRC16_CMS) ^ CRC16_CMS.xorout
-        }
-        CrcAlgorithm::Crc16Custom => {
-            panic!("Custom CRC-16 requires parameters via CrcParams::new()")
         }
         CrcAlgorithm::Crc16Dds110 => {
             Calculator::calculate(CRC16_DDS_110.init, buf, &CRC16_DDS_110) ^ CRC16_DDS_110.xorout
@@ -864,6 +872,9 @@ pub fn checksum(algorithm: CrcAlgorithm, buf: &[u8]) -> u64 {
         }
         CrcAlgorithm::Crc32Xfer => {
             Calculator::calculate(CRC32_XFER.init, buf, &CRC32_XFER) ^ CRC32_XFER.xorout
+        }
+        CrcAlgorithm::CrcCustom => {
+            panic!("Custom CRC requires parameters via CrcParams::new()")
         }
         CrcAlgorithm::Crc64Custom => {
             panic!("Custom CRC-64 requires parameters via CrcParams::new()")
@@ -1194,14 +1205,12 @@ pub fn get_calculator_target(_algorithm: CrcAlgorithm) -> String {
 
 /// Returns the calculator function and parameters for the specified CRC algorithm.
 #[inline(always)]
+#[allow(deprecated)]
 fn get_calculator_params(algorithm: CrcAlgorithm) -> (CalculatorFn, CrcParams) {
     match algorithm {
         CrcAlgorithm::Crc16Arc => (Calculator::calculate as CalculatorFn, CRC16_ARC),
         CrcAlgorithm::Crc16Cdma2000 => (Calculator::calculate as CalculatorFn, CRC16_CDMA2000),
         CrcAlgorithm::Crc16Cms => (Calculator::calculate as CalculatorFn, CRC16_CMS),
-        CrcAlgorithm::Crc16Custom => {
-            panic!("Custom CRC-16 requires parameters via CrcParams::new()")
-        }
         CrcAlgorithm::Crc16Dds110 => (Calculator::calculate as CalculatorFn, CRC16_DDS_110),
         CrcAlgorithm::Crc16DectR => (Calculator::calculate as CalculatorFn, CRC16_DECT_R),
         CrcAlgorithm::Crc16DectX => (Calculator::calculate as CalculatorFn, CRC16_DECT_X),
@@ -1252,6 +1261,9 @@ fn get_calculator_params(algorithm: CrcAlgorithm) -> (CalculatorFn, CrcParams) {
         CrcAlgorithm::Crc32Mef => (Calculator::calculate as CalculatorFn, CRC32_MEF),
         CrcAlgorithm::Crc32Mpeg2 => (Calculator::calculate as CalculatorFn, CRC32_MPEG_2),
         CrcAlgorithm::Crc32Xfer => (Calculator::calculate as CalculatorFn, CRC32_XFER),
+        CrcAlgorithm::CrcCustom => {
+            panic!("Custom CRC requires parameters via CrcParams::new()")
+        }
         CrcAlgorithm::Crc64Custom => {
             panic!("Custom CRC-64 requires parameters via CrcParams::new()")
         }

@@ -65,13 +65,13 @@ impl FromStr for CrcAlgorithm {
     }
 }
 
+#[allow(deprecated)]
 impl Display for CrcAlgorithm {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
         match self {
             CrcAlgorithm::Crc16Arc => write!(f, "{NAME_CRC16_ARC}"),
             CrcAlgorithm::Crc16Cdma2000 => write!(f, "{NAME_CRC16_CDMA2000}"),
             CrcAlgorithm::Crc16Cms => write!(f, "{NAME_CRC16_CMS}"),
-            CrcAlgorithm::Crc16Custom => write!(f, "CRC-16/CUSTOM"),
             CrcAlgorithm::Crc16Dds110 => write!(f, "{NAME_CRC16_DDS_110}"),
             CrcAlgorithm::Crc16DectR => write!(f, "{NAME_CRC16_DECT_R}"),
             CrcAlgorithm::Crc16DectX => write!(f, "{NAME_CRC16_DECT_X}"),
@@ -115,6 +115,7 @@ impl Display for CrcAlgorithm {
             CrcAlgorithm::Crc32Mef => write!(f, "{NAME_CRC32_MEF}",),
             CrcAlgorithm::Crc32Mpeg2 => write!(f, "{NAME_CRC32_MPEG_2}",),
             CrcAlgorithm::Crc32Xfer => write!(f, "{NAME_CRC32_XFER}",),
+            CrcAlgorithm::CrcCustom => write!(f, "CRC/CUSTOM"),
             CrcAlgorithm::Crc64Custom => write!(f, "CRC-64/CUSTOM"),
             CrcAlgorithm::Crc64GoIso => write!(f, "{NAME_CRC64_GO_ISO}",),
             CrcAlgorithm::Crc64Ms => write!(f, "{NAME_CRC64_MS}",),

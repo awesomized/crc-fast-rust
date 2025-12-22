@@ -1457,12 +1457,8 @@ mod tests {
         let _check: u64 = params.check;
         let _keys: [u64; 23] = params.keys.to_keys_array_23();
 
-        // Verify the algorithm is set correctly based on width
-        match params.width {
-            32 => assert!(matches!(params.algorithm, CrcAlgorithm::Crc32Custom)),
-            64 => assert!(matches!(params.algorithm, CrcAlgorithm::Crc64Custom)),
-            _ => panic!("Unexpected width: {}", params.width),
-        }
+        // Verify the algorithm is set to CrcCustom (unified custom variant)
+        assert!(matches!(params.algorithm, CrcAlgorithm::CrcCustom));
 
         // Test that CrcParams can be copied and cloned
         let params_copy = params;

@@ -138,10 +138,11 @@ pub struct CrcFastDigestHandle(*mut Digest);
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub enum CrcFastAlgorithm {
+    // CrcCustom works with any supported widths (16, 32, 64)
+    CrcCustom,
     Crc16Arc,
     Crc16Cdma2000,
     Crc16Cms,
-    Crc16Custom, // Custom CRC-16 implementation, not defined in consts
     Crc16Dds110,
     Crc16DectR,
     Crc16DectX,
@@ -194,13 +195,13 @@ pub enum CrcFastAlgorithm {
 }
 
 // Convert from FFI enum to internal enum
+#[allow(deprecated)]
 impl From<CrcFastAlgorithm> for CrcAlgorithm {
     fn from(value: CrcFastAlgorithm) -> Self {
         match value {
             CrcFastAlgorithm::Crc16Arc => CrcAlgorithm::Crc16Arc,
             CrcFastAlgorithm::Crc16Cdma2000 => CrcAlgorithm::Crc16Cdma2000,
             CrcFastAlgorithm::Crc16Cms => CrcAlgorithm::Crc16Cms,
-            CrcFastAlgorithm::Crc16Custom => CrcAlgorithm::Crc16Custom,
             CrcFastAlgorithm::Crc16Dds110 => CrcAlgorithm::Crc16Dds110,
             CrcFastAlgorithm::Crc16DectR => CrcAlgorithm::Crc16DectR,
             CrcFastAlgorithm::Crc16DectX => CrcAlgorithm::Crc16DectX,
@@ -242,6 +243,7 @@ impl From<CrcFastAlgorithm> for CrcAlgorithm {
             CrcFastAlgorithm::Crc32Mef => CrcAlgorithm::Crc32Mef,
             CrcFastAlgorithm::Crc32Mpeg2 => CrcAlgorithm::Crc32Mpeg2,
             CrcFastAlgorithm::Crc32Xfer => CrcAlgorithm::Crc32Xfer,
+            CrcFastAlgorithm::CrcCustom => CrcAlgorithm::CrcCustom,
             CrcFastAlgorithm::Crc64Custom => CrcAlgorithm::Crc64Custom,
             CrcFastAlgorithm::Crc64Ecma182 => CrcAlgorithm::Crc64Ecma182,
             CrcFastAlgorithm::Crc64GoIso => CrcAlgorithm::Crc64GoIso,
@@ -354,6 +356,7 @@ impl From<CrcFastParams> for CrcParams {
 }
 
 // Convert from internal struct to FFI struct
+#[allow(deprecated)]
 impl From<CrcParams> for CrcFastParams {
     fn from(params: CrcParams) -> Self {
         // Create stable key pointer for FFI usage
@@ -364,7 +367,6 @@ impl From<CrcParams> for CrcFastParams {
                 CrcAlgorithm::Crc16Arc => CrcFastAlgorithm::Crc16Arc,
                 CrcAlgorithm::Crc16Cdma2000 => CrcFastAlgorithm::Crc16Cdma2000,
                 CrcAlgorithm::Crc16Cms => CrcFastAlgorithm::Crc16Cms,
-                CrcAlgorithm::Crc16Custom => CrcFastAlgorithm::Crc16Custom,
                 CrcAlgorithm::Crc16Dds110 => CrcFastAlgorithm::Crc16Dds110,
                 CrcAlgorithm::Crc16DectR => CrcFastAlgorithm::Crc16DectR,
                 CrcAlgorithm::Crc16DectX => CrcFastAlgorithm::Crc16DectX,
@@ -406,6 +408,7 @@ impl From<CrcParams> for CrcFastParams {
                 CrcAlgorithm::Crc32Mef => CrcFastAlgorithm::Crc32Mef,
                 CrcAlgorithm::Crc32Mpeg2 => CrcFastAlgorithm::Crc32Mpeg2,
                 CrcAlgorithm::Crc32Xfer => CrcFastAlgorithm::Crc32Xfer,
+                CrcAlgorithm::CrcCustom => CrcFastAlgorithm::CrcCustom,
                 CrcAlgorithm::Crc64Custom => CrcFastAlgorithm::Crc64Custom,
                 CrcAlgorithm::Crc64Ecma182 => CrcFastAlgorithm::Crc64Ecma182,
                 CrcAlgorithm::Crc64GoIso => CrcFastAlgorithm::Crc64GoIso,
@@ -827,14 +830,9 @@ pub extern "C" fn crc_fast_get_custom_params(
     // Create stable key pointer for FFI usage
     let (keys_ptr, key_count) = create_stable_key_pointer(&params.keys);
 
-    // Convert to FFI struct
+    // Convert to FFI struct - use CrcCustom for all widths since CrcParams::new now uses it
     CrcFastParams {
-        algorithm: match width {
-            32 => CrcFastAlgorithm::Crc32Custom,
-            64 => CrcFastAlgorithm::Crc64Custom,
-            // Default to 32-bit for unsupported widths (defensive programming)
-            _ => CrcFastAlgorithm::Crc32Custom,
-        },
+        algorithm: CrcFastAlgorithm::CrcCustom,
         width: params.width,
         poly: params.poly,
         init: params.init,

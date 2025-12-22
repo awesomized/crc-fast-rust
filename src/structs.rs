@@ -70,12 +70,10 @@ impl CrcParams {
         let keys_array = cache::get_or_generate_keys(width, poly, reflected);
         let keys = crate::CrcKeysStorage::from_keys_fold_256(keys_array);
 
-        let algorithm = match width {
-            16 => CrcAlgorithm::Crc16Custom,
-            32 => CrcAlgorithm::Crc32Custom,
-            64 => CrcAlgorithm::Crc64Custom,
-            _ => panic!("Unsupported width: {width}",),
-        };
+        // Validate width is supported
+        if width != 16 && width != 32 && width != 64 {
+            panic!("Unsupported width: {width}");
+        }
 
         // For reflected CRC-16, bit-reverse the init value for the SIMD algorithm
         let init_algorithm = if width == 16 && reflected {
@@ -85,7 +83,7 @@ impl CrcParams {
         };
 
         Self {
-            algorithm,
+            algorithm: CrcAlgorithm::CrcCustom,
             name,
             width,
             poly,

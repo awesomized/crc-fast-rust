@@ -72,6 +72,7 @@ fn test_crc_keys_storage_bounds_checking() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn test_crc_params_get_key_checked() {
     // Create test CrcParams with 23-key storage
     let keys_23 = [42u64; 23];
@@ -161,6 +162,7 @@ fn test_crc_params_get_key_checked() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn test_key_count_returns_correct_values() {
     // Test KeysFold256 variant
     let keys_23 = [1u64; 23];
@@ -220,6 +222,7 @@ fn test_key_count_returns_correct_values() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn test_crc_params_get_key_bounds_checking() {
     // Create test CrcParams with 23-key storage
     let keys_23 = [99u64; 23];
@@ -264,8 +267,9 @@ fn test_crc_params_get_key_bounds_checking() {
         "Large index should return 0 for 23-key params"
     );
 }
-#[test]
 
+#[test]
+#[allow(deprecated)]
 fn test_third_party_const_definitions_compatibility() {
     // Mock third-party const definitions using the new format
     // These simulate how third-party applications would define custom CrcParams
@@ -385,6 +389,7 @@ fn test_third_party_const_definitions_compatibility() {
 
 #[test]
 #[allow(clippy::needless_range_loop)] // Intentionally testing indexed key access patterns
+#[allow(deprecated)]
 fn test_existing_key_access_patterns_continue_to_work() {
     // Test that common key access patterns used by existing code continue to work
 
@@ -479,6 +484,7 @@ fn test_existing_key_access_patterns_continue_to_work() {
 
 #[test]
 #[allow(clippy::needless_range_loop)] // Intentionally testing indexed key access for backwards compatibility
+#[allow(deprecated)]
 fn test_backwards_compatibility_throughout_migration_phases() {
     // This test simulates the migration phases to ensure backwards compatibility
 
@@ -556,6 +562,7 @@ fn test_backwards_compatibility_throughout_migration_phases() {
 
 #[test]
 #[allow(clippy::needless_range_loop)] // Intentionally testing indexed access performance
+#[allow(deprecated)]
 fn test_key_access_performance_matches_direct_array_access() {
     // This test verifies that CrcKeysStorage key access has zero runtime overhead
     // compared to direct array access. While we can't easily measure exact timing
@@ -695,6 +702,7 @@ fn test_crc_calculation_performance_before_and_after_changes() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn test_memory_usage_impact_of_enum_based_storage() {
     // Test that enum-based storage doesn't significantly increase memory usage
     use std::mem;
@@ -891,6 +899,7 @@ fn test_compiler_optimizations_eliminate_enum_dispatch() {
 }
 #[test]
 #[allow(clippy::needless_range_loop)] // Intentionally testing indexed key access for future variant
+#[allow(deprecated)]
 fn test_create_crc_params_using_keys_future_test_variant() {
     // Create test CrcParams using KeysFutureTest variant with 25 keys
     let test_keys_25 = [
@@ -982,6 +991,7 @@ fn test_create_crc_params_using_keys_future_test_variant() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn test_code_gracefully_handles_different_key_array_sizes() {
     // Test that the same code can handle both 23-key and 25-key variants gracefully
 
@@ -1072,6 +1082,7 @@ fn test_code_gracefully_handles_different_key_array_sizes() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn test_expansion_to_larger_key_arrays_works_as_designed() {
     // Test that the design supports expansion to larger key arrays
 
@@ -1229,6 +1240,7 @@ fn test_expansion_to_larger_key_arrays_works_as_designed() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn test_future_expansion_backwards_compatibility() {
     // Test that future expansion maintains backwards compatibility
 
@@ -1356,6 +1368,7 @@ mod ffi_tests {
     use crate::{CrcAlgorithm, CrcKeysStorage, CrcParams};
 
     #[test]
+    #[allow(deprecated)]
     fn test_ffi_conversion_23_keys() {
         // Test conversion between CrcParams and CrcFastParams for 23-key variant
         let keys_23 = [0x1234567890ABCDEFu64; 23];
@@ -1428,6 +1441,7 @@ mod ffi_tests {
     }
 
     #[test]
+    #[allow(deprecated)]
     fn test_ffi_conversion_25_keys() {
         // Test conversion between CrcParams and CrcFastParams for 25-key variant
         let keys_25 = [0xFEDCBA0987654321u64; 25];
@@ -1485,6 +1499,7 @@ mod ffi_tests {
     }
 
     #[test]
+    #[allow(deprecated)]
     fn test_ffi_pointer_stability() {
         // Test that key pointers remain stable across multiple conversions
         let keys_23 = [0x1111111111111111u64; 23];
@@ -1540,6 +1555,7 @@ mod ffi_tests {
     }
 
     #[test]
+    #[allow(deprecated)]
     fn test_ffi_memory_safety() {
         // Test that FFI conversions are memory safe
         let keys_23 = [0xAAAAAAAAAAAAAAAAu64; 23];
@@ -1597,6 +1613,7 @@ mod ffi_tests {
     }
 
     #[test]
+    #[allow(deprecated)]
     fn test_ffi_different_key_counts() {
         // Test FFI with different key count scenarios
 
