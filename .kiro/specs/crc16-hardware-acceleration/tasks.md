@@ -29,7 +29,7 @@ This implementation adds hardware-accelerated CRC-16 support to the crc-fast lib
     - Format polynomial for reflected mode: (bit_reverse_16(poly) << 1) | 1
     - _Requirements: 1.5, 1.6_
 
-  - [ ]* 1.5 Write property tests for CRC-16 key generation
+  - [x] 1.5 Write property tests for CRC-16 key generation
     - **Property 1: Forward polynomial formatting**
     - **Property 2: Reflected polynomial formatting**
     - **Validates: Requirements 1.5, 1.6**

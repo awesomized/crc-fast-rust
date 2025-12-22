@@ -781,3 +781,57 @@ mod tests {
         }
     }
 }
+
+#[cfg(test)]
+mod property_tests {
+    use super::*;
+    use proptest::prelude::*;
+
+    /// Helper function to bit-reverse a 16-bit value
+    fn bit_reverse_16(value: u16) -> u16 {
+        let mut v = value;
+        let mut result: u16 = 0;
+        for _ in 0..16 {
+            result = (result << 1) | (v & 1);
+            v >>= 1;
+        }
+        result
+    }
+
+    proptest! {
+        #![proptest_config(ProptestConfig::with_cases(100))]
+
+        /// Feature: crc16-hardware-acceleration, Property 1: Forward polynomial formatting
+        /// *For any* 16-bit polynomial value P, when generating the polynomial key for forward
+        /// (non-reflected) CRC-16, the result SHALL equal `(P << 16) | (1 << 32)`.
+        /// **Validates: Requirements 1.5**
+        #[test]
+        fn prop_forward_polynomial_formatting(poly in 0u16..=0xFFFFu16) {
+            let generated_keys = keys(16, poly as u64, false);
+            let polynomial_key = generated_keys[8];
+            let expected = ((poly as u64) << 16) | (1u64 << 32);
+            prop_assert_eq!(
+                polynomial_key, expected,
+                "Forward polynomial formatting failed for poly=0x{:04X}: expected 0x{:016X}, got 0x{:016X}",
+                poly, expected, polynomial_key
+            );
+        }
+
+        /// Feature: crc16-hardware-acceleration, Property 2: Reflected polynomial formatting
+        /// *For any* 16-bit polynomial value P, when generating the polynomial key for reflected
+        /// CRC-16, the result SHALL equal `(bit_reverse_16(P) << 1) | 1`.
+        /// **Validates: Requirements 1.6**
+        #[test]
+        fn prop_reflected_polynomial_formatting(poly in 0u16..=0xFFFFu16) {
+            let generated_keys = keys(16, poly as u64, true);
+            let polynomial_key = generated_keys[8];
+            let reversed = bit_reverse_16(poly);
+            let expected = ((reversed as u64) << 1) | 1;
+            prop_assert_eq!(
+                polynomial_key, expected,
+                "Reflected polynomial formatting failed for poly=0x{:04X}: expected 0x{:016X}, got 0x{:016X}",
+                poly, expected, polynomial_key
+            );
+        }
+    }
+}
