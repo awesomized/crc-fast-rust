@@ -71,56 +71,56 @@ This implementation refactors CRC-16 and CRC-32 to share common 32-bit-space ope
     - Call width32_ops::process_0_to_15()
     - _Requirements: 3.7_
 
-- [ ] 4. Checkpoint - Verify CRC-32 still works
+- [x] 4. Checkpoint - Verify CRC-32 still works
   - Run `cargo test` to ensure CRC-32 tests pass
 
-- [ ] 5. Refactor Width16 implementation
-  - [ ] 5.1 Update Width16 load_constants to delegate
+- [x] 5. Refactor Width16 implementation
+  - [x] 5.1 Update Width16 load_constants to delegate
     - Call width32_ops::load_constants()
     - _Requirements: 2.1_
 
-  - [ ] 5.2 Update Width16 fold_16 to delegate
+  - [x] 5.2 Update Width16 fold_16 to delegate
     - Call width32_ops::fold_16()
     - _Requirements: 2.1_
 
-  - [ ] 5.3 Update Width16 fold_width to delegate
+  - [x] 5.3 Update Width16 fold_width to delegate
     - Call width32_ops::fold_width()
     - _Requirements: 2.2_
 
-  - [ ] 5.4 Update Width16 barrett_reduction to delegate
+  - [x] 5.4 Update Width16 barrett_reduction to delegate
     - Call width32_ops::barrett_reduction() and extract 16-bit result
     - _Requirements: 2.6_
 
-  - [ ] 5.5 Update Width16 create_coefficient to delegate
+  - [x] 5.5 Update Width16 create_coefficient to delegate
     - Call width32_ops::create_coefficient()
     - _Requirements: 2.3_
 
-  - [ ] 5.6 Update Width16 perform_final_reduction to delegate
+  - [x] 5.6 Update Width16 perform_final_reduction to delegate
     - Call width32_ops::fold_width() and width32_ops::barrett_reduction()
     - _Requirements: 2.4_
 
-  - [ ] 5.7 Update Width16 get_last_bytes_table_ptr to delegate
+  - [x] 5.7 Update Width16 get_last_bytes_table_ptr to delegate
     - Call width32_ops::get_last_bytes_table_ptr()
     - _Requirements: 2.5_
 
-  - [ ] 5.8 Update crc16::algorithm::process_0_to_15 to delegate
+  - [x] 5.8 Update crc16::algorithm::process_0_to_15 to delegate
     - Call width32_ops::process_0_to_15()
     - _Requirements: 2.7_
 
-- [ ] 6. Checkpoint - Verify CRC-16 still works
+- [x] 6. Checkpoint - Verify CRC-16 still works
   - Run `cargo test` to ensure CRC-16 tests pass
 
-- [ ] 7. Final verification and cleanup
-  - [ ] 7.1 Run full test suite
+- [x] 7. Final verification and cleanup
+  - [x] 7.1 Run full test suite
     - Run `cargo test` to verify all tests pass
     - _Requirements: 4.5_
 
-  - [ ] 7.2 Run code quality checks
+  - [x] 7.2 Run code quality checks
     - Run `cargo fmt --check`
     - Run `cargo clippy -- -D warnings`
     - _Requirements: 5.1, 5.2, 5.3_
 
-  - [ ] 7.3 Verify CRC-64 unchanged
+  - [x] 7.3 Verify CRC-64 unchanged
     - Confirm CRC-64 tests still pass
     - _Requirements: 4.3_
 
