@@ -6,7 +6,7 @@
 [![Documentation](https://img.shields.io/badge/api-rustdoc-blue.svg)](https://docs.rs/crc-fast)
 
 World's fastest generic CRC calculator for
-[all known CRC-32 and CRC-64 variants](https://reveng.sourceforge.io/crc-catalogue/all.htm), as well as bring-your-own
+[all known CRC-16, CRC-32, and CRC-64 variants](https://reveng.sourceforge.io/crc-catalogue/all.htm), as well as bring-your-own
 custom parameters, using SIMD intrinsics,
 which can exceed [100GiB/s](#performance) on modern systems.
 
@@ -40,7 +40,8 @@ See [CHANGELOG](CHANGELOG.md).
 
 ### Library
 
-`cargo build --release` will obviously build the Rust library, including the  [C/C++ compatible dynamic and static libraries](#cc-compatible-library).
+`cargo build --release` will obviously build the Rust library, including
+the  [C/C++ compatible dynamic and static libraries](#cc-compatible-library).
 
 ### CLI tools
 
@@ -115,8 +116,48 @@ Tested on `wasm32-unknown-unknown`, `wasm32-wasip1`, and `wasm32-wasip2` targets
 
 ## Usage
 
-Add `crc-fast = version = "1"` to your `Cargo.toml` dependencies, which will enable every available optimization for
+Add `crc-fast = "1"` to your `Cargo.toml` dependencies, which will enable every available optimization for
 the `stable` toolchain.
+
+### Fast helper functions
+
+For the [most common and popular](#important-crc-variants) CRC variants, there are specialized one-shot functions to make adoption easier and
+performance faster, particularly for smaller input sizes, since it reduces some of the overhead of the generic 
+`checksum` path.
+
+#### CRC-32/ISCSI
+
+Also commonly known as `crc32c` in many, but not all, implementations.
+
+```rust
+use crc_fast::crc32_iscsi;
+
+let checksum = crc32_iscsi(b"123456789");
+
+assert_eq!(checksum, 0xe3069283);
+```
+
+#### CRC-32/ISO-HDLC
+
+Also commonly known as `crc32` in many, but not all, implementations.
+
+```rust
+use crc_fast::crc32_iso_hdlc;
+
+let checksum = crc32_iso_hdlc(b"123456789");
+
+assert_eq!(checksum, 0xcbf43926);
+```
+
+#### CRC-64/NVME
+
+```rust
+use crc_fast::crc64_nvme;
+
+let checksum = crc64_nvme(b"123456789");
+
+assert_eq!(checksum, 0xae8b14860a799888);
+``` 
 
 ### Digest
 
@@ -374,8 +415,20 @@ but all known public & private implementations agree on the correct value, which
 
 # Acceleration targets
 
-This library has baseline support for accelerating all known `CRC-32` and `CRC-64` variants on `aarch64`, `x86_64`, and
+This library has baseline support for accelerating all known `CRC-16`, `CRC-32`, and `CRC-64` variants on `aarch64`,
+`x86_64`, and
 `x86` internally in pure `Rust`.
+
+It uses the best available acceleration method for the detected CPU features at runtime, including:
+* `aarch64`:
+  * `neon-pmull-sha3` (preferred, if available)
+  * `neon-pmull`
+* `x86_64` and `x86`:
+    * `avx512-vpclmulqdq` (preferred, if available)
+    * `avx512-pclmulqdq`
+    * `sse-pclmulqdq`
+  
+There is a safe table-based software fallback for other architectures, or if no acceleration features are detected.
 
 ### Checking your platform capabilities
 
@@ -394,7 +447,7 @@ cargo build --release
 
 ## Performance
 
-Modern systems can exceed 100 GiB/s for calculating `CRC-32/ISCSI`, `CRC-32/ISO-HDLC`,
+Modern systems can exceed 100 GiB/s for calculating `CRC-32/ISCSI`, and nearly 90 GiB/s for `CRC-32/ISO-HDLC`,
 `CRC-64/NVME`, and all other reflected variants. (Forward variants are slower, due to the extra shuffle-masking, but
 are still extremely fast in this library).
 
@@ -419,7 +472,7 @@ AKA `crc32` in many, but not all, implementations.
 
 | Arch    | Brand | CPU             | System                    | Target            | 1KiB (GiB/s) | 1MiB (GiB/s) |
 |:--------|:------|:----------------|:--------------------------|:------------------|-------------:|-------------:|
-| x86_64  | Intel | Sapphire Rapids | EC2 c7i.metal-248xl       | avx512-vpclmulqdq |          ~27 |          ~88 |
+| x86_64  | Intel | Sapphire Rapids | EC2 c7i.metal-248xl       | avx512-vpclmulqdq |          ~28 |          ~88 |
 | x86_64  | AMD   | Genoa           | EC2 c7a.metal-48xl        | avx512-vpclmulqdq |          ~21 |          ~55 |
 | aarch64 | AWS   | Graviton4       | EC2 c8g.metal-48xl        | neon-pmull-sha3   |          ~23 |          ~54 |
 | aarch64 | AWS   | Graviton2       | EC2 c6g.metal             | neon-pmull        |          ~11 |          ~17 |
@@ -466,9 +519,11 @@ AKA `crc32` in many, but not all, implementations.
 There are [a lot of other known CRC widths and variants](https://reveng.sourceforge.io/crc-catalogue/all.htm), ranging
 from `CRC-3/GSM` to `CRC-82/DARC`, and everything in between.
 
-Since [Awesome](https://awesome.co) doesn't use any that aren't `CRC-32` or `CRC-64` in length, this library doesn't
-currently support them, either. (It should support any newly created or discovered `CRC-32` and `CRC-64` variants,
-though, with zero changes other than defining the [Rocksoft](http://www.ross.net/crc/download/crc_v3.txt) parameters).
+Since [Awesome](https://awesome.co) only uses  `CRC-32` or `CRC-64` widths in our products, this library began by supporting only those
+widths, including all known variants plus support for custom [Rocksoft](http://www.ross.net/crc/download/crc_v3.txt)
+parameters.
+
+`CRC-16` has since been added, including all known variants plus support for custom parameters as well.
 
 In theory, much of the "heavy lifting" has been done, so it should be possible to add other widths with minimal effort.
 
@@ -478,7 +533,8 @@ PRs welcome!
 
 Given the heavy use of hardware intrinsics, this crate uses a decent amount of `unsafe` code.
 
-To help ensure memory safety, this crate is validated using [Miri](https://github.com/rust-lang/miri) on `x86_64` as well as fuzz tested using [libFuzzer](https://github.com/rust-fuzz/libfuzzer) over millions of iterations.
+To help ensure memory safety and stability, this crate is validated using [Miri](https://github.com/rust-lang/miri) on
+`x86_64` as well as fuzz tested using [libFuzzer](https://github.com/rust-fuzz/libfuzzer) over millions of iterations.
 
 ## References
 
