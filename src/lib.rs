@@ -419,12 +419,9 @@ impl DynDigest for Digest {
         }
 
         let result = self.finalize();
-        let bytes = if self.output_size() == 4 {
-            result.to_be_bytes()[4..].to_vec() // Take last 4 bytes for 32-bit CRC
-        } else {
-            result.to_be_bytes().to_vec() // Use all 8 bytes for 64-bit CRC
-        };
-        buf.copy_from_slice(&bytes[..self.output_size()]);
+        let be_bytes = result.to_be_bytes();
+        let start = 8 - self.output_size();
+        buf.copy_from_slice(&be_bytes[start..]);
 
         Ok(())
     }
@@ -436,12 +433,9 @@ impl DynDigest for Digest {
         }
         let result = self.finalize();
         self.reset();
-        let bytes = if self.output_size() == 4 {
-            result.to_be_bytes()[4..].to_vec() // Take last 4 bytes for 32-bit CRC
-        } else {
-            result.to_be_bytes().to_vec() // Use all 8 bytes for 64-bit CRC
-        };
-        out.copy_from_slice(&bytes[..self.output_size()]);
+        let be_bytes = result.to_be_bytes();
+        let start = 8 - self.output_size();
+        out.copy_from_slice(&be_bytes[start..]);
         Ok(())
     }
 
@@ -1596,6 +1590,12 @@ mod lib {
             digest.update(TEST_CHECK_STRING);
 
             match digest.params.width {
+                16 => {
+                    let mut output = [0u8; 2];
+                    digest.finalize_into(&mut output).unwrap();
+                    let result = u16::from_be_bytes(output) as u64;
+                    assert_eq!(result, config.get_check());
+                }
                 32 => {
                     let mut output = [0u8; 4];
                     digest.finalize_into(&mut output).unwrap();
@@ -1620,6 +1620,7 @@ mod lib {
             digest.update(TEST_CHECK_STRING);
 
             let mut output: Vec<u8> = match digest.params.width {
+                16 => vec![0u8; 2],
                 32 => vec![0u8; 4],
                 64 => vec![0u8; 8],
                 _ => panic!("Unsupported CRC width"),
@@ -1627,6 +1628,7 @@ mod lib {
 
             digest.finalize_into_reset(&mut output).unwrap();
             let result = match output.len() {
+                2 => u16::from_be_bytes(output.try_into().unwrap()) as u64,
                 4 => u32::from_be_bytes(output.try_into().unwrap()) as u64,
                 8 => u64::from_be_bytes(output.try_into().unwrap()),
                 _ => panic!("Unsupported CRC width"),

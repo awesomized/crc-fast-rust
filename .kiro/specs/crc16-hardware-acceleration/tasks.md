@@ -85,15 +85,15 @@ This implementation adds hardware-accelerated CRC-16 support to the crc-fast lib
     - Add CRC-16 reference implementations from crc crate
     - _Requirements: 2.1, 2.2_
 
-- [ ] 5. Checkpoint - Verify basic CRC-16 computation
+- [x] 5. Checkpoint - Verify basic CRC-16 computation
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 6. Add Public API Support for CRC-16
-  - [ ] 6.1 Update src/lib.rs checksum() function
+- [x] 6. Add Public API Support for CRC-16
+  - [x] 6.1 Update src/lib.rs checksum() function
     - Add cases for Crc16IbmSdlc and Crc16T10Dif
     - _Requirements: 2.1, 2.2_
 
-  - [ ] 6.2 Update Digest and other public APIs
+  - [x] 6.2 Update Digest and other public APIs
     - Ensure Digest works with CRC-16 algorithms
     - Ensure checksum_combine works with CRC-16
     - _Requirements: 6.2, 6.3, 6.4_
