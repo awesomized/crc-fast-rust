@@ -7,7 +7,10 @@ pub(crate) mod consts;
 mod property_tests {
     use crate::crc16::consts::{CRC16_IBM_SDLC, CRC16_T10_DIF};
     use crate::test::consts::{RUST_CRC16_IBM_SDLC, RUST_CRC16_T10_DIF};
-    use crate::{checksum, checksum_with_params, CrcAlgorithm, CrcParams};
+    use crate::{
+        checksum, checksum_combine, checksum_combine_with_params, checksum_with_params,
+        CrcAlgorithm, CrcParams,
+    };
     use proptest::prelude::*;
 
     proptest! {
@@ -118,6 +121,120 @@ mod property_tests {
                 our_result, reference_result,
                 "CRC-16 custom forward mismatch for {} bytes: our=0x{:04X}, ref=0x{:04X}",
                 data.len(), our_result, reference_result
+            );
+        }
+
+        /// Feature: crc16-hardware-acceleration, Property 5: CRC-16 checksum combination round-trip
+        /// *For any* valid CRC-16 parameters and any two input byte sequences A and B,
+        /// `checksum_combine(checksum(A), checksum(B), len(B))` SHALL equal `checksum(A + B)`.
+        /// **Validates: Requirements 6.4**
+        #[test]
+        fn prop_crc16_ibm_sdlc_checksum_combine_roundtrip(
+            data_a in proptest::collection::vec(any::<u8>(), 0..512),
+            data_b in proptest::collection::vec(any::<u8>(), 0..512)
+        ) {
+            let checksum_a = checksum(CrcAlgorithm::Crc16IbmSdlc, &data_a);
+            let checksum_b = checksum(CrcAlgorithm::Crc16IbmSdlc, &data_b);
+            let combined = checksum_combine(
+                CrcAlgorithm::Crc16IbmSdlc,
+                checksum_a,
+                checksum_b,
+                data_b.len() as u64,
+            );
+
+            let mut concatenated = data_a.clone();
+            concatenated.extend(&data_b);
+            let expected = checksum(CrcAlgorithm::Crc16IbmSdlc, &concatenated);
+
+            prop_assert_eq!(
+                combined, expected,
+                "CRC-16/IBM-SDLC combine mismatch: combined=0x{:04X}, expected=0x{:04X}, len_a={}, len_b={}",
+                combined, expected, data_a.len(), data_b.len()
+            );
+        }
+
+        /// Feature: crc16-hardware-acceleration, Property 5: CRC-16 checksum combination round-trip
+        /// *For any* valid CRC-16 parameters and any two input byte sequences A and B,
+        /// `checksum_combine(checksum(A), checksum(B), len(B))` SHALL equal `checksum(A + B)`.
+        /// **Validates: Requirements 6.4**
+        #[test]
+        fn prop_crc16_t10_dif_checksum_combine_roundtrip(
+            data_a in proptest::collection::vec(any::<u8>(), 0..512),
+            data_b in proptest::collection::vec(any::<u8>(), 0..512)
+        ) {
+            let checksum_a = checksum(CrcAlgorithm::Crc16T10Dif, &data_a);
+            let checksum_b = checksum(CrcAlgorithm::Crc16T10Dif, &data_b);
+            let combined = checksum_combine(
+                CrcAlgorithm::Crc16T10Dif,
+                checksum_a,
+                checksum_b,
+                data_b.len() as u64,
+            );
+
+            let mut concatenated = data_a.clone();
+            concatenated.extend(&data_b);
+            let expected = checksum(CrcAlgorithm::Crc16T10Dif, &concatenated);
+
+            prop_assert_eq!(
+                combined, expected,
+                "CRC-16/T10-DIF combine mismatch: combined=0x{:04X}, expected=0x{:04X}, len_a={}, len_b={}",
+                combined, expected, data_a.len(), data_b.len()
+            );
+        }
+
+        /// Feature: crc16-hardware-acceleration, Property 5: CRC-16 checksum combination round-trip
+        /// Tests checksum_combine_with_params for CRC-16/IBM-SDLC
+        /// **Validates: Requirements 6.4**
+        #[test]
+        fn prop_crc16_ibm_sdlc_checksum_combine_with_params_roundtrip(
+            data_a in proptest::collection::vec(any::<u8>(), 0..512),
+            data_b in proptest::collection::vec(any::<u8>(), 0..512)
+        ) {
+            let checksum_a = checksum_with_params(CRC16_IBM_SDLC, &data_a);
+            let checksum_b = checksum_with_params(CRC16_IBM_SDLC, &data_b);
+            let combined = checksum_combine_with_params(
+                CRC16_IBM_SDLC,
+                checksum_a,
+                checksum_b,
+                data_b.len() as u64,
+            );
+
+            let mut concatenated = data_a.clone();
+            concatenated.extend(&data_b);
+            let expected = checksum_with_params(CRC16_IBM_SDLC, &concatenated);
+
+            prop_assert_eq!(
+                combined, expected,
+                "CRC-16/IBM-SDLC combine_with_params mismatch: combined=0x{:04X}, expected=0x{:04X}, len_a={}, len_b={}",
+                combined, expected, data_a.len(), data_b.len()
+            );
+        }
+
+        /// Feature: crc16-hardware-acceleration, Property 5: CRC-16 checksum combination round-trip
+        /// Tests checksum_combine_with_params for CRC-16/T10-DIF
+        /// **Validates: Requirements 6.4**
+        #[test]
+        fn prop_crc16_t10_dif_checksum_combine_with_params_roundtrip(
+            data_a in proptest::collection::vec(any::<u8>(), 0..512),
+            data_b in proptest::collection::vec(any::<u8>(), 0..512)
+        ) {
+            let checksum_a = checksum_with_params(CRC16_T10_DIF, &data_a);
+            let checksum_b = checksum_with_params(CRC16_T10_DIF, &data_b);
+            let combined = checksum_combine_with_params(
+                CRC16_T10_DIF,
+                checksum_a,
+                checksum_b,
+                data_b.len() as u64,
+            );
+
+            let mut concatenated = data_a.clone();
+            concatenated.extend(&data_b);
+            let expected = checksum_with_params(CRC16_T10_DIF, &concatenated);
+
+            prop_assert_eq!(
+                combined, expected,
+                "CRC-16/T10-DIF combine_with_params mismatch: combined=0x{:04X}, expected=0x{:04X}, len_a={}, len_b={}",
+                combined, expected, data_a.len(), data_b.len()
             );
         }
     }

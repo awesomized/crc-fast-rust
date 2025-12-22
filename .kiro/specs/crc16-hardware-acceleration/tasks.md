@@ -112,7 +112,7 @@ This implementation adds hardware-accelerated CRC-16 support to the crc-fast lib
     - **Property 4: CRC-32 and CRC-64 backwards compatibility**
     - **Validates: Requirements 3.1, 3.2, 3.4**
 
-  - [ ]* 7.4 Write property test for CRC-16 checksum combination
+  - [x] 7.4 Write property test for CRC-16 checksum combination
     - **Property 5: CRC-16 checksum combination round-trip**
     - **Validates: Requirements 6.4**
 
@@ -121,7 +121,7 @@ This implementation adds hardware-accelerated CRC-16 support to the crc-fast lib
     - Ensure all length-based tests include CRC-16
     - _Requirements: 4.3, 4.4_
 
-- [ ] 8. Final Checkpoint - Ensure all tests pass
+- [x] 8. Final Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
   - Run cargo fmt --check
   - Run cargo clippy -- -D warnings
