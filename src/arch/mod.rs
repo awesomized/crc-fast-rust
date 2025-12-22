@@ -18,7 +18,7 @@ use crate::arch::aarch64::aes_sha3::Aarch64AesSha3Ops;
 #[cfg(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64"))]
 use crate::{
     algorithm,
-    structs::{Width32, Width64},
+    structs::{Width16, Width32, Width64},
 };
 
 pub mod aarch64;
@@ -71,6 +71,7 @@ unsafe fn update_aarch64_aes(
     match params.width {
         64 => algorithm::update::<_, Width64>(state, bytes, params, &ops),
         32 => algorithm::update::<_, Width32>(state as u32, bytes, params, &ops) as u64,
+        16 => algorithm::update::<_, Width16>(state as u16, bytes, params, &ops) as u64,
         _ => panic!("Unsupported CRC width: {}", params.width),
     }
 }
@@ -87,6 +88,7 @@ unsafe fn update_aarch64_aes_sha3(
     match params.width {
         64 => algorithm::update::<_, Width64>(state, bytes, params, &ops),
         32 => algorithm::update::<_, Width32>(state as u32, bytes, params, &ops) as u64,
+        16 => algorithm::update::<_, Width16>(state as u16, bytes, params, &ops) as u64,
         _ => panic!("Unsupported CRC width: {}", params.width),
     }
 }
@@ -106,17 +108,20 @@ pub(crate) unsafe fn update(state: u64, bytes: &[u8], params: &CrcParams) -> u64
         ArchOpsInstance::X86_64Avx512Vpclmulqdq(ops) => match params.width {
             64 => algorithm::update::<_, Width64>(state, bytes, params, ops),
             32 => algorithm::update::<_, Width32>(state as u32, bytes, params, ops) as u64,
+            16 => algorithm::update::<_, Width16>(state as u16, bytes, params, ops) as u64,
             _ => panic!("Unsupported CRC width: {}", params.width),
         },
         #[cfg(target_arch = "x86_64")]
         ArchOpsInstance::X86_64Avx512Pclmulqdq(ops) => match params.width {
             64 => algorithm::update::<_, Width64>(state, bytes, params, ops),
             32 => algorithm::update::<_, Width32>(state as u32, bytes, params, ops) as u64,
+            16 => algorithm::update::<_, Width16>(state as u16, bytes, params, ops) as u64,
             _ => panic!("Unsupported CRC width: {}", params.width),
         },
         ArchOpsInstance::X86SsePclmulqdq(ops) => match params.width {
             64 => algorithm::update::<_, Width64>(state, bytes, params, ops),
             32 => algorithm::update::<_, Width32>(state as u32, bytes, params, ops) as u64,
+            16 => algorithm::update::<_, Width16>(state as u16, bytes, params, ops) as u64,
             _ => panic!("Unsupported CRC width: {}", params.width),
         },
         ArchOpsInstance::SoftwareFallback => crate::arch::software::update(state, bytes, params),
@@ -137,6 +142,7 @@ pub(crate) unsafe fn update(state: u64, bytes: &[u8], params: &CrcParams) -> u64
         ArchOpsInstance::X86SsePclmulqdq(ops) => match params.width {
             64 => algorithm::update::<_, Width64>(state, bytes, params, ops),
             32 => algorithm::update::<_, Width32>(state as u32, bytes, params, ops) as u64,
+            16 => algorithm::update::<_, Width16>(state as u16, bytes, params, ops) as u64,
             _ => panic!("Unsupported CRC width: {}", params.width),
         },
         ArchOpsInstance::SoftwareFallback => crate::arch::software::update(state, bytes, params),

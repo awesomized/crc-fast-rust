@@ -60,8 +60,8 @@ This implementation adds hardware-accelerated CRC-16 support to the crc-fast lib
     - Update cache module if needed for CRC-16 key caching
     - _Requirements: 5.5, 6.1_
 
-- [ ] 4. Implement CRC-16 Algorithm
-  - [ ] 4.1 Create src/crc16/algorithm.rs with EnhancedCrcWidth implementation
+- [x] 4. Implement CRC-16 Algorithm
+  - [x] 4.1 Create src/crc16/algorithm.rs with EnhancedCrcWidth implementation
     - Implement EnhancedCrcWidth for Width16
     - Implement create_state() with proper scaling for forward mode
     - Implement extract_result() with proper scaling
@@ -70,17 +70,17 @@ This implementation adds hardware-accelerated CRC-16 support to the crc-fast lib
     - Implement get_last_bytes_table_ptr()
     - _Requirements: 2.3, 2.4, 2.5, 2.6, 2.7_
 
-  - [ ] 4.2 Implement process_0_to_15 for CRC-16
+  - [x] 4.2 Implement process_0_to_15 for CRC-16
     - Handle small inputs (0-15 bytes) for CRC-16
     - Follow pattern from crc32/algorithm.rs
     - _Requirements: 2.1, 2.2_
 
-  - [ ] 4.3 Update architecture dispatcher for CRC-16
+  - [x] 4.3 Update architecture dispatcher for CRC-16
     - Update src/arch/mod.rs to handle width=16
     - Route to Width16 implementation
     - _Requirements: 2.1, 2.2_
 
-  - [ ] 4.4 Update software fallback for CRC-16
+  - [x] 4.4 Update software fallback for CRC-16
     - Update src/arch/software.rs to handle CRC-16 algorithms
     - Add CRC-16 reference implementations from crc crate
     - _Requirements: 2.1, 2.2_
