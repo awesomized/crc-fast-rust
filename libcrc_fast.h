@@ -51,9 +51,38 @@ typedef enum CrcFastError {
  * The supported CRC algorithms
  */
 typedef enum CrcFastAlgorithm {
+  Crc16Arc,
+  Crc16Cdma2000,
+  Crc16Cms,
   Crc16Custom,
+  Crc16Dds110,
+  Crc16DectR,
+  Crc16DectX,
+  Crc16Dnp,
+  Crc16En13757,
+  Crc16Genibus,
+  Crc16Gsm,
+  Crc16Ibm3740,
   Crc16IbmSdlc,
+  Crc16IsoIec144433A,
+  Crc16Kermit,
+  Crc16Lj1200,
+  Crc16M17,
+  Crc16MaximDow,
+  Crc16Mcrf4xx,
+  Crc16Modbus,
+  Crc16Nrsc5,
+  Crc16OpensafetyA,
+  Crc16OpensafetyB,
+  Crc16Profibus,
+  Crc16Riello,
+  Crc16SpiFujitsu,
   Crc16T10Dif,
+  Crc16Teledisk,
+  Crc16Tms37157,
+  Crc16Umts,
+  Crc16Usb,
+  Crc16Xmodem,
   Crc32Aixm,
   Crc32Autosar,
   Crc32Base91D,
@@ -270,7 +299,8 @@ const char *crc_fast_get_calculator_target(enum CrcFastAlgorithm algorithm);
 const char *crc_fast_get_version(void);
 
 /**
- * Calculates the CRC-32/ISCSI ("crc32c" in many, but not all, implementations) checksum.
+ * Calculates the CRC-32/ISCSI (commonly called "crc32c" in many, but not all, implementations)
+ * checksum.
  *
  * https://reveng.sourceforge.io/crc-catalogue/all.htm#crc.cat.crc-32-iscsi
  *
@@ -279,7 +309,8 @@ const char *crc_fast_get_version(void);
 uint32_t crc_fast_crc32_iscsi(const char *data, uintptr_t len);
 
 /**
- * Calculates the CRC-32/ISO-HDLC ("crc32" in many, but not all, implementations) checksum.
+ * Calculates the CRC-32/ISO-HDLC (commonly called "crc32" in many, but not all, implementations)
+ * checksum.
  *
  * https://reveng.sourceforge.io/crc-catalogue/all.htm#crc.cat.crc-32-iso-hdlc
  *

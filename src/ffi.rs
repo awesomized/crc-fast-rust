@@ -138,9 +138,38 @@ pub struct CrcFastDigestHandle(*mut Digest);
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub enum CrcFastAlgorithm {
-    Crc16Custom,
+    Crc16Arc,
+    Crc16Cdma2000,
+    Crc16Cms,
+    Crc16Custom, // Custom CRC-16 implementation, not defined in consts
+    Crc16Dds110,
+    Crc16DectR,
+    Crc16DectX,
+    Crc16Dnp,
+    Crc16En13757,
+    Crc16Genibus,
+    Crc16Gsm,
+    Crc16Ibm3740,
     Crc16IbmSdlc,
+    Crc16IsoIec144433A,
+    Crc16Kermit,
+    Crc16Lj1200,
+    Crc16M17,
+    Crc16MaximDow,
+    Crc16Mcrf4xx,
+    Crc16Modbus,
+    Crc16Nrsc5,
+    Crc16OpensafetyA,
+    Crc16OpensafetyB,
+    Crc16Profibus,
+    Crc16Riello,
+    Crc16SpiFujitsu,
     Crc16T10Dif,
+    Crc16Teledisk,
+    Crc16Tms37157,
+    Crc16Umts,
+    Crc16Usb,
+    Crc16Xmodem,
     Crc32Aixm,
     Crc32Autosar,
     Crc32Base91D,
@@ -168,9 +197,38 @@ pub enum CrcFastAlgorithm {
 impl From<CrcFastAlgorithm> for CrcAlgorithm {
     fn from(value: CrcFastAlgorithm) -> Self {
         match value {
+            CrcFastAlgorithm::Crc16Arc => CrcAlgorithm::Crc16Arc,
+            CrcFastAlgorithm::Crc16Cdma2000 => CrcAlgorithm::Crc16Cdma2000,
+            CrcFastAlgorithm::Crc16Cms => CrcAlgorithm::Crc16Cms,
             CrcFastAlgorithm::Crc16Custom => CrcAlgorithm::Crc16Custom,
+            CrcFastAlgorithm::Crc16Dds110 => CrcAlgorithm::Crc16Dds110,
+            CrcFastAlgorithm::Crc16DectR => CrcAlgorithm::Crc16DectR,
+            CrcFastAlgorithm::Crc16DectX => CrcAlgorithm::Crc16DectX,
+            CrcFastAlgorithm::Crc16Dnp => CrcAlgorithm::Crc16Dnp,
+            CrcFastAlgorithm::Crc16En13757 => CrcAlgorithm::Crc16En13757,
+            CrcFastAlgorithm::Crc16Genibus => CrcAlgorithm::Crc16Genibus,
+            CrcFastAlgorithm::Crc16Gsm => CrcAlgorithm::Crc16Gsm,
+            CrcFastAlgorithm::Crc16Ibm3740 => CrcAlgorithm::Crc16Ibm3740,
             CrcFastAlgorithm::Crc16IbmSdlc => CrcAlgorithm::Crc16IbmSdlc,
+            CrcFastAlgorithm::Crc16IsoIec144433A => CrcAlgorithm::Crc16IsoIec144433A,
+            CrcFastAlgorithm::Crc16Kermit => CrcAlgorithm::Crc16Kermit,
+            CrcFastAlgorithm::Crc16Lj1200 => CrcAlgorithm::Crc16Lj1200,
+            CrcFastAlgorithm::Crc16M17 => CrcAlgorithm::Crc16M17,
+            CrcFastAlgorithm::Crc16MaximDow => CrcAlgorithm::Crc16MaximDow,
+            CrcFastAlgorithm::Crc16Mcrf4xx => CrcAlgorithm::Crc16Mcrf4xx,
+            CrcFastAlgorithm::Crc16Modbus => CrcAlgorithm::Crc16Modbus,
+            CrcFastAlgorithm::Crc16Nrsc5 => CrcAlgorithm::Crc16Nrsc5,
+            CrcFastAlgorithm::Crc16OpensafetyA => CrcAlgorithm::Crc16OpensafetyA,
+            CrcFastAlgorithm::Crc16OpensafetyB => CrcAlgorithm::Crc16OpensafetyB,
+            CrcFastAlgorithm::Crc16Profibus => CrcAlgorithm::Crc16Profibus,
+            CrcFastAlgorithm::Crc16Riello => CrcAlgorithm::Crc16Riello,
+            CrcFastAlgorithm::Crc16SpiFujitsu => CrcAlgorithm::Crc16SpiFujitsu,
             CrcFastAlgorithm::Crc16T10Dif => CrcAlgorithm::Crc16T10Dif,
+            CrcFastAlgorithm::Crc16Teledisk => CrcAlgorithm::Crc16Teledisk,
+            CrcFastAlgorithm::Crc16Tms37157 => CrcAlgorithm::Crc16Tms37157,
+            CrcFastAlgorithm::Crc16Umts => CrcAlgorithm::Crc16Umts,
+            CrcFastAlgorithm::Crc16Usb => CrcAlgorithm::Crc16Usb,
+            CrcFastAlgorithm::Crc16Xmodem => CrcAlgorithm::Crc16Xmodem,
             CrcFastAlgorithm::Crc32Aixm => CrcAlgorithm::Crc32Aixm,
             CrcFastAlgorithm::Crc32Autosar => CrcAlgorithm::Crc32Autosar,
             CrcFastAlgorithm::Crc32Base91D => CrcAlgorithm::Crc32Base91D,
@@ -295,9 +353,38 @@ impl From<CrcParams> for CrcFastParams {
 
         CrcFastParams {
             algorithm: match params.algorithm {
+                CrcAlgorithm::Crc16Arc => CrcFastAlgorithm::Crc16Arc,
+                CrcAlgorithm::Crc16Cdma2000 => CrcFastAlgorithm::Crc16Cdma2000,
+                CrcAlgorithm::Crc16Cms => CrcFastAlgorithm::Crc16Cms,
                 CrcAlgorithm::Crc16Custom => CrcFastAlgorithm::Crc16Custom,
+                CrcAlgorithm::Crc16Dds110 => CrcFastAlgorithm::Crc16Dds110,
+                CrcAlgorithm::Crc16DectR => CrcFastAlgorithm::Crc16DectR,
+                CrcAlgorithm::Crc16DectX => CrcFastAlgorithm::Crc16DectX,
+                CrcAlgorithm::Crc16Dnp => CrcFastAlgorithm::Crc16Dnp,
+                CrcAlgorithm::Crc16En13757 => CrcFastAlgorithm::Crc16En13757,
+                CrcAlgorithm::Crc16Genibus => CrcFastAlgorithm::Crc16Genibus,
+                CrcAlgorithm::Crc16Gsm => CrcFastAlgorithm::Crc16Gsm,
+                CrcAlgorithm::Crc16Ibm3740 => CrcFastAlgorithm::Crc16Ibm3740,
                 CrcAlgorithm::Crc16IbmSdlc => CrcFastAlgorithm::Crc16IbmSdlc,
+                CrcAlgorithm::Crc16IsoIec144433A => CrcFastAlgorithm::Crc16IsoIec144433A,
+                CrcAlgorithm::Crc16Kermit => CrcFastAlgorithm::Crc16Kermit,
+                CrcAlgorithm::Crc16Lj1200 => CrcFastAlgorithm::Crc16Lj1200,
+                CrcAlgorithm::Crc16M17 => CrcFastAlgorithm::Crc16M17,
+                CrcAlgorithm::Crc16MaximDow => CrcFastAlgorithm::Crc16MaximDow,
+                CrcAlgorithm::Crc16Mcrf4xx => CrcFastAlgorithm::Crc16Mcrf4xx,
+                CrcAlgorithm::Crc16Modbus => CrcFastAlgorithm::Crc16Modbus,
+                CrcAlgorithm::Crc16Nrsc5 => CrcFastAlgorithm::Crc16Nrsc5,
+                CrcAlgorithm::Crc16OpensafetyA => CrcFastAlgorithm::Crc16OpensafetyA,
+                CrcAlgorithm::Crc16OpensafetyB => CrcFastAlgorithm::Crc16OpensafetyB,
+                CrcAlgorithm::Crc16Profibus => CrcFastAlgorithm::Crc16Profibus,
+                CrcAlgorithm::Crc16Riello => CrcFastAlgorithm::Crc16Riello,
+                CrcAlgorithm::Crc16SpiFujitsu => CrcFastAlgorithm::Crc16SpiFujitsu,
                 CrcAlgorithm::Crc16T10Dif => CrcFastAlgorithm::Crc16T10Dif,
+                CrcAlgorithm::Crc16Teledisk => CrcFastAlgorithm::Crc16Teledisk,
+                CrcAlgorithm::Crc16Tms37157 => CrcFastAlgorithm::Crc16Tms37157,
+                CrcAlgorithm::Crc16Umts => CrcFastAlgorithm::Crc16Umts,
+                CrcAlgorithm::Crc16Usb => CrcFastAlgorithm::Crc16Usb,
+                CrcAlgorithm::Crc16Xmodem => CrcFastAlgorithm::Crc16Xmodem,
                 CrcAlgorithm::Crc32Aixm => CrcFastAlgorithm::Crc32Aixm,
                 CrcAlgorithm::Crc32Autosar => CrcFastAlgorithm::Crc32Autosar,
                 CrcAlgorithm::Crc32Base91D => CrcFastAlgorithm::Crc32Base91D,
@@ -785,7 +872,8 @@ pub extern "C" fn crc_fast_get_version() -> *const c_char {
     VERSION.as_ptr()
 }
 
-/// Calculates the CRC-32/ISCSI ("crc32c" in many, but not all, implementations) checksum.
+/// Calculates the CRC-32/ISCSI (commonly called "crc32c" in many, but not all, implementations)
+/// checksum.
 ///
 /// https://reveng.sourceforge.io/crc-catalogue/all.htm#crc.cat.crc-32-iscsi
 ///
@@ -804,7 +892,8 @@ pub extern "C" fn crc_fast_crc32_iscsi(data: *const c_char, len: usize) -> u32 {
     }
 }
 
-/// Calculates the CRC-32/ISO-HDLC ("crc32" in many, but not all, implementations) checksum.
+/// Calculates the CRC-32/ISO-HDLC (commonly called "crc32" in many, but not all, implementations)
+/// checksum.
 ///
 /// https://reveng.sourceforge.io/crc-catalogue/all.htm#crc.cat.crc-32-iso-hdlc
 ///
