@@ -7,7 +7,7 @@ license = "MIT OR Apache-2.0"
 keywords = ["crc", "checksum", "simd", "accelerated", "fast"]
 categories = ["algorithms", "encoding", "hardware-support"]
 repository = "https://github.com/awesomized/crc-fast-rust"
-description = "World's fastest generic CRC32 and CRC64 calculator using SIMD. Supplies a C-compatible shared library for use in other languages."
+description = "World's fastest generic CRC16, CRC32, and CRC64 calculator using SIMD. Supplies a C-compatible shared library for use in other languages."
 readme = "README.md"
 
 # important intrinsics stabilization notes:
@@ -22,7 +22,8 @@ crate-type = ["lib", "cdylib", "staticlib"]
 bench = true
 
 [dependencies]
-crc = "3.3"
+# can move to crc 3.4+ once our MSRV is Rust 1.82+
+crc = "~3.3"
 
 # We use digest with default-features = false and features = ["alloc"] to enable heap allocation support in no_std environments.
 # This configuration is safe because the alloc feature in digest does not depend on its default features as of digest v0.10.
@@ -74,7 +75,10 @@ spin = { version = "0.10.0", default-features = false, features = [
 [dev-dependencies]
 criterion = "0.7"
 cbindgen = "0.29"
-proptest = "1.6"
+
+# can move to proptest 1.9+ once our MSRV is Rust 1.82+
+proptest = "~1.8"
+
 rand = "0.9"
 regex = "1.12"
 wasm-bindgen-test = "0.3"
