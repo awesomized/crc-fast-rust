@@ -98,8 +98,8 @@ This implementation adds hardware-accelerated CRC-16 support to the crc-fast lib
     - Ensure checksum_combine works with CRC-16
     - _Requirements: 6.2, 6.3, 6.4_
 
-- [ ] 7. Add Comprehensive Tests
-  - [ ] 7.1 Add CRC-16 check value tests
+- [-] 7. Add Comprehensive Tests
+  - [x] 7.1 Add CRC-16 check value tests
     - Test "123456789" produces 0x906E for CRC-16/IBM-SDLC
     - Test "123456789" produces 0xD0DB for CRC-16/T10-DIF
     - _Requirements: 2.1, 2.2, 4.2_
@@ -116,7 +116,7 @@ This implementation adds hardware-accelerated CRC-16 support to the crc-fast lib
     - **Property 5: CRC-16 checksum combination round-trip**
     - **Validates: Requirements 6.4**
 
-  - [ ] 7.5 Add CRC-16 to existing test suites
+  - [x] 7.5 Add CRC-16 to existing test suites
     - Add CRC-16 configs to TEST_ALL_CONFIGS in src/test/consts.rs
     - Ensure all length-based tests include CRC-16
     - _Requirements: 4.3, 4.4_

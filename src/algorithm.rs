@@ -539,7 +539,8 @@ where
 
         let shuffled_masked = ops.shuffle_bytes(current_state, xmm0);
 
-        let (xmm2_blended, mut temp_state) = if 32 == W::WIDTH {
+        // CRC-16 and CRC-32 use the same logic (both operate in 32-bit space)
+        let (xmm2_blended, mut temp_state) = if W::WIDTH <= 32 {
             let compare_mask = ops.create_compare_mask(xmm0);
 
             let xmm2_blended = ops.blend_vectors(xmm1, shuffled, compare_mask);

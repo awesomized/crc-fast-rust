@@ -191,9 +191,8 @@ pub(crate) const TEST_CRC32_XFER: Crc32TestConfig = Crc32TestConfig {
 };
 
 pub(crate) const TEST_ALL_CONFIGS: &[AnyCrcTestConfig] = &[
-    // CRC-16 configs are defined but not included here until algorithm implementation is complete
-    // AnyCrcTestConfig::CRC16(&TEST_CRC16_IBM_SDLC),
-    // AnyCrcTestConfig::CRC16(&TEST_CRC16_T10_DIF),
+    AnyCrcTestConfig::CRC16(&TEST_CRC16_IBM_SDLC),
+    AnyCrcTestConfig::CRC16(&TEST_CRC16_T10_DIF),
     AnyCrcTestConfig::CRC32(&TEST_CRC32_AIXM),
     AnyCrcTestConfig::CRC32(&TEST_CRC32_AUTOSAR),
     AnyCrcTestConfig::CRC32(&TEST_CRC32_BASE91_D),

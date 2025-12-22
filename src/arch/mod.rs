@@ -334,12 +334,44 @@ mod tests {
         }
     }
 
+    /// Test CRC-16/IBM-SDLC check value (reflected variant)
+    #[test]
+    fn test_crc16_ibm_sdlc_check_value() {
+        use crate::crc16::consts::CRC16_IBM_SDLC;
+
+        let actual = unsafe {
+            update(CRC16_IBM_SDLC.init, TEST_CHECK_STRING, &CRC16_IBM_SDLC) ^ CRC16_IBM_SDLC.xorout
+        };
+
+        assert_eq!(
+            actual, 0x906E,
+            "CRC-16/IBM-SDLC check value mismatch: expected 0x906E, got {:#x}",
+            actual
+        );
+    }
+
+    /// Test CRC-16/T10-DIF check value (forward/non-reflected variant)
+    #[test]
+    fn test_crc16_t10_dif_check_value() {
+        use crate::crc16::consts::CRC16_T10_DIF;
+
+        let actual = unsafe {
+            update(CRC16_T10_DIF.init, TEST_CHECK_STRING, &CRC16_T10_DIF) ^ CRC16_T10_DIF.xorout
+        };
+
+        assert_eq!(
+            actual, 0xD0DB,
+            "CRC-16/T10-DIF check value mismatch: expected 0xD0DB, got {:#x}",
+            actual
+        );
+    }
+
     /// Skipping for Miri runs due to time constraints, underlying code already covered by other
     /// tests.
     #[test]
     #[cfg_attr(miri, ignore)]
     fn test_small_lengths_all() {
-        // Test each CRC-64 variant
+        // Test each CRC variant
         for config in TEST_ALL_CONFIGS {
             // Test each length from 0 to 255
             for len in 0..=255 {
@@ -353,7 +385,7 @@ mod tests {
     #[test]
     #[cfg_attr(miri, ignore)]
     fn test_medium_lengths() {
-        // Test each CRC-64 variant
+        // Test each CRC variant
         for config in TEST_ALL_CONFIGS {
             // Test each length from 256 to 1024, which should fold and include handling remainders
             for len in 256..=1024 {
@@ -367,7 +399,7 @@ mod tests {
     #[test]
     #[cfg_attr(miri, ignore)]
     fn test_large_lengths() {
-        // Test each CRC-64 variant
+        // Test each CRC variant
         for config in TEST_ALL_CONFIGS {
             // Test ~1 MiB just before, at, and just after the folding boundaries
             for len in 1048575..=1048577 {
