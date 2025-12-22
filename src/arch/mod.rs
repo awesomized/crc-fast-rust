@@ -190,7 +190,7 @@ unsafe fn update_x86_64_avx512_vpclmulqdq(
     }
 }
 
-#[inline]
+#[inline(always)]
 #[cfg(all(
     not(target_arch = "x86"),
     not(target_arch = "x86_64"),
