@@ -592,7 +592,7 @@ impl Digest {
             self.state ^ self.params.xorout,
             other_crc,
             other.amount,
-            self.params,
+            &self.params,
         ) ^ self.params.xorout;
     }
 
@@ -893,7 +893,7 @@ pub fn checksum_combine(
 ) -> u64 {
     let params = get_calculator_params(algorithm).1;
 
-    combine::checksums(checksum1, checksum2, checksum2_len, params)
+    combine::checksums(checksum1, checksum2, checksum2_len, &params)
 }
 
 /// Combines two CRC checksums using custom CRC parameters.
@@ -926,7 +926,7 @@ pub fn checksum_combine_with_params(
     checksum2: u64,
     checksum2_len: u64,
 ) -> u64 {
-    combine::checksums(checksum1, checksum2, checksum2_len, params)
+    combine::checksums(checksum1, checksum2, checksum2_len, &params)
 }
 
 /// Returns the target used to calculate the CRC checksum for the specified algorithm.

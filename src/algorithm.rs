@@ -80,6 +80,9 @@ where
     // Create initial CRC state
     let mut crc_state = W::create_state(state, params.refin, ops);
 
+    // Extract keys once and pass by reference to avoid repeated stack copies
+    let keys = extract_keys_array(params);
+
     // Process data differently based on length
     // On ARM M4 Max, ARM c8g, x86 c7a, and x86 c7i, using 128 bytes is a measurably faster
     // threshold than 256 bytes...
@@ -91,19 +94,13 @@ where
             bytes,
             &mut crc_state,
             reflector,
-            extract_keys_array(params),
+            &keys,
             ops,
         );
     }
 
     // Process large inputs with SIMD-optimized approach
-    process_large_aligned::<T, W>(
-        bytes,
-        &mut crc_state,
-        reflector,
-        extract_keys_array(params),
-        ops,
-    )
+    process_large_aligned::<T, W>(bytes, &mut crc_state, reflector, &keys, ops)
 }
 
 /// Process data with the selected strategy
@@ -118,7 +115,7 @@ unsafe fn process_by_strategy<T: ArchOps, W: EnhancedCrcWidth>(
     data: &[u8],
     state: &mut CrcState<T::Vector>,
     reflector: Reflector<T::Vector>,
-    keys: [u64; 23],
+    keys: &[u64; 23],
     ops: &T,
 ) -> W::Value
 where
@@ -153,7 +150,7 @@ unsafe fn process_large_aligned<T: ArchOps, W: EnhancedCrcWidth>(
     bytes: &[u8],
     state: &mut CrcState<T::Vector>,
     reflector: Reflector<T::Vector>,
-    keys: [u64; 23],
+    keys: &[u64; 23],
     ops: &T,
 ) -> W::Value
 where
@@ -174,7 +171,7 @@ where
 
         // try to use the enhanced SIMD implementation first, fall back to non-enhanced if necessary
         if rest.is_empty()
-            || !ops.process_enhanced_simd_blocks::<W>(state, first, rest, &reflector, keys)
+            || !ops.process_enhanced_simd_blocks::<W>(state, first, rest, &reflector, *keys)
         {
             process_simd_chunks::<T, W>(state, first, rest, &reflector, keys, ops);
         }
@@ -207,7 +204,7 @@ unsafe fn process_simd_chunks<T: ArchOps, W: EnhancedCrcWidth>(
     first: &[T::Vector; 8],
     rest: &[[T::Vector; 8]],
     reflector: &Reflector<T::Vector>,
-    keys: [u64; 23],
+    keys: &[u64; 23],
     ops: &T,
 ) where
     T::Vector: Copy,
@@ -271,7 +268,7 @@ unsafe fn process_simd_chunks<T: ArchOps, W: EnhancedCrcWidth>(
     }
 
     // Perform final reduction and update state
-    let final_value = W::perform_final_reduction(res, state.reflected, keys, ops);
+    let final_value = W::perform_final_reduction(res, state.reflected, *keys, ops);
     *state = W::create_state(final_value, state.reflected, ops);
 }
 
@@ -286,7 +283,7 @@ unsafe fn process_exactly_16<T: ArchOps, W: EnhancedCrcWidth>(
     data: &[u8],
     state: &mut CrcState<T::Vector>,
     reflector: &Reflector<T::Vector>,
-    keys: [u64; 23],
+    keys: &[u64; 23],
     ops: &T,
 ) -> W::Value
 where
@@ -296,7 +293,7 @@ where
     W::perform_final_reduction(
         process_16_byte_block(data.as_ptr(), state.value, reflector, ops),
         state.reflected,
-        keys,
+        *keys,
         ops,
     )
 }
@@ -386,7 +383,7 @@ unsafe fn process_17_to_31<T: ArchOps, W: EnhancedCrcWidth>(
     data: &[u8],
     state: &mut CrcState<T::Vector>,
     reflector: &Reflector<T::Vector>,
-    keys: [u64; 23],
+    keys: &[u64; 23],
     ops: &T,
 ) -> W::Value
 where
@@ -413,7 +410,7 @@ where
     );
 
     // Perform final reduction
-    W::perform_final_reduction(final_xmm7, state.reflected, keys, ops)
+    W::perform_final_reduction(final_xmm7, state.reflected, *keys, ops)
 }
 
 // Process inputs between 32 and 255 bytes
@@ -428,7 +425,7 @@ unsafe fn process_32_to_255<T: ArchOps, W: EnhancedCrcWidth>(
     data: &[u8],
     state: &mut CrcState<T::Vector>,
     reflector: &Reflector<T::Vector>,
-    keys: [u64; 23],
+    keys: &[u64; 23],
     ops: &T,
 ) -> W::Value
 where
@@ -478,7 +475,7 @@ where
     }
 
     // Perform final reduction
-    W::perform_final_reduction(xmm7, state.reflected, keys, ops)
+    W::perform_final_reduction(xmm7, state.reflected, *keys, ops)
 }
 
 /// Data region descriptor for overlapping SIMD reads in CRC processing
@@ -512,7 +509,7 @@ struct DataRegion<'a> {
 unsafe fn get_last_two_xmms<T: ArchOps, W: EnhancedCrcWidth>(
     region: DataRegion,
     current_state: T::Vector,
-    keys: [u64; 23],
+    keys: &[u64; 23],
     reflector: &Reflector<T::Vector>,
     reflected: bool,
     ops: &T,

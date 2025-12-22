@@ -237,7 +237,7 @@ pub(crate) unsafe fn process_0_to_15<T: ArchOps, W: EnhancedCrcWidth>(
     data: &[u8],
     state: &mut CrcState<T::Vector>,
     reflector: &Reflector<T::Vector>,
-    keys: [u64; 23],
+    keys: &[u64; 23],
     ops: &T,
 ) -> W::Value
 where
@@ -321,7 +321,7 @@ where
     };
 
     if len >= 4 {
-        return W::perform_final_reduction(xmm7, state.reflected, keys, ops);
+        return W::perform_final_reduction(xmm7, state.reflected, *keys, ops);
     }
 
     let final_state = CrcState {
