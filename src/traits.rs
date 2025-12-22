@@ -48,7 +48,7 @@ pub trait ArchOps: Sized + Copy + Clone {
         _first: &[Self::Vector; 8],
         _rest: &[[Self::Vector; 8]],
         _reflector: &Reflector<Self::Vector>,
-        _keys: [u64; 23],
+        _keys: &[u64; 23],
     ) -> bool
     where
         Self::Vector: Copy,

@@ -128,7 +128,7 @@ impl X86_64Avx512VpclmulqdqOps {
         state: &mut CrcState<<X86_64Avx512VpclmulqdqOps as ArchOps>::Vector>,
         first: &[__m128i; 8],
         rest: &[[__m128i; 8]],
-        keys: [u64; 23],
+        keys: &[u64; 23],
         reflected: bool,
     ) -> W::Value
     where
@@ -221,7 +221,7 @@ impl X86_64Avx512VpclmulqdqOps {
     #[inline(always)]
     unsafe fn create_avx512_128byte_coefficient(
         &self,
-        keys: [u64; 23],
+        keys: &[u64; 23],
         reflected: bool,
     ) -> Simd512 {
         let (k1, k2) = if reflected {
@@ -238,7 +238,7 @@ impl X86_64Avx512VpclmulqdqOps {
     #[inline(always)]
     unsafe fn create_avx512_256byte_coefficient(
         &self,
-        keys: [u64; 23],
+        keys: &[u64; 23],
         reflected: bool,
     ) -> Simd512 {
         let (k1, k2) = if reflected {
@@ -256,7 +256,7 @@ impl X86_64Avx512VpclmulqdqOps {
     unsafe fn fold_from_4x512_to_1x128(
         &self,
         x: [Simd512; 4],
-        keys: [u64; 23],
+        keys: &[u64; 23],
         reflected: bool,
     ) -> __m128i {
         // Step 1: Fold 4 x 512-bit to 2 x 512-bit
@@ -271,7 +271,7 @@ impl X86_64Avx512VpclmulqdqOps {
     unsafe fn fold_from_4x512_to_2x256(
         &self,
         x: [Simd512; 4],
-        keys: [u64; 23],
+        keys: &[u64; 23],
         reflected: bool,
     ) -> [Simd512; 2] {
         // This folds registers that are 128 bytes apart (x[0] with x[2], x[1] with x[3])
@@ -288,7 +288,7 @@ impl X86_64Avx512VpclmulqdqOps {
     unsafe fn fold_from_2x512_to_1x128(
         &self,
         x: [Simd512; 2],
-        keys: [u64; 23],
+        keys: &[u64; 23],
         reflected: bool,
     ) -> __m128i {
         // Create the fold coefficients for different distances
@@ -410,7 +410,7 @@ impl ArchOps for X86_64Avx512VpclmulqdqOps {
         first: &[Self::Vector; 8],
         rest: &[[Self::Vector; 8]],
         _reflector: &Reflector<Self::Vector>,
-        keys: [u64; 23],
+        keys: &[u64; 23],
     ) -> bool
     where
         Self::Vector: Copy,
