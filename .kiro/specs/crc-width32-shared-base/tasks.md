@@ -6,36 +6,36 @@ This implementation refactors CRC-16 and CRC-32 to share common 32-bit-space ope
 
 ## Tasks
 
-- [ ] 1. Create shared width32_ops module
-  - [ ] 1.1 Create src/crc32/width32_ops.rs with shared constants
+- [x] 1. Create shared width32_ops module
+  - [x] 1.1 Create src/crc32/width32_ops.rs with shared constants
     - Add module documentation explaining purpose
     - Add WIDTH32_CONSTANTS_REFLECTED and WIDTH32_CONSTANTS_FORWARD
     - Add load_constants() function
     - _Requirements: 1.1, 1.4_
 
-  - [ ] 1.2 Add shared fold operations to width32_ops
+  - [x] 1.2 Add shared fold operations to width32_ops
     - Implement fold_16() function
     - Implement fold_width() function
     - _Requirements: 1.3_
 
-  - [ ] 1.3 Add shared barrett_reduction to width32_ops
+  - [x] 1.3 Add shared barrett_reduction to width32_ops
     - Implement barrett_reduction() returning [u64; 2] for caller to extract bits
     - _Requirements: 1.3_
 
-  - [ ] 1.4 Add shared helper functions to width32_ops
+  - [x] 1.4 Add shared helper functions to width32_ops
     - Implement create_coefficient() function
     - Implement get_last_bytes_table_ptr() function
     - _Requirements: 1.3, 1.5_
 
-  - [ ] 1.5 Add shared process_0_to_15 to width32_ops
+  - [x] 1.5 Add shared process_0_to_15 to width32_ops
     - Move the shared implementation from crc32/algorithm.rs
     - _Requirements: 1.2_
 
-  - [ ] 1.6 Update src/crc32/mod.rs to export width32_ops
+  - [x] 1.6 Update src/crc32/mod.rs to export width32_ops
     - Add `pub(crate) mod width32_ops;`
     - _Requirements: 1.1_
 
-- [ ] 2. Checkpoint - Verify module compiles
+- [x] 2. Checkpoint - Verify module compiles
   - Ensure `cargo check` passes
 
 - [ ] 3. Refactor Width32 implementation

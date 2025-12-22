@@ -4,6 +4,7 @@
 
 pub mod algorithm;
 pub mod consts;
+pub(crate) mod width32_ops;
 
 #[cfg(all(
     feature = "std",
