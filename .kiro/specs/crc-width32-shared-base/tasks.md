@@ -38,36 +38,36 @@ This implementation refactors CRC-16 and CRC-32 to share common 32-bit-space ope
 - [x] 2. Checkpoint - Verify module compiles
   - Ensure `cargo check` passes
 
-- [ ] 3. Refactor Width32 implementation
-  - [ ] 3.1 Update Width32 load_constants to delegate
+- [x] 3. Refactor Width32 implementation
+  - [x] 3.1 Update Width32 load_constants to delegate
     - Call width32_ops::load_constants()
     - _Requirements: 3.1_
 
-  - [ ] 3.2 Update Width32 fold_16 to delegate
+  - [x] 3.2 Update Width32 fold_16 to delegate
     - Call width32_ops::fold_16()
     - _Requirements: 3.1_
 
-  - [ ] 3.3 Update Width32 fold_width to delegate
+  - [x] 3.3 Update Width32 fold_width to delegate
     - Call width32_ops::fold_width()
     - _Requirements: 3.2_
 
-  - [ ] 3.4 Update Width32 barrett_reduction to delegate
+  - [x] 3.4 Update Width32 barrett_reduction to delegate
     - Call width32_ops::barrett_reduction() and extract 32-bit result
     - _Requirements: 3.6_
 
-  - [ ] 3.5 Update Width32 create_coefficient to delegate
+  - [x] 3.5 Update Width32 create_coefficient to delegate
     - Call width32_ops::create_coefficient()
     - _Requirements: 3.3_
 
-  - [ ] 3.6 Update Width32 perform_final_reduction to delegate
+  - [x] 3.6 Update Width32 perform_final_reduction to delegate
     - Call width32_ops::fold_width() and width32_ops::barrett_reduction()
     - _Requirements: 3.4_
 
-  - [ ] 3.7 Update Width32 get_last_bytes_table_ptr to delegate
+  - [x] 3.7 Update Width32 get_last_bytes_table_ptr to delegate
     - Call width32_ops::get_last_bytes_table_ptr()
     - _Requirements: 3.5_
 
-  - [ ] 3.8 Update crc32::algorithm::process_0_to_15 to delegate
+  - [x] 3.8 Update crc32::algorithm::process_0_to_15 to delegate
     - Call width32_ops::process_0_to_15()
     - _Requirements: 3.7_
 
