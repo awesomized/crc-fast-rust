@@ -6,25 +6,25 @@ This implementation adds hardware-accelerated CRC-16 support to the crc-fast lib
 
 ## Tasks
 
-- [ ] 1. Extend Key Generator for CRC-16
+- [x] 1. Extend Key Generator for CRC-16
   - [x] 1.1 Add CRC-16 exponents constant and update keys() function
     - Add `CRC16_EXPONENTS` constant (same as CRC32_EXPONENTS)
     - Update `keys()` function to handle width=16
     - Update `key()` function to dispatch to `crc16_key()`
     - _Requirements: 1.3_
 
-  - [ ] 1.2 Implement crc16_key() function
+  - [x] 1.2 Implement crc16_key() function
     - Compute x^exponent mod P(x) for 17-bit CRC-16 polynomial
     - Handle both forward and reflected modes
     - Follow the pattern from reference/crc16f/crc16fg.cpp and reference/crc16r/crc16rg.cpp
     - _Requirements: 1.1, 1.2, 1.7_
 
-  - [ ] 1.3 Implement crc16_mu() function
+  - [x] 1.3 Implement crc16_mu() function
     - Compute Barrett reduction constant floor(x^64/P(x))
     - Handle both forward and reflected modes
     - _Requirements: 1.4_
 
-  - [ ] 1.4 Implement crc16_polynomial() function
+  - [x] 1.4 Implement crc16_polynomial() function
     - Format polynomial for forward mode: (poly << 16) | (1 << 32)
     - Format polynomial for reflected mode: (bit_reverse_16(poly) << 1) | 1
     - _Requirements: 1.5, 1.6_
@@ -34,7 +34,7 @@ This implementation adds hardware-accelerated CRC-16 support to the crc-fast lib
     - **Property 2: Reflected polynomial formatting**
     - **Validates: Requirements 1.5, 1.6**
 
-  - [ ] 1.6 Add unit tests for CRC-16 key generation
+  - [x] 1.6 Add unit tests for CRC-16 key generation
     - Test generated keys match KEYS_8BB7_FORWARD for CRC-16/T10-DIF
     - Test generated keys match KEYS_1021_REVERSE for CRC-16/IBM-SDLC
     - Add CRC-16 test configs to TEST_ALL_CONFIGS

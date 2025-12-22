@@ -4,6 +4,7 @@
 #![allow(dead_code)]
 
 use crate::consts::CRC_64_NVME;
+use crate::crc16::consts::{CRC16_IBM_SDLC, CRC16_T10_DIF};
 use crate::crc32::consts::{
     CRC32_AIXM, CRC32_AUTOSAR, CRC32_BASE91_D, CRC32_BZIP2, CRC32_CD_ROM_EDC, CRC32_CKSUM,
     CRC32_ISCSI, CRC32_ISO_HDLC, CRC32_JAMCRC, CRC32_MEF, CRC32_MPEG_2, CRC32_XFER,
@@ -56,6 +57,12 @@ pub(crate) const RUST_CRC32_MPEG_2: crc::Crc<u32, Table<16>> =
 
 pub(crate) const RUST_CRC32_XFER: crc::Crc<u32, Table<16>> =
     crc::Crc::<u32, Table<16>>::new(&crc::CRC_32_XFER);
+
+pub(crate) const RUST_CRC16_IBM_SDLC: crc::Crc<u16, Table<16>> =
+    crc::Crc::<u16, Table<16>>::new(&crc::CRC_16_IBM_SDLC);
+
+pub(crate) const RUST_CRC16_T10_DIF: crc::Crc<u16, Table<16>> =
+    crc::Crc::<u16, Table<16>>::new(&crc::CRC_16_T10_DIF);
 
 pub(crate) const RUST_CRC64_ECMA_182: crc::Crc<u64, Table<16>> =
     crc::Crc::<u64, Table<16>>::new(&crc::CRC_64_ECMA_182);
@@ -111,6 +118,16 @@ pub(crate) const TEST_CRC64_WE: Crc64TestConfig = Crc64TestConfig {
 pub(crate) const TEST_CRC64_XZ: Crc64TestConfig = Crc64TestConfig {
     params: CRC64_XZ,
     reference_impl: &RUST_CRC64_XZ,
+};
+
+pub(crate) const TEST_CRC16_IBM_SDLC: Crc16TestConfig = Crc16TestConfig {
+    params: CRC16_IBM_SDLC,
+    reference_impl: &RUST_CRC16_IBM_SDLC,
+};
+
+pub(crate) const TEST_CRC16_T10_DIF: Crc16TestConfig = Crc16TestConfig {
+    params: CRC16_T10_DIF,
+    reference_impl: &RUST_CRC16_T10_DIF,
 };
 
 pub(crate) const TEST_CRC32_AIXM: Crc32TestConfig = Crc32TestConfig {
@@ -174,6 +191,9 @@ pub(crate) const TEST_CRC32_XFER: Crc32TestConfig = Crc32TestConfig {
 };
 
 pub(crate) const TEST_ALL_CONFIGS: &[AnyCrcTestConfig] = &[
+    // CRC-16 configs are defined but not included here until algorithm implementation is complete
+    // AnyCrcTestConfig::CRC16(&TEST_CRC16_IBM_SDLC),
+    // AnyCrcTestConfig::CRC16(&TEST_CRC16_T10_DIF),
     AnyCrcTestConfig::CRC32(&TEST_CRC32_AIXM),
     AnyCrcTestConfig::CRC32(&TEST_CRC32_AUTOSAR),
     AnyCrcTestConfig::CRC32(&TEST_CRC32_BASE91_D),

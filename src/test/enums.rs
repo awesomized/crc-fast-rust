@@ -9,6 +9,7 @@ use crate::CrcParams;
 use crc::Crc;
 
 pub enum AnyCrcTestConfig {
+    CRC16(&'static Crc16TestConfig),
     CRC32(&'static Crc32TestConfig),
     CRC64(&'static Crc64TestConfig),
 }
@@ -16,6 +17,7 @@ pub enum AnyCrcTestConfig {
 impl AnyCrcTestConfig {
     pub fn get_params(&self) -> &CrcParams {
         match self {
+            AnyCrcTestConfig::CRC16(cfg) => &cfg.params,
             AnyCrcTestConfig::CRC32(cfg) => &cfg.params,
             AnyCrcTestConfig::CRC64(cfg) => &cfg.params,
         }
@@ -59,6 +61,7 @@ impl AnyCrcTestConfig {
 
     pub fn checksum_with_reference(&self, data: &[u8]) -> u64 {
         match self {
+            AnyCrcTestConfig::CRC16(cfg) => cfg.reference_impl.checksum(data) as u64,
             AnyCrcTestConfig::CRC32(cfg) => cfg.reference_impl.checksum(data) as u64,
             AnyCrcTestConfig::CRC64(cfg) => cfg.reference_impl.checksum(data),
         }
@@ -66,11 +69,16 @@ impl AnyCrcTestConfig {
 
     pub fn with_reference_impl<F, R>(&self, f: F) -> R
     where
-        F: FnOnce(Option<&Crc<u32, crc::Table<16>>>, Option<&Crc<u64, crc::Table<16>>>) -> R,
+        F: FnOnce(
+            Option<&Crc<u16, crc::Table<16>>>,
+            Option<&Crc<u32, crc::Table<16>>>,
+            Option<&Crc<u64, crc::Table<16>>>,
+        ) -> R,
     {
         match self {
-            AnyCrcTestConfig::CRC32(cfg) => f(Some(cfg.reference_impl), None),
-            AnyCrcTestConfig::CRC64(cfg) => f(None, Some(cfg.reference_impl)),
+            AnyCrcTestConfig::CRC16(cfg) => f(Some(cfg.reference_impl), None, None),
+            AnyCrcTestConfig::CRC32(cfg) => f(None, Some(cfg.reference_impl), None),
+            AnyCrcTestConfig::CRC64(cfg) => f(None, None, Some(cfg.reference_impl)),
         }
     }
 }

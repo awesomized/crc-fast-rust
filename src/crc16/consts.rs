@@ -18,7 +18,7 @@ pub const CRC16_IBM_SDLC: CrcParams = CrcParams {
     refout: CRC_16_IBM_SDLC.refout,
     xorout: CRC_16_IBM_SDLC.xorout as u64,
     check: CRC_16_IBM_SDLC.check as u64,
-    keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_8BB7_FORWARD),
+    keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_1021_REVERSE),
 };
 
 // width=16 poly=0x8bb7 init=0x0000 refin=false refout=false xorout=0x0000 check=0xd0db residue=0x0000 name="CRC-16/T10-DIF"
@@ -32,7 +32,7 @@ pub const CRC16_T10_DIF: CrcParams = CrcParams {
     refout: CRC_16_T10_DIF.refout,
     xorout: CRC_16_T10_DIF.xorout as u64,
     check: CRC_16_T10_DIF.check as u64,
-    keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_1021_REVERSE),
+    keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_8BB7_FORWARD),
 };
 
 pub const KEYS_8BB7_FORWARD: [u64; 23] = [
@@ -57,8 +57,8 @@ pub const KEYS_8BB7_FORWARD: [u64; 23] = [
     0xa497000000000000, // 2^(32*13) mod Q << 32
     0x6ee3000000000000, // 2^(32* 7) mod Q << 32
     0xe7b5000000000000, // 2^(32* 9) mod Q << 32
-    0x0000000000000000, // TODO: calculate correct value for 256-byte folding (AVX512)
-    0x0000000000000000, // TODO: calculate correct value for 256-byte folding (AVX512)
+    0xdccf000000000000, // 2^(32*63) mod Q << 32 (256-byte folding)
+    0x4b0b000000000000, // 2^(32*65) mod Q << 32 (256-byte folding)
 ];
 
 pub const KEYS_1021_REVERSE: [u64; 23] = [
@@ -83,6 +83,6 @@ pub const KEYS_1021_REVERSE: [u64; 23] = [
     0x0000000000004d7a, // (2^(32*13) mod P(x))' << 1
     0x0000000000005b44, // (2^(32* 7) mod P(x))' << 1
     0x0000000000007762, // (2^(32* 9) mod P(x))' << 1
-    0x0000000000000000, // TODO: calculate correct value for 256-byte folding (AVX512)
-    0x0000000000000000, // TODO: calculate correct value for 256-byte folding (AVX512)
+    0x0000000000019208, // (2^(32*63) mod P(x))' << 1 (256-byte folding)
+    0x0000000000002df8, // (2^(32*65) mod P(x))' << 1 (256-byte folding)
 ];
