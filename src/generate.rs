@@ -785,6 +785,7 @@ mod tests {
 #[cfg(test)]
 mod property_tests {
     use super::*;
+    use crate::test::miri_compatible_proptest_config;
     use proptest::prelude::*;
 
     /// Helper function to bit-reverse a 16-bit value
@@ -799,7 +800,7 @@ mod property_tests {
     }
 
     proptest! {
-        #![proptest_config(ProptestConfig::with_cases(100))]
+        #![proptest_config(miri_compatible_proptest_config())]
 
         /// Feature: crc16-hardware-acceleration, Property 1: Forward polynomial formatting
         /// *For any* 16-bit polynomial value P, when generating the polynomial key for forward

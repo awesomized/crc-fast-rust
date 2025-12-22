@@ -8,11 +8,12 @@ pub mod utils;
 
 #[cfg(test)]
 mod property_tests {
+    use crate::test::miri_compatible_proptest_config;
     use crate::{checksum, CrcAlgorithm};
     use proptest::prelude::*;
 
     proptest! {
-        #![proptest_config(ProptestConfig::with_cases(100))]
+        #![proptest_config(miri_compatible_proptest_config())]
 
         /// Feature: crc16-hardware-acceleration, Property 4: CRC-32 and CRC-64 backwards compatibility
         /// *For any* existing CRC-32 or CRC-64 configuration and any input byte sequence, the

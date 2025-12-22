@@ -7,6 +7,7 @@ pub(crate) mod consts;
 mod property_tests {
     use crate::crc16::consts::{CRC16_IBM_SDLC, CRC16_T10_DIF};
     use crate::test::consts::{RUST_CRC16_IBM_SDLC, RUST_CRC16_T10_DIF};
+    use crate::test::miri_compatible_proptest_config;
     use crate::{
         checksum, checksum_combine, checksum_combine_with_params, checksum_with_params,
         CrcAlgorithm, CrcParams,
@@ -14,7 +15,7 @@ mod property_tests {
     use proptest::prelude::*;
 
     proptest! {
-        #![proptest_config(ProptestConfig::with_cases(100))]
+        #![proptest_config(miri_compatible_proptest_config())]
 
         /// Feature: crc16-hardware-acceleration, Property 3: CRC-16 computation matches reference
         /// *For any* valid CRC-16 parameters (polynomial, init, refin, refout, xorout) and any
