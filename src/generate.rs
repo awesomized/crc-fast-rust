@@ -730,6 +730,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::crc16::consts::{KEYS_1021_REVERSE, KEYS_8BB7_FORWARD};
     use crate::test::consts::TEST_ALL_CONFIGS;
 
     #[test]
@@ -749,6 +750,34 @@ mod tests {
                     *key
                 );
             }
+        }
+    }
+
+    #[test]
+    fn test_crc16_t10_dif_keys() {
+        // CRC-16/T10-DIF: forward mode, poly=0x8BB7
+        let generated = keys(16, 0x8BB7, false);
+
+        for (i, key) in generated.iter().enumerate().take(21) {
+            assert_eq!(
+                *key, KEYS_8BB7_FORWARD[i],
+                "CRC-16/T10-DIF key mismatch at index {}: expected 0x{:016x}, got 0x{:016x}",
+                i, KEYS_8BB7_FORWARD[i], *key
+            );
+        }
+    }
+
+    #[test]
+    fn test_crc16_ibm_sdlc_keys() {
+        // CRC-16/IBM-SDLC: reflected mode, poly=0x1021
+        let generated = keys(16, 0x1021, true);
+
+        for (i, key) in generated.iter().enumerate().take(21) {
+            assert_eq!(
+                *key, KEYS_1021_REVERSE[i],
+                "CRC-16/IBM-SDLC key mismatch at index {}: expected 0x{:016x}, got 0x{:016x}",
+                i, KEYS_1021_REVERSE[i], *key
+            );
         }
     }
 }

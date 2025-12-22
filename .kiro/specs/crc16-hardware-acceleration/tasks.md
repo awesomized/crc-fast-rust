@@ -7,7 +7,7 @@ This implementation adds hardware-accelerated CRC-16 support to the crc-fast lib
 ## Tasks
 
 - [ ] 1. Extend Key Generator for CRC-16
-  - [-] 1.1 Add CRC-16 exponents constant and update keys() function
+  - [x] 1.1 Add CRC-16 exponents constant and update keys() function
     - Add `CRC16_EXPONENTS` constant (same as CRC32_EXPONENTS)
     - Update `keys()` function to handle width=16
     - Update `key()` function to dispatch to `crc16_key()`
