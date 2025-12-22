@@ -330,23 +330,24 @@ pub(crate) fn update(state: u64, data: &[u8], params: &CrcParams) -> u64 {
 
                             #[cfg(all(feature = "cache", not(feature = "std")))]
                             {
-                                let algorithm: Algorithm<u16> = Algorithm {
-                                    width: params.width,
-                                    poly: params.poly as u16,
-                                    init: params.init as u16,
-                                    refin: params.refin,
-                                    refout: params.refout,
-                                    xorout: params.xorout as u16,
-                                    check: params.check as u16,
-                                    residue: 0x0000,
-                                };
+                                let cache =
+                                    CUSTOM_CRC16_CACHE.call_once(|| Mutex::new(HashMap::new()));
+                                let mut cache_guard = cache.lock();
 
-                                let static_algorithm = CUSTOM_CRC16_CACHE
-                                    .get_or_init(|| spin::Mutex::new(heapless::FnvIndexMap::new()))
-                                    .lock()
-                                    .entry(key)
-                                    .or_insert_with(|| Box::leak(Box::new(algorithm)))
-                                    .clone();
+                                let static_algorithm =
+                                    cache_guard.entry(key).or_insert_with(|| {
+                                        let algorithm: Algorithm<u16> = Algorithm {
+                                            width: params.width,
+                                            poly: params.poly as u16,
+                                            init: params.init as u16,
+                                            refin: params.refin,
+                                            refout: params.refout,
+                                            xorout: params.xorout as u16,
+                                            check: params.check as u16,
+                                            residue: 0x0000,
+                                        };
+                                        Box::leak(Box::new(algorithm))
+                                    });
 
                                 crc::Crc::<u16, Table<16>>::new(static_algorithm)
                             }
@@ -525,23 +526,24 @@ pub(crate) fn update(state: u64, data: &[u8], params: &CrcParams) -> u64 {
 
                             #[cfg(all(feature = "cache", not(feature = "std")))]
                             {
-                                let algorithm: Algorithm<u32> = Algorithm {
-                                    width: params.width,
-                                    poly: params.poly as u32,
-                                    init: params.init as u32,
-                                    refin: params.refin,
-                                    refout: params.refout,
-                                    xorout: params.xorout as u32,
-                                    check: params.check as u32,
-                                    residue: 0x00000000,
-                                };
+                                let cache =
+                                    CUSTOM_CRC32_CACHE.call_once(|| Mutex::new(HashMap::new()));
+                                let mut cache_guard = cache.lock();
 
-                                let static_algorithm = CUSTOM_CRC32_CACHE
-                                    .get_or_init(|| spin::Mutex::new(heapless::FnvIndexMap::new()))
-                                    .lock()
-                                    .entry(key)
-                                    .or_insert_with(|| Box::leak(Box::new(algorithm)))
-                                    .clone();
+                                let static_algorithm =
+                                    cache_guard.entry(key).or_insert_with(|| {
+                                        let algorithm: Algorithm<u32> = Algorithm {
+                                            width: params.width,
+                                            poly: params.poly as u32,
+                                            init: params.init as u32,
+                                            refin: params.refin,
+                                            refout: params.refout,
+                                            xorout: params.xorout as u32,
+                                            check: params.check as u32,
+                                            residue: 0x00000000,
+                                        };
+                                        Box::leak(Box::new(algorithm))
+                                    });
 
                                 crc::Crc::<u32, Table<16>>::new(static_algorithm)
                             }
@@ -715,23 +717,24 @@ pub(crate) fn update(state: u64, data: &[u8], params: &CrcParams) -> u64 {
 
                             #[cfg(all(feature = "cache", not(feature = "std")))]
                             {
-                                let algorithm: Algorithm<u64> = Algorithm {
-                                    width: params.width,
-                                    poly: params.poly,
-                                    init: params.init,
-                                    refin: params.refin,
-                                    refout: params.refout,
-                                    xorout: params.xorout,
-                                    check: params.check,
-                                    residue: 0x0000000000000000,
-                                };
+                                let cache =
+                                    CUSTOM_CRC64_CACHE.call_once(|| Mutex::new(HashMap::new()));
+                                let mut cache_guard = cache.lock();
 
-                                let static_algorithm = CUSTOM_CRC64_CACHE
-                                    .get_or_init(|| spin::Mutex::new(heapless::FnvIndexMap::new()))
-                                    .lock()
-                                    .entry(key)
-                                    .or_insert_with(|| Box::leak(Box::new(algorithm)))
-                                    .clone();
+                                let static_algorithm =
+                                    cache_guard.entry(key).or_insert_with(|| {
+                                        let algorithm: Algorithm<u64> = Algorithm {
+                                            width: params.width,
+                                            poly: params.poly,
+                                            init: params.init,
+                                            refin: params.refin,
+                                            refout: params.refout,
+                                            xorout: params.xorout,
+                                            check: params.check,
+                                            residue: 0x0000000000000000,
+                                        };
+                                        Box::leak(Box::new(algorithm))
+                                    });
 
                                 crc::Crc::<u64, Table<16>>::new(static_algorithm)
                             }
