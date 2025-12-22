@@ -77,12 +77,20 @@ impl CrcParams {
             _ => panic!("Unsupported width: {width}",),
         };
 
+        // For reflected CRC-16, bit-reverse the init value for the SIMD algorithm
+        let init_algorithm = if width == 16 && reflected {
+            (init as u16).reverse_bits() as u64
+        } else {
+            init
+        };
+
         Self {
             algorithm,
             name,
             width,
             poly,
             init,
+            init_algorithm,
             refin: reflected,
             refout: reflected,
             xorout,

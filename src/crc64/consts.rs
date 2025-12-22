@@ -14,6 +14,7 @@ pub const CRC64_ECMA_182: CrcParams = CrcParams {
     width: CRC_64_ECMA_182.width,
     poly: CRC_64_ECMA_182.poly,
     init: CRC_64_ECMA_182.init,
+    init_algorithm: CRC_64_ECMA_182.init,
     refin: CRC_64_ECMA_182.refin,   // false
     refout: CRC_64_ECMA_182.refout, // false
     xorout: CRC_64_ECMA_182.xorout,
@@ -28,6 +29,7 @@ pub const CRC64_GO_ISO: CrcParams = CrcParams {
     width: CRC_64_GO_ISO.width,
     poly: CRC_64_GO_ISO.poly,
     init: CRC_64_GO_ISO.init,
+    init_algorithm: CRC_64_GO_ISO.init,
     refin: CRC_64_GO_ISO.refin,   // true
     refout: CRC_64_GO_ISO.refout, // true
     xorout: CRC_64_GO_ISO.xorout,
@@ -42,6 +44,7 @@ pub const CRC64_MS: CrcParams = CrcParams {
     width: 64,
     poly: CRC_64_MS.poly,
     init: CRC_64_MS.init,
+    init_algorithm: CRC_64_MS.init,
     refin: CRC_64_MS.refin,   // true
     refout: CRC_64_MS.refout, // true
     xorout: CRC_64_MS.xorout,
@@ -57,6 +60,7 @@ pub const CRC64_NVME: CrcParams = CrcParams {
     width: CRC_64_NVME.width,
     poly: CRC_64_NVME.poly,
     init: CRC_64_NVME.init,
+    init_algorithm: CRC_64_NVME.init,
     refin: CRC_64_NVME.refin,   // true
     refout: CRC_64_NVME.refout, // true
     xorout: CRC_64_NVME.xorout,
@@ -71,6 +75,7 @@ pub const CRC64_REDIS: CrcParams = CrcParams {
     width: CRC_64_REDIS.width,
     poly: CRC_64_REDIS.poly,
     init: CRC_64_REDIS.init,
+    init_algorithm: CRC_64_REDIS.init,
     refin: CRC_64_REDIS.refin,   // true
     refout: CRC_64_REDIS.refout, // true
     xorout: CRC_64_REDIS.xorout,
@@ -85,6 +90,7 @@ pub const CRC64_WE: CrcParams = CrcParams {
     width: CRC_64_WE.width,
     poly: CRC_64_WE.poly,
     init: CRC_64_WE.init,
+    init_algorithm: CRC_64_WE.init,
     refin: CRC_64_WE.refin,   // false
     refout: CRC_64_WE.refout, // false
     xorout: CRC_64_WE.xorout,
@@ -99,6 +105,7 @@ pub const CRC64_XZ: CrcParams = CrcParams {
     width: CRC_64_XZ.width,
     poly: CRC_64_XZ.poly,
     init: CRC_64_XZ.init,
+    init_algorithm: CRC_64_XZ.init,
     refin: CRC_64_XZ.refin,   // true
     refout: CRC_64_XZ.refout, // true
     xorout: CRC_64_XZ.xorout,

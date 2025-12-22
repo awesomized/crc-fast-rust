@@ -397,6 +397,18 @@ pub struct CrcParams {
     pub width: u8,
     pub poly: u64,
     pub init: u64,
+    /// The init value in "algorithm form" for the SIMD implementation.
+    ///
+    /// For most CRC variants, this equals `init`. However, for reflected CRC-16 variants
+    /// with non-symmetric init values (e.g., CRC-16/ISO-IEC-14443-3-A with init=0xC6C6),
+    /// this stores the bit-reversed init value. This avoids runtime bit-reversal on every
+    /// update() call, which would otherwise be needed because the SIMD algorithm operates
+    /// on data in a different bit order than the catalog specification.
+    ///
+    /// Examples:
+    /// - CRC-16/IBM-SDLC: init=0xFFFF, init_algorithm=0xFFFF (symmetric)
+    /// - CRC-16/ISO-IEC-14443-3-A: init=0xC6C6, init_algorithm=0x6363 (0xC6C6.reverse_bits())
+    pub init_algorithm: u64,
     pub refin: bool,
     pub refout: bool,
     pub xorout: u64,
@@ -509,7 +521,7 @@ impl Digest {
         let (calculator, params) = get_calculator_params(algorithm);
 
         Self {
-            state: params.init,
+            state: params.init_algorithm,
             amount: 0,
             params,
             calculator,
@@ -580,7 +592,7 @@ impl Digest {
         let calculator = Calculator::calculate as CalculatorFn;
 
         Self {
-            state: params.init,
+            state: params.init_algorithm,
             amount: 0,
             params,
             calculator,
@@ -612,7 +624,7 @@ impl Digest {
     /// Resets the CRC state to its initial value.
     #[inline(always)]
     pub fn reset(&mut self) {
-        self.state = self.params.init;
+        self.state = self.params.init_algorithm;
         self.amount = 0;
     }
 
@@ -746,8 +758,11 @@ pub fn checksum(algorithm: CrcAlgorithm, buf: &[u8]) -> u64 {
             Calculator::calculate(CRC16_IBM_SDLC.init, buf, &CRC16_IBM_SDLC) ^ CRC16_IBM_SDLC.xorout
         }
         CrcAlgorithm::Crc16IsoIec144433A => {
-            Calculator::calculate(CRC16_ISO_IEC_14443_3_A.init, buf, &CRC16_ISO_IEC_14443_3_A)
-                ^ CRC16_ISO_IEC_14443_3_A.xorout
+            Calculator::calculate(
+                CRC16_ISO_IEC_14443_3_A.init_algorithm,
+                buf,
+                &CRC16_ISO_IEC_14443_3_A,
+            ) ^ CRC16_ISO_IEC_14443_3_A.xorout
         }
         CrcAlgorithm::Crc16Kermit => {
             Calculator::calculate(CRC16_KERMIT.init, buf, &CRC16_KERMIT) ^ CRC16_KERMIT.xorout
@@ -783,7 +798,8 @@ pub fn checksum(algorithm: CrcAlgorithm, buf: &[u8]) -> u64 {
             Calculator::calculate(CRC16_PROFIBUS.init, buf, &CRC16_PROFIBUS) ^ CRC16_PROFIBUS.xorout
         }
         CrcAlgorithm::Crc16Riello => {
-            Calculator::calculate(CRC16_RIELLO.init, buf, &CRC16_RIELLO) ^ CRC16_RIELLO.xorout
+            Calculator::calculate(CRC16_RIELLO.init_algorithm, buf, &CRC16_RIELLO)
+                ^ CRC16_RIELLO.xorout
         }
         CrcAlgorithm::Crc16SpiFujitsu => {
             Calculator::calculate(CRC16_SPI_FUJITSU.init, buf, &CRC16_SPI_FUJITSU)
@@ -796,7 +812,8 @@ pub fn checksum(algorithm: CrcAlgorithm, buf: &[u8]) -> u64 {
             Calculator::calculate(CRC16_TELEDISK.init, buf, &CRC16_TELEDISK) ^ CRC16_TELEDISK.xorout
         }
         CrcAlgorithm::Crc16Tms37157 => {
-            Calculator::calculate(CRC16_TMS37157.init, buf, &CRC16_TMS37157) ^ CRC16_TMS37157.xorout
+            Calculator::calculate(CRC16_TMS37157.init_algorithm, buf, &CRC16_TMS37157)
+                ^ CRC16_TMS37157.xorout
         }
         CrcAlgorithm::Crc16Umts => {
             Calculator::calculate(CRC16_UMTS.init, buf, &CRC16_UMTS) ^ CRC16_UMTS.xorout
@@ -1578,7 +1595,7 @@ mod lib {
             let checksum2 = checksum(algorithm, "56789".as_ref());
 
             // checksum_combine()
-            assert_eq!(checksum_combine(algorithm, checksum1, checksum2, 5), check,);
+            assert_eq!(checksum_combine(algorithm, checksum1, checksum2, 5), check);
 
             // Digest
             let mut digest1 = Digest::new(algorithm);
@@ -1978,6 +1995,7 @@ mod lib {
             width: 32,
             poly: 0x04C11DB7,
             init: 0xFFFFFFFF,
+            init_algorithm: 0xFFFFFFFF,
             refin: true,
             refout: true,
             xorout: 0xFFFFFFFF,

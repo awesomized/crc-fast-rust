@@ -91,7 +91,7 @@ pub fn checksums(mut crc1: u64, crc2: u64, mut len2: u64, params: &CrcParams) ->
 
     /* exclusive-or the result with len2 zeros applied to the CRC of an empty
     sequence */
-    crc1 ^= params.init ^ params.xorout;
+    crc1 ^= params.init_algorithm ^ params.xorout;
 
     /* construct the operator for one zero bit and put in odd[] */
     if params.refin && params.refout {

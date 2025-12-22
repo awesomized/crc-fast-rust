@@ -43,6 +43,10 @@ impl AnyCrcTestConfig {
         self.get_params().init
     }
 
+    pub fn get_init_algorithm(&self) -> u64 {
+        self.get_params().init_algorithm
+    }
+
     pub fn get_xorout(&self) -> u64 {
         self.get_params().xorout
     }

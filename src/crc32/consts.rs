@@ -21,6 +21,7 @@ pub const CRC32_AIXM: CrcParams = CrcParams {
     width: 32,
     poly: CRC_32_AIXM.poly as u64,
     init: CRC_32_AIXM.init as u64,
+    init_algorithm: CRC_32_AIXM.init as u64,
     refin: CRC_32_AIXM.refin,   // false
     refout: CRC_32_AIXM.refout, // false
     xorout: CRC_32_AIXM.xorout as u64,
@@ -35,6 +36,7 @@ pub const CRC32_AUTOSAR: CrcParams = CrcParams {
     width: 32,
     poly: CRC_32_AUTOSAR.poly as u64,
     init: CRC_32_AUTOSAR.init as u64,
+    init_algorithm: CRC_32_AUTOSAR.init as u64,
     refin: CRC_32_AUTOSAR.refin,   // true
     refout: CRC_32_AUTOSAR.refout, // true
     xorout: CRC_32_AUTOSAR.xorout as u64,
@@ -49,6 +51,7 @@ pub const CRC32_BASE91_D: CrcParams = CrcParams {
     width: 32,
     poly: CRC_32_BASE91_D.poly as u64,
     init: CRC_32_BASE91_D.init as u64,
+    init_algorithm: CRC_32_BASE91_D.init as u64,
     refin: CRC_32_BASE91_D.refin,   // true
     refout: CRC_32_BASE91_D.refout, // true
     xorout: CRC_32_BASE91_D.xorout as u64,
@@ -63,6 +66,7 @@ pub const CRC32_BZIP2: CrcParams = CrcParams {
     width: 32,
     poly: CRC_32_BZIP2.poly as u64,
     init: CRC_32_BZIP2.init as u64,
+    init_algorithm: CRC_32_BZIP2.init as u64,
     refin: CRC_32_BZIP2.refin,   // false
     refout: CRC_32_BZIP2.refout, // false
     xorout: CRC_32_BZIP2.xorout as u64,
@@ -77,6 +81,7 @@ pub const CRC32_CD_ROM_EDC: CrcParams = CrcParams {
     width: 32,
     poly: CRC_32_CD_ROM_EDC.poly as u64,
     init: CRC_32_CD_ROM_EDC.init as u64,
+    init_algorithm: CRC_32_CD_ROM_EDC.init as u64,
     refin: CRC_32_CD_ROM_EDC.refin,   // true
     refout: CRC_32_CD_ROM_EDC.refout, // true
     xorout: CRC_32_CD_ROM_EDC.xorout as u64,
@@ -91,6 +96,7 @@ pub const CRC32_CKSUM: CrcParams = CrcParams {
     width: 32,
     poly: CRC_32_CKSUM.poly as u64,
     init: CRC_32_CKSUM.init as u64,
+    init_algorithm: CRC_32_CKSUM.init as u64,
     refin: CRC_32_CKSUM.refin,   // false
     refout: CRC_32_CKSUM.refout, // false
     xorout: CRC_32_CKSUM.xorout as u64,
@@ -105,6 +111,7 @@ pub const CRC32_ISCSI: CrcParams = CrcParams {
     width: 32,
     poly: CRC_32_ISCSI.poly as u64,
     init: CRC_32_ISCSI.init as u64,
+    init_algorithm: CRC_32_ISCSI.init as u64,
     refin: CRC_32_ISCSI.refin,   // true
     refout: CRC_32_ISCSI.refout, // true
     xorout: CRC_32_ISCSI.xorout as u64,
@@ -119,6 +126,7 @@ pub const CRC32_ISO_HDLC: CrcParams = CrcParams {
     width: 32,
     poly: CRC_32_ISO_HDLC.poly as u64,
     init: CRC_32_ISO_HDLC.init as u64,
+    init_algorithm: CRC_32_ISO_HDLC.init as u64,
     refin: CRC_32_ISO_HDLC.refin,   // true
     refout: CRC_32_ISO_HDLC.refout, // true
     xorout: CRC_32_ISO_HDLC.xorout as u64,
@@ -133,6 +141,7 @@ pub const CRC32_JAMCRC: CrcParams = CrcParams {
     width: 32,
     poly: CRC_32_JAMCRC.poly as u64,
     init: CRC_32_JAMCRC.init as u64,
+    init_algorithm: CRC_32_JAMCRC.init as u64,
     refin: CRC_32_JAMCRC.refin,   // true
     refout: CRC_32_JAMCRC.refout, // true
     xorout: CRC_32_JAMCRC.xorout as u64,
@@ -147,6 +156,7 @@ pub const CRC32_MEF: CrcParams = CrcParams {
     width: 32,
     poly: CRC_32_MEF.poly as u64,
     init: CRC_32_MEF.init as u64,
+    init_algorithm: CRC_32_MEF.init as u64,
     refin: CRC_32_MEF.refin,   // true
     refout: CRC_32_MEF.refout, // true
     xorout: CRC_32_MEF.xorout as u64,
@@ -161,6 +171,7 @@ pub const CRC32_MPEG_2: CrcParams = CrcParams {
     width: 32,
     poly: CRC_32_MPEG_2.poly as u64,
     init: CRC_32_MPEG_2.init as u64,
+    init_algorithm: CRC_32_MPEG_2.init as u64,
     refin: CRC_32_MPEG_2.refin,   // false
     refout: CRC_32_MPEG_2.refout, // false
     xorout: CRC_32_MPEG_2.xorout as u64,
@@ -175,6 +186,7 @@ pub const CRC32_XFER: CrcParams = CrcParams {
     width: 32,
     poly: CRC_32_XFER.poly as u64,
     init: CRC_32_XFER.init as u64,
+    init_algorithm: CRC_32_XFER.init as u64,
     refin: CRC_32_XFER.refin,   // false
     refout: CRC_32_XFER.refout, // false
     xorout: CRC_32_XFER.xorout as u64,

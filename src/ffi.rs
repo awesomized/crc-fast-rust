@@ -322,12 +322,20 @@ fn try_params_from_ffi(value: &CrcFastParams) -> Option<CrcParams> {
         _ => return None, // Unsupported key count
     };
 
+    // For reflected CRC-16, bit-reverse the init value for the SIMD algorithm
+    let init_algorithm = if value.width == 16 && value.refin {
+        (value.init as u16).reverse_bits() as u64
+    } else {
+        value.init
+    };
+
     Some(CrcParams {
         algorithm: value.algorithm.into(),
         name: "custom", // C interface doesn't need the name field
         width: value.width,
         poly: value.poly,
         init: value.init,
+        init_algorithm,
         refin: value.refin,
         refout: value.refout,
         xorout: value.xorout,
