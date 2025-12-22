@@ -104,7 +104,7 @@ This implementation adds hardware-accelerated CRC-16 support to the crc-fast lib
     - Test "123456789" produces 0xD0DB for CRC-16/T10-DIF
     - _Requirements: 2.1, 2.2, 4.2_
 
-  - [ ]* 7.2 Write property test for CRC-16 computation matches reference
+  - [x] 7.2 Write property test for CRC-16 computation matches reference
     - **Property 3: CRC-16 computation matches reference**
     - **Validates: Requirements 2.1, 2.2, 5.5, 6.1, 6.2, 6.3**
 
