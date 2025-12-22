@@ -105,25 +105,16 @@ pub(crate) unsafe fn update(state: u64, bytes: &[u8], params: &CrcParams) -> u64
 
     match get_arch_ops() {
         #[cfg(target_arch = "x86_64")]
-        ArchOpsInstance::X86_64Avx512Vpclmulqdq(ops) => match params.width {
-            64 => algorithm::update::<_, Width64>(state, bytes, params, ops),
-            32 => algorithm::update::<_, Width32>(state as u32, bytes, params, ops) as u64,
-            16 => algorithm::update::<_, Width16>(state as u16, bytes, params, ops) as u64,
-            _ => panic!("Unsupported CRC width: {}", params.width),
-        },
+        ArchOpsInstance::X86_64Avx512Vpclmulqdq(ops) => {
+            update_x86_64_avx512_vpclmulqdq(state, bytes, params, *ops)
+        }
         #[cfg(target_arch = "x86_64")]
-        ArchOpsInstance::X86_64Avx512Pclmulqdq(ops) => match params.width {
-            64 => algorithm::update::<_, Width64>(state, bytes, params, ops),
-            32 => algorithm::update::<_, Width32>(state as u32, bytes, params, ops) as u64,
-            16 => algorithm::update::<_, Width16>(state as u16, bytes, params, ops) as u64,
-            _ => panic!("Unsupported CRC width: {}", params.width),
-        },
-        ArchOpsInstance::X86SsePclmulqdq(ops) => match params.width {
-            64 => algorithm::update::<_, Width64>(state, bytes, params, ops),
-            32 => algorithm::update::<_, Width32>(state as u32, bytes, params, ops) as u64,
-            16 => algorithm::update::<_, Width16>(state as u16, bytes, params, ops) as u64,
-            _ => panic!("Unsupported CRC width: {}", params.width),
-        },
+        ArchOpsInstance::X86_64Avx512Pclmulqdq(ops) => {
+            update_x86_64_avx512_pclmulqdq(state, bytes, params, *ops)
+        }
+        ArchOpsInstance::X86SsePclmulqdq(ops) => {
+            update_x86_sse_pclmulqdq(state, bytes, params, *ops)
+        }
         ArchOpsInstance::SoftwareFallback => crate::arch::software::update(state, bytes, params),
     }
 }
@@ -139,13 +130,63 @@ pub(crate) unsafe fn update(state: u64, bytes: &[u8], params: &CrcParams) -> u64
     use crate::feature_detection::{get_arch_ops, ArchOpsInstance};
 
     match get_arch_ops() {
-        ArchOpsInstance::X86SsePclmulqdq(ops) => match params.width {
-            64 => algorithm::update::<_, Width64>(state, bytes, params, ops),
-            32 => algorithm::update::<_, Width32>(state as u32, bytes, params, ops) as u64,
-            16 => algorithm::update::<_, Width16>(state as u16, bytes, params, ops) as u64,
-            _ => panic!("Unsupported CRC width: {}", params.width),
-        },
+        ArchOpsInstance::X86SsePclmulqdq(ops) => {
+            update_x86_sse_pclmulqdq(state, bytes, params, *ops)
+        }
         ArchOpsInstance::SoftwareFallback => crate::arch::software::update(state, bytes, params),
+    }
+}
+
+#[inline]
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+#[target_feature(enable = "sse4.1,pclmulqdq")]
+unsafe fn update_x86_sse_pclmulqdq(
+    state: u64,
+    bytes: &[u8],
+    params: &CrcParams,
+    ops: crate::arch::x86::sse::X86SsePclmulqdqOps,
+) -> u64 {
+    match params.width {
+        64 => algorithm::update::<_, Width64>(state, bytes, params, &ops),
+        32 => algorithm::update::<_, Width32>(state as u32, bytes, params, &ops) as u64,
+        16 => algorithm::update::<_, Width16>(state as u16, bytes, params, &ops) as u64,
+        _ => panic!("Unsupported CRC width: {}", params.width),
+    }
+}
+
+#[rustversion::since(1.89)]
+#[inline]
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx512vl,pclmulqdq")]
+unsafe fn update_x86_64_avx512_pclmulqdq(
+    state: u64,
+    bytes: &[u8],
+    params: &CrcParams,
+    ops: crate::arch::x86_64::avx512::X86_64Avx512PclmulqdqOps,
+) -> u64 {
+    match params.width {
+        64 => algorithm::update::<_, Width64>(state, bytes, params, &ops),
+        32 => algorithm::update::<_, Width32>(state as u32, bytes, params, &ops) as u64,
+        16 => algorithm::update::<_, Width16>(state as u16, bytes, params, &ops) as u64,
+        _ => panic!("Unsupported CRC width: {}", params.width),
+    }
+}
+
+#[rustversion::since(1.89)]
+#[inline]
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx512vl,vpclmulqdq")]
+unsafe fn update_x86_64_avx512_vpclmulqdq(
+    state: u64,
+    bytes: &[u8],
+    params: &CrcParams,
+    ops: crate::arch::x86_64::avx512_vpclmulqdq::X86_64Avx512VpclmulqdqOps,
+) -> u64 {
+    match params.width {
+        64 => algorithm::update::<_, Width64>(state, bytes, params, &ops),
+        32 => algorithm::update::<_, Width32>(state as u32, bytes, params, &ops) as u64,
+        16 => algorithm::update::<_, Width16>(state as u16, bytes, params, &ops) as u64,
+        _ => panic!("Unsupported CRC width: {}", params.width),
     }
 }
 
