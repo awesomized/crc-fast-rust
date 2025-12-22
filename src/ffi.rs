@@ -138,6 +138,8 @@ pub struct CrcFastDigestHandle(*mut Digest);
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub enum CrcFastAlgorithm {
+    Crc16IbmSdlc,
+    Crc16T10Dif,
     Crc32Aixm,
     Crc32Autosar,
     Crc32Base91D,
@@ -165,6 +167,8 @@ pub enum CrcFastAlgorithm {
 impl From<CrcFastAlgorithm> for CrcAlgorithm {
     fn from(value: CrcFastAlgorithm) -> Self {
         match value {
+            CrcFastAlgorithm::Crc16IbmSdlc => CrcAlgorithm::Crc16IbmSdlc,
+            CrcFastAlgorithm::Crc16T10Dif => CrcAlgorithm::Crc16T10Dif,
             CrcFastAlgorithm::Crc32Aixm => CrcAlgorithm::Crc32Aixm,
             CrcFastAlgorithm::Crc32Autosar => CrcAlgorithm::Crc32Autosar,
             CrcFastAlgorithm::Crc32Base91D => CrcAlgorithm::Crc32Base91D,
@@ -289,6 +293,8 @@ impl From<CrcParams> for CrcFastParams {
 
         CrcFastParams {
             algorithm: match params.algorithm {
+                CrcAlgorithm::Crc16IbmSdlc => CrcFastAlgorithm::Crc16IbmSdlc,
+                CrcAlgorithm::Crc16T10Dif => CrcFastAlgorithm::Crc16T10Dif,
                 CrcAlgorithm::Crc32Aixm => CrcFastAlgorithm::Crc32Aixm,
                 CrcAlgorithm::Crc32Autosar => CrcFastAlgorithm::Crc32Autosar,
                 CrcAlgorithm::Crc32Base91D => CrcFastAlgorithm::Crc32Base91D,

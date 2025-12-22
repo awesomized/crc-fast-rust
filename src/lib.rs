@@ -188,6 +188,8 @@ unsafe impl core::alloc::GlobalAlloc for StubAllocator {
     unsafe fn dealloc(&self, _ptr: *mut u8, _layout: core::alloc::Layout) {}
 }
 
+use crate::crc16::consts::{CRC16_IBM_SDLC, CRC16_T10_DIF};
+
 use crate::crc32::consts::{
     CRC32_AIXM, CRC32_AUTOSAR, CRC32_BASE91_D, CRC32_BZIP2, CRC32_CD_ROM_EDC, CRC32_CKSUM,
     CRC32_ISCSI, CRC32_ISO_HDLC, CRC32_JAMCRC, CRC32_MEF, CRC32_MPEG_2, CRC32_XFER,
@@ -226,6 +228,7 @@ mod arch;
 mod cache;
 mod combine;
 mod consts;
+mod crc16;
 mod crc32;
 mod crc64;
 mod enums;
@@ -240,6 +243,8 @@ mod traits;
 /// Supported CRC-32 and CRC-64 variants
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum CrcAlgorithm {
+    Crc16IbmSdlc,
+    Crc16T10Dif,
     Crc32Aixm,
     Crc32Autosar,
     Crc32Base91D,
@@ -670,6 +675,12 @@ impl Write for Digest {
 pub fn checksum(algorithm: CrcAlgorithm, buf: &[u8]) -> u64 {
     // avoid using get_calculator_params() here to reduce overhead for small data sizes
     match algorithm {
+        CrcAlgorithm::Crc16IbmSdlc => {
+            Calculator::calculate(CRC16_IBM_SDLC.init, buf, &CRC16_IBM_SDLC) ^ CRC16_IBM_SDLC.xorout
+        }
+        CrcAlgorithm::Crc16T10Dif => {
+            Calculator::calculate(CRC16_T10_DIF.init, buf, &CRC16_T10_DIF) ^ CRC16_T10_DIF.xorout
+        }
         CrcAlgorithm::Crc32Aixm => {
             Calculator::calculate(CRC32_AIXM.init, buf, &CRC32_AIXM) ^ CRC32_AIXM.xorout
         }
@@ -1038,6 +1049,8 @@ pub fn get_calculator_target(_algorithm: CrcAlgorithm) -> String {
 #[inline(always)]
 fn get_calculator_params(algorithm: CrcAlgorithm) -> (CalculatorFn, CrcParams) {
     match algorithm {
+        CrcAlgorithm::Crc16IbmSdlc => (Calculator::calculate as CalculatorFn, CRC16_IBM_SDLC),
+        CrcAlgorithm::Crc16T10Dif => (Calculator::calculate as CalculatorFn, CRC16_T10_DIF),
         CrcAlgorithm::Crc32Aixm => (Calculator::calculate as CalculatorFn, CRC32_AIXM),
         CrcAlgorithm::Crc32Autosar => (Calculator::calculate as CalculatorFn, CRC32_AUTOSAR),
         CrcAlgorithm::Crc32Base91D => (Calculator::calculate as CalculatorFn, CRC32_BASE91_D),

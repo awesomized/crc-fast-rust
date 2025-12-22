@@ -9,6 +9,9 @@ pub(crate) const CRC_CHUNK_SIZE: usize = 16;
 pub(crate) const CRC_HALF_CHUNK_SIZE: usize = 8;
 pub(crate) const CRC_LARGE_CHUNK_THRESHOLD: usize = 256;
 
+pub const NAME_CRC16_IBM_SDLC: &str = "CRC-16/IBM-SDLC";
+pub const NAME_CRC16_T10_DIF: &str = "CRC-16/T10-DIF";
+
 pub const NAME_CRC32_AIXM: &str = "CRC-32/AIXM";
 pub const NAME_CRC32_AUTOSAR: &str = "CRC-32/AUTOSAR";
 pub const NAME_CRC32_BASE91_D: &str = "CRC-32/BASE91-D";

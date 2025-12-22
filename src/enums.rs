@@ -10,6 +10,8 @@ impl FromStr for CrcAlgorithm {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
+            NAME_CRC16_IBM_SDLC => Ok(CrcAlgorithm::Crc16IbmSdlc),
+            NAME_CRC16_T10_DIF => Ok(CrcAlgorithm::Crc16T10Dif),
             NAME_CRC32_AIXM => Ok(CrcAlgorithm::Crc32Aixm),
             NAME_CRC32_AUTOSAR => Ok(CrcAlgorithm::Crc32Autosar),
             NAME_CRC32_BASE91_D => Ok(CrcAlgorithm::Crc32Base91D),
@@ -37,6 +39,8 @@ impl FromStr for CrcAlgorithm {
 impl Display for CrcAlgorithm {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
         match self {
+            CrcAlgorithm::Crc16IbmSdlc => write!(f, "{NAME_CRC16_IBM_SDLC}",),
+            CrcAlgorithm::Crc16T10Dif => write!(f, "{NAME_CRC16_T10_DIF}",),
             CrcAlgorithm::Crc32Aixm => write!(f, "{NAME_CRC32_AIXM}",),
             CrcAlgorithm::Crc32Autosar => write!(f, "{NAME_CRC32_AUTOSAR}",),
             CrcAlgorithm::Crc32Base91D => write!(f, "{NAME_CRC32_BASE91_D}",),
