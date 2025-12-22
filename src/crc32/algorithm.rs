@@ -112,7 +112,7 @@ impl EnhancedCrcWidth for crate::structs::Width32 {
     unsafe fn perform_final_reduction<T: ArchOps>(
         state: T::Vector,
         reflected: bool,
-        keys: [u64; 23],
+        keys: &[u64; 23],
         ops: &T,
     ) -> Self::Value
     where
@@ -143,7 +143,7 @@ pub(crate) unsafe fn process_0_to_15<T: ArchOps, W: EnhancedCrcWidth>(
     data: &[u8],
     state: &mut CrcState<T::Vector>,
     reflector: &Reflector<T::Vector>,
-    keys: [u64; 23],
+    keys: &[u64; 23],
     ops: &T,
 ) -> W::Value
 where

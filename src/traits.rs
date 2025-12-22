@@ -294,7 +294,7 @@ pub trait EnhancedCrcWidth: CrcWidth {
     unsafe fn perform_final_reduction<T: ArchOps>(
         state: T::Vector,
         reflected: bool,
-        keys: [u64; 23],
+        keys: &[u64; 23],
         ops: &T,
     ) -> Self::Value
     where
