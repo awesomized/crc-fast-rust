@@ -51,6 +51,7 @@ typedef enum CrcFastError {
  * The supported CRC algorithms
  */
 typedef enum CrcFastAlgorithm {
+  Crc16Custom,
   Crc16IbmSdlc,
   Crc16T10Dif,
   Crc32Aixm,

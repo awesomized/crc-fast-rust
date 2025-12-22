@@ -5,6 +5,15 @@
 use crate::traits::{CrcCalculator, CrcWidth};
 use crate::{arch, cache, CrcAlgorithm, CrcParams};
 
+/// CRC-16 width implementation
+#[derive(Clone, Copy)]
+pub struct Width16;
+
+impl CrcWidth for Width16 {
+    const WIDTH: u32 = 16;
+    type Value = u16;
+}
+
 /// CRC-32 width implementation
 #[derive(Clone, Copy)]
 pub struct Width32;
@@ -62,6 +71,7 @@ impl CrcParams {
         let keys = crate::CrcKeysStorage::from_keys_fold_256(keys_array);
 
         let algorithm = match width {
+            16 => CrcAlgorithm::Crc16Custom,
             32 => CrcAlgorithm::Crc32Custom,
             64 => CrcAlgorithm::Crc64Custom,
             _ => panic!("Unsupported width: {width}",),

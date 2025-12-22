@@ -138,6 +138,7 @@ pub struct CrcFastDigestHandle(*mut Digest);
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub enum CrcFastAlgorithm {
+    Crc16Custom,
     Crc16IbmSdlc,
     Crc16T10Dif,
     Crc32Aixm,
@@ -167,6 +168,7 @@ pub enum CrcFastAlgorithm {
 impl From<CrcFastAlgorithm> for CrcAlgorithm {
     fn from(value: CrcFastAlgorithm) -> Self {
         match value {
+            CrcFastAlgorithm::Crc16Custom => CrcAlgorithm::Crc16Custom,
             CrcFastAlgorithm::Crc16IbmSdlc => CrcAlgorithm::Crc16IbmSdlc,
             CrcFastAlgorithm::Crc16T10Dif => CrcAlgorithm::Crc16T10Dif,
             CrcFastAlgorithm::Crc32Aixm => CrcAlgorithm::Crc32Aixm,
@@ -293,6 +295,7 @@ impl From<CrcParams> for CrcFastParams {
 
         CrcFastParams {
             algorithm: match params.algorithm {
+                CrcAlgorithm::Crc16Custom => CrcFastAlgorithm::Crc16Custom,
                 CrcAlgorithm::Crc16IbmSdlc => CrcFastAlgorithm::Crc16IbmSdlc,
                 CrcAlgorithm::Crc16T10Dif => CrcFastAlgorithm::Crc16T10Dif,
                 CrcAlgorithm::Crc32Aixm => CrcFastAlgorithm::Crc32Aixm,

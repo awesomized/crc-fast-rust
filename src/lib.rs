@@ -243,6 +243,7 @@ mod traits;
 /// Supported CRC-32 and CRC-64 variants
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum CrcAlgorithm {
+    Crc16Custom, // Custom CRC-16 implementation, not defined in consts
     Crc16IbmSdlc,
     Crc16T10Dif,
     Crc32Aixm,
@@ -675,6 +676,9 @@ impl Write for Digest {
 pub fn checksum(algorithm: CrcAlgorithm, buf: &[u8]) -> u64 {
     // avoid using get_calculator_params() here to reduce overhead for small data sizes
     match algorithm {
+        CrcAlgorithm::Crc16Custom => {
+            panic!("Custom CRC-16 requires parameters via CrcParams::new()")
+        }
         CrcAlgorithm::Crc16IbmSdlc => {
             Calculator::calculate(CRC16_IBM_SDLC.init, buf, &CRC16_IBM_SDLC) ^ CRC16_IBM_SDLC.xorout
         }
@@ -1049,6 +1053,9 @@ pub fn get_calculator_target(_algorithm: CrcAlgorithm) -> String {
 #[inline(always)]
 fn get_calculator_params(algorithm: CrcAlgorithm) -> (CalculatorFn, CrcParams) {
     match algorithm {
+        CrcAlgorithm::Crc16Custom => {
+            panic!("Custom CRC-16 requires parameters via CrcParams::new()")
+        }
         CrcAlgorithm::Crc16IbmSdlc => (Calculator::calculate as CalculatorFn, CRC16_IBM_SDLC),
         CrcAlgorithm::Crc16T10Dif => (Calculator::calculate as CalculatorFn, CRC16_T10_DIF),
         CrcAlgorithm::Crc32Aixm => (Calculator::calculate as CalculatorFn, CRC32_AIXM),

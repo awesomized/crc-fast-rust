@@ -39,6 +39,7 @@ impl FromStr for CrcAlgorithm {
 impl Display for CrcAlgorithm {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
         match self {
+            CrcAlgorithm::Crc16Custom => write!(f, "CRC-16/CUSTOM"),
             CrcAlgorithm::Crc16IbmSdlc => write!(f, "{NAME_CRC16_IBM_SDLC}",),
             CrcAlgorithm::Crc16T10Dif => write!(f, "{NAME_CRC16_T10_DIF}",),
             CrcAlgorithm::Crc32Aixm => write!(f, "{NAME_CRC32_AIXM}",),

@@ -40,21 +40,21 @@ This implementation adds hardware-accelerated CRC-16 support to the crc-fast lib
     - Add CRC-16 test configs to TEST_ALL_CONFIGS
     - _Requirements: 1.1, 1.2, 4.1_
 
-- [ ] 2. Checkpoint - Verify key generation
+- [x] 2. Checkpoint - Verify key generation
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 3. Update CRC-16 Constants and Parameters
-  - [ ] 3.1 Update src/crc16/consts.rs with complete constants
+- [x] 3. Update CRC-16 Constants and Parameters
+  - [x] 3.1 Update src/crc16/consts.rs with complete constants
     - Update KEYS_8BB7_FORWARD with 256-byte folding keys (indices 21-22)
     - Update KEYS_1021_REVERSE with 256-byte folding keys (indices 21-22)
     - Add SIMD_CONSTANTS if different from CRC-32
     - _Requirements: 5.1, 5.2, 5.4_
 
-  - [ ] 3.2 Add Width16 struct to src/structs.rs
+  - [x] 3.2 Add Width16 struct to src/structs.rs
     - Implement CrcWidth trait for Width16
     - _Requirements: 5.3_
 
-  - [ ] 3.3 Update CrcAlgorithm enum and CrcParams::new()
+  - [x] 3.3 Update CrcAlgorithm enum and CrcParams::new()
     - Add Crc16Custom variant to CrcAlgorithm enum
     - Update CrcParams::new() to handle width=16
     - Update cache module if needed for CRC-16 key caching
