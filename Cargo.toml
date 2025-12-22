@@ -22,7 +22,7 @@ crate-type = ["lib", "cdylib", "staticlib"]
 bench = true
 
 [dependencies]
-crc = "3.2"
+crc = "3.3"
 
 # We use digest with default-features = false and features = ["alloc"] to enable heap allocation support in no_std environments.
 # This configuration is safe because the alloc feature in digest does not depend on its default features as of digest v0.10.
