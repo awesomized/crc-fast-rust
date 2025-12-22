@@ -108,7 +108,7 @@ This implementation adds hardware-accelerated CRC-16 support to the crc-fast lib
     - **Property 3: CRC-16 computation matches reference**
     - **Validates: Requirements 2.1, 2.2, 5.5, 6.1, 6.2, 6.3**
 
-  - [ ]* 7.3 Write property test for backwards compatibility
+  - [x] 7.3 Write property test for backwards compatibility
     - **Property 4: CRC-32 and CRC-64 backwards compatibility**
     - **Validates: Requirements 3.1, 3.2, 3.4**
 
