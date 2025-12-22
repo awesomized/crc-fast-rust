@@ -299,8 +299,8 @@ const char *crc_fast_get_calculator_target(enum CrcFastAlgorithm algorithm);
 const char *crc_fast_get_version(void);
 
 /**
- * Calculates the CRC-32/ISCSI (commonly called "crc32c" in many, but not all, implementations)
- * checksum.
+ * Calculates the CRC-32/ISCSI checksum (commonly called "crc32c" in many, but not all,
+ * implementations).
  *
  * https://reveng.sourceforge.io/crc-catalogue/all.htm#crc.cat.crc-32-iscsi
  *
@@ -309,8 +309,8 @@ const char *crc_fast_get_version(void);
 uint32_t crc_fast_crc32_iscsi(const char *data, uintptr_t len);
 
 /**
- * Calculates the CRC-32/ISO-HDLC (commonly called "crc32" in many, but not all, implementations)
- * checksum.
+ * Calculates the CRC-32/ISO-HDLC checksum (commonly called "crc32" in many, but not all,
+ * implementations).
  *
  * https://reveng.sourceforge.io/crc-catalogue/all.htm#crc.cat.crc-32-iso-hdlc
  *

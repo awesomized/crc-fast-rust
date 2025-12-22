@@ -1121,8 +1121,8 @@ pub fn get_calculator_target(_algorithm: CrcAlgorithm) -> String {
     arch_ops.get_target_string()
 }
 
-/// Calculates the CRC-32/ISCSI (commonly called "crc32c" in many, but not all, implementations)
-/// checksum.
+/// Calculates the CRC-32/ISCSI checksum (commonly called "crc32c" in many, but not all,
+/// implementations).
 ///
 /// https://reveng.sourceforge.io/crc-catalogue/all.htm#crc.cat.crc-32-iscsi
 ///
@@ -1141,8 +1141,8 @@ pub fn crc32_iscsi(data: &[u8]) -> u32 {
     crc32_iscsi_calculator(CRC32_ISCSI.init, data, &CRC32_ISCSI) as u32 ^ CRC32_ISCSI.xorout as u32
 }
 
-/// Calculates the CRC-32/ISO-HDLC (commonly called "crc32" in many, but not all, implementations)
-/// checksum.
+/// Calculates the CRC-32/ISO-HDLC checksum (commonly called "crc32" in many, but not all,
+/// implementations).
 ///
 /// https://reveng.sourceforge.io/crc-catalogue/all.htm#crc.cat.crc-32-iso-hdlc
 ///

@@ -880,8 +880,8 @@ pub extern "C" fn crc_fast_get_version() -> *const c_char {
     VERSION.as_ptr()
 }
 
-/// Calculates the CRC-32/ISCSI (commonly called "crc32c" in many, but not all, implementations)
-/// checksum.
+/// Calculates the CRC-32/ISCSI checksum (commonly called "crc32c" in many, but not all,
+/// implementations).
 ///
 /// https://reveng.sourceforge.io/crc-catalogue/all.htm#crc.cat.crc-32-iscsi
 ///
@@ -900,8 +900,8 @@ pub extern "C" fn crc_fast_crc32_iscsi(data: *const c_char, len: usize) -> u32 {
     }
 }
 
-/// Calculates the CRC-32/ISO-HDLC (commonly called "crc32" in many, but not all, implementations)
-/// checksum.
+/// Calculates the CRC-32/ISO-HDLC checksum (commonly called "crc32" in many, but not all,
+/// implementations).
 ///
 /// https://reveng.sourceforge.io/crc-catalogue/all.htm#crc.cat.crc-32-iso-hdlc
 ///
