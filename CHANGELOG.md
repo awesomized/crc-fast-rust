@@ -1,5 +1,9 @@
 # Changes for crc-fast-rust
 
+## [1.9.0](https://github.com/awesomized/crc-fast-rust/releases/tag/1.9.0) - 2025-12-22
+* [Optimize performance for smaller sizes](https://github.com/awesomized/crc-fast-rust/pull/38)
+* [Add CRC-16 support](https://github.com/awesomized/crc-fast-rust/pull/39)
+
 ## [1.8.2](https://github.com/awesomized/crc-fast-rust/releases/tag/1.8.2) - 2025-12-14
 * [Fix the crc dependency minimum](https://github.com/awesomized/crc-fast-rust/pull/33)
 * [Fix no_std build for embedded targets](https://github.com/awesomized/crc-fast-rust/pull/35)

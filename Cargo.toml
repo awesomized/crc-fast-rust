@@ -1,6 +1,6 @@
 [package]
 name = "crc-fast"
-version = "1.8.2"
+version = "1.9.0"
 edition = "2021"
 authors = ["Don MacAskill"]
 license = "MIT OR Apache-2.0"
