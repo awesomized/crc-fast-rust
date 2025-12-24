@@ -6,7 +6,7 @@
 #![cfg(target_arch = "aarch64")]
 
 use crate::traits::ArchOps;
-use std::arch::aarch64::*;
+use core::arch::aarch64::*;
 
 // Tier-specific ArchOps implementations for AArch64
 

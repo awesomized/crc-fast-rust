@@ -7,7 +7,7 @@
 
 use crate::arch::aarch64::aes::Aarch64AesOps;
 use crate::traits::ArchOps;
-use std::arch::aarch64::*;
+use core::arch::aarch64::*;
 
 /// AArch64 AES+SHA3 tier - delegates to AES tier and overrides XOR3 operations
 /// Provides EOR3 instruction for optimal XOR3 performance

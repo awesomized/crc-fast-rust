@@ -15,7 +15,8 @@
 mod iscsi;
 mod iso_hdlc;
 
-use std::arch::aarch64::*;
+use core::arch::aarch64::*;
+#[cfg(feature = "std")]
 use std::arch::is_aarch64_feature_detected;
 
 use iscsi::crc_pmull::crc32_iscsi_v12e_v1;
@@ -25,64 +26,88 @@ use iso_hdlc::crc_pmull_sha3::crc32_iso_hdlc_eor3_v9s3x2e_s3;
 
 #[inline(always)]
 pub fn crc32_iscsi(crc: u32, data: &[u8]) -> u32 {
-    if is_aarch64_feature_detected!("sha3") {
-        unsafe { crc32_iscsi_aes_sha3(crc, data) }
+    let data_len = data.len();
+
+    // there's some variance among different aarch64 CPUs (Apple Silicon, AWS Graviton, etc.), but
+    // 127 bytes is the "small" threshold where this is generally faster
+    if data_len < 128 {
+        return unsafe { crc32_iscsi_small_fast(crc, data) };
+    }
+
+    #[cfg(feature = "std")]
+    let has_sha3 = is_aarch64_feature_detected!("sha3");
+    #[cfg(not(feature = "std"))]
+    let has_sha3 = cfg!(target_feature = "sha3");
+
+    if has_sha3 {
+        unsafe { crc32_iscsi_aes_sha3(crc, data, data_len) }
     } else {
-        unsafe { crc32_iscsi_aes(crc, data) }
+        unsafe { crc32_iscsi_aes(crc, data, data_len) }
     }
 }
 
 #[inline(always)]
 pub fn crc32_iso_hdlc(crc: u32, data: &[u8]) -> u32 {
-    if is_aarch64_feature_detected!("sha3") {
-        unsafe { crc32_iso_hdlc_aes_sha3(crc, data) }
+    let data_len = data.len();
+
+    // there's some variance among different aarch64 CPUs (Apple Silicon, AWS Graviton, etc.), but
+    // 127 bytes is the "small" threshold where this is generally faster
+    if data_len < 128 {
+        return unsafe { crc32_iso_hdlc_small_fast(crc, data) };
+    }
+
+    #[cfg(feature = "std")]
+    let has_sha3 = is_aarch64_feature_detected!("sha3");
+    #[cfg(not(feature = "std"))]
+    let has_sha3 = cfg!(target_feature = "sha3");
+
+    if has_sha3 {
+        unsafe { crc32_iso_hdlc_aes_sha3(crc, data, data_len) }
     } else {
-        unsafe { crc32_iso_hdlc_aes(crc, data) }
+        unsafe { crc32_iso_hdlc_aes(crc, data, data_len) }
     }
 }
 
-/// Safe wrapper for CRC32 iSCSI calculation
 #[inline]
 #[target_feature(enable = "crc,aes,sha3")]
-unsafe fn crc32_iscsi_aes_sha3(crc: u32, data: &[u8]) -> u32 {
+unsafe fn crc32_iscsi_aes_sha3(crc: u32, data: &[u8], data_len: usize) -> u32 {
     unsafe {
         const LARGE_BUFFER_THRESHOLD: usize = 1024;
 
         // Select implementation based on buffer size
-        if data.len() <= LARGE_BUFFER_THRESHOLD {
-            crc32_iscsi_v12e_v1(crc, data.as_ptr(), data.len())
+        if data_len <= LARGE_BUFFER_THRESHOLD {
+            crc32_iscsi_v12e_v1(crc, data.as_ptr(), data_len)
         } else {
-            crc32_iscsi_eor3_v9s3x2e_s3(crc, data.as_ptr(), data.len())
+            crc32_iscsi_eor3_v9s3x2e_s3(crc, data.as_ptr(), data_len)
         }
     }
 }
 
 #[inline]
 #[target_feature(enable = "crc,aes")]
-unsafe fn crc32_iscsi_aes(crc: u32, data: &[u8]) -> u32 {
-    unsafe { crc32_iscsi_v12e_v1(crc, data.as_ptr(), data.len()) }
+unsafe fn crc32_iscsi_aes(crc: u32, data: &[u8], data_len: usize) -> u32 {
+    unsafe { crc32_iscsi_v12e_v1(crc, data.as_ptr(), data_len) }
 }
 
-/// Safe wrapper for CRC32 ISO-HDLC calculation
 #[inline]
 #[target_feature(enable = "crc,aes,sha3")]
-unsafe fn crc32_iso_hdlc_aes_sha3(crc: u32, data: &[u8]) -> u32 {
+unsafe fn crc32_iso_hdlc_aes_sha3(crc: u32, data: &[u8], data_len: usize) -> u32 {
     unsafe {
         const LARGE_BUFFER_THRESHOLD: usize = 1024;
 
         // Select implementation based on buffer size
-        if data.len() <= LARGE_BUFFER_THRESHOLD {
-            crc32_iso_hdlc_v12e_v1(crc, data.as_ptr(), data.len())
+        if data_len <= LARGE_BUFFER_THRESHOLD {
+            crc32_iso_hdlc_v12e_v1(crc, data.as_ptr(), data_len)
         } else {
-            crc32_iso_hdlc_eor3_v9s3x2e_s3(crc, data.as_ptr(), data.len())
+            crc32_iso_hdlc_eor3_v9s3x2e_s3(crc, data.as_ptr(), data_len)
         }
     }
 }
 
 #[inline]
 #[target_feature(enable = "crc,aes")]
-unsafe fn crc32_iso_hdlc_aes(crc: u32, data: &[u8]) -> u32 {
-    unsafe { crc32_iso_hdlc_v12e_v1(crc, data.as_ptr(), data.len()) }
+unsafe fn crc32_iso_hdlc_aes(crc: u32, data: &[u8], data_len: usize) -> u32 {
+    unsafe { crc32_iso_hdlc_v12e_v1(crc, data.as_ptr(), data_len) }
 }
 
 #[inline]
@@ -119,6 +144,80 @@ unsafe fn clmul_lo_and_xor(a: uint64x2_t, b: uint64x2_t, c: uint64x2_t) -> uint6
 #[target_feature(enable = "aes")]
 unsafe fn clmul_hi_and_xor(a: uint64x2_t, b: uint64x2_t, c: uint64x2_t) -> uint64x2_t {
     veorq_u64(clmul_hi(a, b), c)
+}
+
+/// CRC-32/ISCSI calculation for small buffers (< 128 bytes) using unrolled native CRC instructions
+#[inline]
+#[target_feature(enable = "crc")]
+pub unsafe fn crc32_iscsi_small_fast(mut crc: u32, data: &[u8]) -> u32 {
+    let (prefix, aligned, suffix) = data.align_to::<u64>();
+
+    // Process unaligned prefix bytes
+    for &byte in prefix {
+        crc = __crc32cb(crc, byte);
+    }
+
+    // Process aligned u64s with 8-way unrolling (64 bytes per iteration)
+    let mut chunks = aligned.chunks_exact(8);
+    for chunk in &mut chunks {
+        crc = __crc32cd(crc, chunk[0]);
+        crc = __crc32cd(crc, chunk[1]);
+        crc = __crc32cd(crc, chunk[2]);
+        crc = __crc32cd(crc, chunk[3]);
+        crc = __crc32cd(crc, chunk[4]);
+        crc = __crc32cd(crc, chunk[5]);
+        crc = __crc32cd(crc, chunk[6]);
+        crc = __crc32cd(crc, chunk[7]);
+    }
+
+    // Process remaining aligned u64s
+    for &val in chunks.remainder() {
+        crc = __crc32cd(crc, val);
+    }
+
+    // Process unaligned suffix bytes
+    for &byte in suffix {
+        crc = __crc32cb(crc, byte);
+    }
+
+    crc
+}
+
+/// CRC-32/ISO-HDLC calculation for small buffers (< 128 bytes) using unrolled native CRC instructions
+#[inline]
+#[target_feature(enable = "crc")]
+pub unsafe fn crc32_iso_hdlc_small_fast(mut crc: u32, data: &[u8]) -> u32 {
+    let (prefix, aligned, suffix) = data.align_to::<u64>();
+
+    // Process unaligned prefix bytes
+    for &byte in prefix {
+        crc = __crc32b(crc, byte);
+    }
+
+    // Process aligned u64s with 8-way unrolling (64 bytes per iteration)
+    let mut chunks = aligned.chunks_exact(8);
+    for chunk in &mut chunks {
+        crc = __crc32d(crc, chunk[0]);
+        crc = __crc32d(crc, chunk[1]);
+        crc = __crc32d(crc, chunk[2]);
+        crc = __crc32d(crc, chunk[3]);
+        crc = __crc32d(crc, chunk[4]);
+        crc = __crc32d(crc, chunk[5]);
+        crc = __crc32d(crc, chunk[6]);
+        crc = __crc32d(crc, chunk[7]);
+    }
+
+    // Process remaining aligned u64s
+    for &val in chunks.remainder() {
+        crc = __crc32d(crc, val);
+    }
+
+    // Process unaligned suffix bytes
+    for &byte in suffix {
+        crc = __crc32b(crc, byte);
+    }
+
+    crc
 }
 
 #[cfg(test)]

@@ -6,10 +6,10 @@
 #![cfg(any(target_arch = "x86_64", target_arch = "x86"))]
 
 #[cfg(target_arch = "x86")]
-use std::arch::x86::*;
+use core::arch::x86::*;
 
 #[cfg(target_arch = "x86_64")]
-use std::arch::x86_64::*;
+use core::arch::x86_64::*;
 
 use crate::fusion::x86::*;
 

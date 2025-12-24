@@ -713,15 +713,8 @@ mod tests {
         let decimal_format = OutputFormat::Decimal;
 
         // Test that both variants can be created and are different
-        match hex_format {
-            OutputFormat::Hex => assert!(true),
-            OutputFormat::Decimal => assert!(false),
-        }
-
-        match decimal_format {
-            OutputFormat::Decimal => assert!(true),
-            OutputFormat::Hex => assert!(false),
-        }
+        assert!(matches!(hex_format, OutputFormat::Hex));
+        assert!(matches!(decimal_format, OutputFormat::Decimal));
     }
 
     #[test]

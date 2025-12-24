@@ -84,14 +84,14 @@ fn gf2_matrix_square(square: &mut [u64; 64], mat: &[u64; 64]) {
 first sequence of bytes, crc2 is the CRC of the immediately following
 sequence of bytes, and len2 is the length of the second sequence.  The CRC
 of the combined sequence is returned. */
-pub fn checksums(mut crc1: u64, crc2: u64, mut len2: u64, params: CrcParams) -> u64 {
+pub fn checksums(mut crc1: u64, crc2: u64, mut len2: u64, params: &CrcParams) -> u64 {
     let mut col: u64;
     let mut even = [0u64; 64]; /* even-power-of-two zeros operator */
     let mut odd = [0u64; 64]; /* odd-power-of-two zeros operator */
 
     /* exclusive-or the result with len2 zeros applied to the CRC of an empty
     sequence */
-    crc1 ^= params.init ^ params.xorout;
+    crc1 ^= params.init_algorithm ^ params.xorout;
 
     /* construct the operator for one zero bit and put in odd[] */
     if params.refin && params.refout {

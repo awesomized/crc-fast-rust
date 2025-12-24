@@ -92,6 +92,12 @@ jobs:
             arch: x86_64
             ext: tar.gz
 
+          - target: i686-unknown-linux-gnu
+            os: ubuntu-22.04
+            platform: linux
+            arch: x86
+            ext: tar.gz
+
           - target: aarch64-unknown-linux-gnu
             os: ubuntu-22.04-arm
             platform: linux
@@ -110,6 +116,12 @@ jobs:
             arch: x86_64
             ext: zip
 
+          - target: i686-pc-windows-msvc
+            os: windows-2022
+            platform: windows
+            arch: x86
+            ext: zip
+
           - target: aarch64-pc-windows-msvc
             os: windows-11-arm
             platform: windows
@@ -124,8 +136,17 @@ jobs:
         with:
           toolchain: stable
 
-      - name: Build release binaries
-        run: cargo build --all-features --release
+      - name: Install cross
+        if: matrix.target == 'i686-unknown-linux-gnu'
+        run: cargo install cross --git https://github.com/cross-rs/cross
+
+      - name: Build release binaries (native)
+        if: matrix.target != 'i686-unknown-linux-gnu'
+        run: cargo build --all-features --release --target ${{ matrix.target }}
+
+      - name: Build release binaries (cross)
+        if: matrix.target == 'i686-unknown-linux-gnu'
+        run: cross build --all-features --release --target ${{ matrix.target }}
 
       - name: Verify library files (Unix)
         if: runner.os != 'Windows'
@@ -133,12 +154,12 @@ jobs:
         run: |
           echo "Verifying library files..."
           if [ "${{ matrix.platform }}" = "linux" ]; then
-            test -f target/release/libcrc_fast.so || { echo "Missing libcrc_fast.so"; exit 1; }
-            test -f target/release/libcrc_fast.a || { echo "Missing libcrc_fast.a"; exit 1; }
+            test -f target/${{ matrix.target }}/release/libcrc_fast.so || { echo "Missing libcrc_fast.so"; exit 1; }
+            test -f target/${{ matrix.target }}/release/libcrc_fast.a || { echo "Missing libcrc_fast.a"; exit 1; }
             echo "✓ Found libcrc_fast.so and libcrc_fast.a"
           elif [ "${{ matrix.platform }}" = "macos" ]; then
-            test -f target/release/libcrc_fast.dylib || { echo "Missing libcrc_fast.dylib"; exit 1; }
-            test -f target/release/libcrc_fast.a || { echo "Missing libcrc_fast.a"; exit 1; }
+            test -f target/${{ matrix.target }}/release/libcrc_fast.dylib || { echo "Missing libcrc_fast.dylib"; exit 1; }
+            test -f target/${{ matrix.target }}/release/libcrc_fast.a || { echo "Missing libcrc_fast.a"; exit 1; }
             echo "✓ Found libcrc_fast.dylib and libcrc_fast.a"
           fi
 
@@ -147,15 +168,15 @@ jobs:
         shell: pwsh
         run: |
           Write-Host "Verifying library files..."
-          if (-not (Test-Path "target/release/crc_fast.dll")) {
+          if (-not (Test-Path "target/${{ matrix.target }}/release/crc_fast.dll")) {
             Write-Error "Missing crc_fast.dll"
             exit 1
           }
-          if (-not (Test-Path "target/release/crc_fast.dll.lib")) {
+          if (-not (Test-Path "target/${{ matrix.target }}/release/crc_fast.dll.lib")) {
             Write-Error "Missing crc_fast.dll.lib"
             exit 1
           }
-          if (-not (Test-Path "target/release/crc_fast.lib")) {
+          if (-not (Test-Path "target/${{ matrix.target }}/release/crc_fast.lib")) {
             Write-Error "Missing crc_fast.lib"
             exit 1
           }
@@ -166,9 +187,9 @@ jobs:
         shell: bash
         run: |
           echo "Verifying CLI binaries..."
-          test -f target/release/checksum || { echo "Missing checksum"; exit 1; }
-          test -f target/release/arch-check || { echo "Missing arch-check"; exit 1; }
-          test -f target/release/get-custom-params || { echo "Missing get-custom-params"; exit 1; }
+          test -f target/${{ matrix.target }}/release/checksum || { echo "Missing checksum"; exit 1; }
+          test -f target/${{ matrix.target }}/release/arch-check || { echo "Missing arch-check"; exit 1; }
+          test -f target/${{ matrix.target }}/release/get-custom-params || { echo "Missing get-custom-params"; exit 1; }
           echo "✓ Found checksum, arch-check, and get-custom-params"
 
       - name: Verify CLI binaries (Windows)
@@ -176,15 +197,15 @@ jobs:
         shell: pwsh
         run: |
           Write-Host "Verifying CLI binaries..."
-          if (-not (Test-Path "target/release/checksum.exe")) {
+          if (-not (Test-Path "target/${{ matrix.target }}/release/checksum.exe")) {
             Write-Error "Missing checksum.exe"
             exit 1
           }
-          if (-not (Test-Path "target/release/arch-check.exe")) {
+          if (-not (Test-Path "target/${{ matrix.target }}/release/arch-check.exe")) {
             Write-Error "Missing arch-check.exe"
             exit 1
           }
-          if (-not (Test-Path "target/release/get-custom-params.exe")) {
+          if (-not (Test-Path "target/${{ matrix.target }}/release/get-custom-params.exe")) {
             Write-Error "Missing get-custom-params.exe"
             exit 1
           }
@@ -202,16 +223,16 @@ jobs:
           mkdir -p "$PKG_NAME/bin"
           
           echo "Copying library files..."
-          cp target/release/libcrc_fast.so "$PKG_NAME/lib/"
-          cp target/release/libcrc_fast.a "$PKG_NAME/lib/"
+          cp target/${{ matrix.target }}/release/libcrc_fast.so "$PKG_NAME/lib/"
+          cp target/${{ matrix.target }}/release/libcrc_fast.a "$PKG_NAME/lib/"
           
           echo "Copying header file..."
           cp libcrc_fast.h "$PKG_NAME/include/"
           
           echo "Copying CLI binaries..."
-          cp target/release/checksum "$PKG_NAME/bin/"
-          cp target/release/arch-check "$PKG_NAME/bin/"
-          cp target/release/get-custom-params "$PKG_NAME/bin/"
+          cp target/${{ matrix.target }}/release/checksum "$PKG_NAME/bin/"
+          cp target/${{ matrix.target }}/release/arch-check "$PKG_NAME/bin/"
+          cp target/${{ matrix.target }}/release/get-custom-params "$PKG_NAME/bin/"
           
           echo "Setting executable permissions on binaries..."
           chmod +x "$PKG_NAME/bin/checksum"
@@ -328,16 +349,16 @@ jobs:
           mkdir -p "$PKG_NAME/bin"
           
           echo "Copying library files..."
-          cp target/release/libcrc_fast.dylib "$PKG_NAME/lib/"
-          cp target/release/libcrc_fast.a "$PKG_NAME/lib/"
+          cp target/${{ matrix.target }}/release/libcrc_fast.dylib "$PKG_NAME/lib/"
+          cp target/${{ matrix.target }}/release/libcrc_fast.a "$PKG_NAME/lib/"
           
           echo "Copying header file..."
           cp libcrc_fast.h "$PKG_NAME/include/"
           
           echo "Copying CLI binaries..."
-          cp target/release/checksum "$PKG_NAME/bin/"
-          cp target/release/arch-check "$PKG_NAME/bin/"
-          cp target/release/get-custom-params "$PKG_NAME/bin/"
+          cp target/${{ matrix.target }}/release/checksum "$PKG_NAME/bin/"
+          cp target/${{ matrix.target }}/release/arch-check "$PKG_NAME/bin/"
+          cp target/${{ matrix.target }}/release/get-custom-params "$PKG_NAME/bin/"
           
           echo "Setting executable permissions on binaries..."
           chmod +x "$PKG_NAME/bin/checksum"
@@ -453,17 +474,17 @@ jobs:
           New-Item -ItemType Directory -Path "$PKG_NAME/include" -Force | Out-Null
           
           Write-Host "Copying library files..."
-          Copy-Item "target/release/crc_fast.dll" "$PKG_NAME/bin/"
-          Copy-Item "target/release/crc_fast.dll.lib" "$PKG_NAME/lib/"
-          Copy-Item "target/release/crc_fast.lib" "$PKG_NAME/lib/"
+          Copy-Item "target/${{ matrix.target }}/release/crc_fast.dll" "$PKG_NAME/bin/"
+          Copy-Item "target/${{ matrix.target }}/release/crc_fast.dll.lib" "$PKG_NAME/lib/"
+          Copy-Item "target/${{ matrix.target }}/release/crc_fast.lib" "$PKG_NAME/lib/"
           
           Write-Host "Copying header file..."
           Copy-Item "libcrc_fast.h" "$PKG_NAME/include/"
           
           Write-Host "Copying CLI binaries..."
-          Copy-Item "target/release/checksum.exe" "$PKG_NAME/bin/"
-          Copy-Item "target/release/arch-check.exe" "$PKG_NAME/bin/"
-          Copy-Item "target/release/get-custom-params.exe" "$PKG_NAME/bin/"
+          Copy-Item "target/${{ matrix.target }}/release/checksum.exe" "$PKG_NAME/bin/"
+          Copy-Item "target/${{ matrix.target }}/release/arch-check.exe" "$PKG_NAME/bin/"
+          Copy-Item "target/${{ matrix.target }}/release/get-custom-params.exe" "$PKG_NAME/bin/"
           
           Write-Host "Creating VERSION file..."
           "$env:TAG_NAME" | Out-File -FilePath "$PKG_NAME/VERSION" -Encoding utf8 -NoNewline
@@ -641,12 +662,16 @@ jobs:
           EXPECTED_FILES=(
             "crc-fast-$TAG_NAME-linux-x86_64.tar.gz"
             "crc-fast-$TAG_NAME-linux-x86_64.tar.gz.sha256"
+            "crc-fast-$TAG_NAME-linux-x86.tar.gz"
+            "crc-fast-$TAG_NAME-linux-x86.tar.gz.sha256"
             "crc-fast-$TAG_NAME-linux-aarch64.tar.gz"
             "crc-fast-$TAG_NAME-linux-aarch64.tar.gz.sha256"
             "crc-fast-$TAG_NAME-macos-aarch64.tar.gz"
             "crc-fast-$TAG_NAME-macos-aarch64.tar.gz.sha256"
             "crc-fast-$TAG_NAME-windows-x86_64.zip"
             "crc-fast-$TAG_NAME-windows-x86_64.zip.sha256"
+            "crc-fast-$TAG_NAME-windows-x86.zip"
+            "crc-fast-$TAG_NAME-windows-x86.zip.sha256"
             "crc-fast-$TAG_NAME-windows-aarch64.zip"
             "crc-fast-$TAG_NAME-windows-aarch64.zip.sha256"
           )

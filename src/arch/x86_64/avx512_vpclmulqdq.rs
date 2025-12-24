@@ -10,8 +10,8 @@ use crate::arch::x86::sse::X86SsePclmulqdqOps;
 use crate::enums::Reflector;
 use crate::structs::CrcState;
 use crate::traits::{ArchOps, EnhancedCrcWidth};
-use std::arch::x86_64::*;
-use std::ops::BitXor;
+use core::arch::x86_64::*;
+use core::ops::BitXor;
 
 /// Implements the ArchOps trait using 512-bit AVX-512 and VPCLMULQDQ instructions at 512 bits.
 /// Delegates to X86SsePclmulqdqOps for standard 128-bit operations
@@ -51,6 +51,7 @@ impl Simd512 {
         ))
     }
 
+    #[cfg(feature = "std")]
     #[inline]
     #[target_feature(enable = "avx512f")]
     unsafe fn extract_u64s(&self) -> [u64; 8] {
@@ -78,6 +79,7 @@ impl Simd512 {
         Self(_mm512_xor_si512(self.0, other.0))
     }
 
+    #[cfg(feature = "std")]
     #[inline]
     #[target_feature(enable = "avx512f")]
     #[allow(unused)]
@@ -110,7 +112,7 @@ impl X86_64Avx512VpclmulqdqOps {
         state: &mut CrcState<<X86_64Avx512VpclmulqdqOps as ArchOps>::Vector>,
         first: &[__m128i; 8],
         rest: &[[__m128i; 8]],
-        keys: [u64; 23],
+        keys: &[u64; 23],
         reflected: bool,
     ) -> W::Value
     where
@@ -203,7 +205,7 @@ impl X86_64Avx512VpclmulqdqOps {
     #[inline(always)]
     unsafe fn create_avx512_128byte_coefficient(
         &self,
-        keys: [u64; 23],
+        keys: &[u64; 23],
         reflected: bool,
     ) -> Simd512 {
         let (k1, k2) = if reflected {
@@ -220,7 +222,7 @@ impl X86_64Avx512VpclmulqdqOps {
     #[inline(always)]
     unsafe fn create_avx512_256byte_coefficient(
         &self,
-        keys: [u64; 23],
+        keys: &[u64; 23],
         reflected: bool,
     ) -> Simd512 {
         let (k1, k2) = if reflected {
@@ -238,7 +240,7 @@ impl X86_64Avx512VpclmulqdqOps {
     unsafe fn fold_from_4x512_to_1x128(
         &self,
         x: [Simd512; 4],
-        keys: [u64; 23],
+        keys: &[u64; 23],
         reflected: bool,
     ) -> __m128i {
         // Step 1: Fold 4 x 512-bit to 2 x 512-bit
@@ -253,7 +255,7 @@ impl X86_64Avx512VpclmulqdqOps {
     unsafe fn fold_from_4x512_to_2x256(
         &self,
         x: [Simd512; 4],
-        keys: [u64; 23],
+        keys: &[u64; 23],
         reflected: bool,
     ) -> [Simd512; 2] {
         // This folds registers that are 128 bytes apart (x[0] with x[2], x[1] with x[3])
@@ -270,7 +272,7 @@ impl X86_64Avx512VpclmulqdqOps {
     unsafe fn fold_from_2x512_to_1x128(
         &self,
         x: [Simd512; 2],
-        keys: [u64; 23],
+        keys: &[u64; 23],
         reflected: bool,
     ) -> __m128i {
         // Create the fold coefficients for different distances
@@ -362,7 +364,7 @@ unsafe fn reflect_bytes512(reflector: &Reflector512, data: Simd512) -> Simd512 {
 
 // pre-compute the reverse indices for 512-bit shuffling
 static REVERSE_INDICES_512: __m512i =
-    unsafe { std::mem::transmute([7u64, 6u64, 5u64, 4u64, 3u64, 2u64, 1u64, 0u64]) };
+    unsafe { core::mem::transmute([7u64, 6u64, 5u64, 4u64, 3u64, 2u64, 1u64, 0u64]) };
 
 // Implement a 512-bit byte shuffle function
 #[inline]
@@ -386,7 +388,7 @@ impl ArchOps for X86_64Avx512VpclmulqdqOps {
         first: &[Self::Vector; 8],
         rest: &[[Self::Vector; 8]],
         _reflector: &Reflector<Self::Vector>,
-        keys: [u64; 23],
+        keys: &[u64; 23],
     ) -> bool
     where
         Self::Vector: Copy,

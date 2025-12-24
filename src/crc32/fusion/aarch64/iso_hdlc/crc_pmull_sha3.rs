@@ -13,7 +13,7 @@
 #![cfg(target_arch = "aarch64")]
 
 use crate::crc32::fusion::aarch64::{clmul_hi, clmul_lo, clmul_scalar};
-use std::arch::aarch64::{
+use core::arch::aarch64::{
     __crc32b, __crc32d, __crc32w, uint64x2_t, veor3q_u64, veorq_u64, vgetq_lane_u64, vld1q_u64,
     vmov_n_u64, vmull_p8, vreinterpret_p8_u64, vreinterpretq_u64_p16,
 };

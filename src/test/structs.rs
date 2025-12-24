@@ -11,6 +11,8 @@ pub struct CrcTestConfig<T: crc::Width, I: crc::Implementation + 'static> {
     pub reference_impl: &'static Crc<T, I>,
 }
 
+pub type Crc16TestConfig = CrcTestConfig<u16, Table<16>>;
+
 pub type Crc32TestConfig = CrcTestConfig<u32, Table<16>>;
 
 pub type Crc64TestConfig = CrcTestConfig<u64, Table<16>>;

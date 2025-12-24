@@ -6,9 +6,10 @@ use std::fs;
 use std::process::Command;
 
 #[test]
+#[cfg_attr(miri, ignore)] // Miri doesn't allow this due to isolation restrictions
 fn test_benchmark_flag_parsing() {
     let output = Command::new("cargo")
-        .args(&[
+        .args([
             "run",
             "--features",
             "cli",
@@ -33,9 +34,10 @@ fn test_benchmark_flag_parsing() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)] // Miri doesn't allow this due to isolation restrictions
 fn test_benchmark_with_size_parameter() {
     let output = Command::new("cargo")
-        .args(&[
+        .args([
             "run",
             "--features",
             "cli",
@@ -57,9 +59,10 @@ fn test_benchmark_with_size_parameter() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)] // Miri doesn't allow this due to isolation restrictions
 fn test_benchmark_with_duration_parameter() {
     let output = Command::new("cargo")
-        .args(&[
+        .args([
             "run",
             "--features",
             "cli",
@@ -81,9 +84,10 @@ fn test_benchmark_with_duration_parameter() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)] // Miri doesn't allow this due to isolation restrictions
 fn test_benchmark_invalid_size() {
     let output = Command::new("cargo")
-        .args(&[
+        .args([
             "run",
             "--features",
             "cli",
@@ -105,9 +109,10 @@ fn test_benchmark_invalid_size() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)] // Miri doesn't allow this due to isolation restrictions
 fn test_benchmark_invalid_duration() {
     let output = Command::new("cargo")
-        .args(&[
+        .args([
             "run",
             "--features",
             "cli",
@@ -129,13 +134,14 @@ fn test_benchmark_invalid_duration() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)] // Miri doesn't allow this due to isolation restrictions
 fn test_benchmark_with_file_input() {
     // Create a temporary test file
     let test_file = "test_benchmark_file.txt";
     fs::write(test_file, "Hello, benchmark world!").expect("Failed to create test file");
 
     let output = Command::new("cargo")
-        .args(&[
+        .args([
             "run",
             "--features",
             "cli",
@@ -162,9 +168,10 @@ fn test_benchmark_with_file_input() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)] // Miri doesn't allow this due to isolation restrictions
 fn test_benchmark_with_string_input() {
     let output = Command::new("cargo")
-        .args(&[
+        .args([
             "run",
             "--features",
             "cli",
@@ -188,12 +195,13 @@ fn test_benchmark_with_string_input() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)] // Miri doesn't allow this due to isolation restrictions
 fn test_benchmark_different_algorithms() {
     let algorithms = ["CRC-32/ISCSI", "CRC-64/NVME"];
 
     for algorithm in &algorithms {
         let output = Command::new("cargo")
-            .args(&[
+            .args([
                 "run",
                 "--features",
                 "cli",
@@ -220,9 +228,10 @@ fn test_benchmark_different_algorithms() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)] // Miri doesn't allow this due to isolation restrictions
 fn test_benchmark_size_without_benchmark_flag() {
     let output = Command::new("cargo")
-        .args(&[
+        .args([
             "run",
             "--features",
             "cli",
@@ -243,9 +252,10 @@ fn test_benchmark_size_without_benchmark_flag() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)] // Miri doesn't allow this due to isolation restrictions
 fn test_benchmark_nonexistent_file() {
     let output = Command::new("cargo")
-        .args(&[
+        .args([
             "run",
             "--features",
             "cli",

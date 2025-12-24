@@ -4,7 +4,7 @@
 //!
 //! It dispatches to the appropriate architecture-specific implementation
 
-#[cfg(target_arch = "aarch64")]
+#[cfg(all(target_arch = "aarch64", feature = "std"))]
 use std::arch::is_aarch64_feature_detected;
 
 use crate::CrcParams;
@@ -18,7 +18,7 @@ use crate::arch::aarch64::aes_sha3::Aarch64AesSha3Ops;
 #[cfg(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64"))]
 use crate::{
     algorithm,
-    structs::{Width32, Width64},
+    structs::{Width16, Width32, Width64},
 };
 
 pub mod aarch64;
@@ -32,14 +32,20 @@ pub mod x86_64;
 /// May use native CPU features
 #[inline(always)]
 #[cfg(target_arch = "aarch64")]
-pub(crate) unsafe fn update(state: u64, bytes: &[u8], params: CrcParams) -> u64 {
+pub(crate) unsafe fn update(state: u64, bytes: &[u8], params: &CrcParams) -> u64 {
     use crate::feature_detection::{get_arch_ops, ArchOpsInstance};
 
     match get_arch_ops() {
         ArchOpsInstance::Aarch64AesSha3(ops) => update_aarch64_aes_sha3(state, bytes, params, *ops),
         ArchOpsInstance::Aarch64Aes(ops) => update_aarch64_aes(state, bytes, params, *ops),
         ArchOpsInstance::SoftwareFallback => {
-            if !is_aarch64_feature_detected!("aes") || !is_aarch64_feature_detected!("neon") {
+            #[cfg(feature = "std")]
+            let has_features =
+                is_aarch64_feature_detected!("aes") && is_aarch64_feature_detected!("neon");
+            #[cfg(not(feature = "std"))]
+            let has_features = cfg!(target_feature = "aes") && cfg!(target_feature = "neon");
+
+            if !has_features {
                 #[cfg(any(not(target_feature = "aes"), not(target_feature = "neon")))]
                 {
                     // Use software implementation when no SIMD support is available
@@ -59,12 +65,13 @@ pub(crate) unsafe fn update(state: u64, bytes: &[u8], params: CrcParams) -> u64 
 unsafe fn update_aarch64_aes(
     state: u64,
     bytes: &[u8],
-    params: CrcParams,
+    params: &CrcParams,
     ops: Aarch64AesOps,
 ) -> u64 {
     match params.width {
         64 => algorithm::update::<_, Width64>(state, bytes, params, &ops),
         32 => algorithm::update::<_, Width32>(state as u32, bytes, params, &ops) as u64,
+        16 => algorithm::update::<_, Width16>(state as u16, bytes, params, &ops) as u64,
         _ => panic!("Unsupported CRC width: {}", params.width),
     }
 }
@@ -75,12 +82,13 @@ unsafe fn update_aarch64_aes(
 unsafe fn update_aarch64_aes_sha3(
     state: u64,
     bytes: &[u8],
-    params: CrcParams,
+    params: &CrcParams,
     ops: Aarch64AesSha3Ops,
 ) -> u64 {
     match params.width {
         64 => algorithm::update::<_, Width64>(state, bytes, params, &ops),
         32 => algorithm::update::<_, Width32>(state as u32, bytes, params, &ops) as u64,
+        16 => algorithm::update::<_, Width16>(state as u16, bytes, params, &ops) as u64,
         _ => panic!("Unsupported CRC width: {}", params.width),
     }
 }
@@ -91,44 +99,83 @@ unsafe fn update_aarch64_aes_sha3(
 /// May use native CPU features
 #[inline(always)]
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-pub(crate) unsafe fn update(state: u64, bytes: &[u8], params: CrcParams) -> u64 {
+pub(crate) unsafe fn update(state: u64, bytes: &[u8], params: &CrcParams) -> u64 {
     use crate::feature_detection::{get_arch_ops, ArchOpsInstance};
 
     match get_arch_ops() {
         #[cfg(target_arch = "x86_64")]
-        ArchOpsInstance::X86_64Avx512Vpclmulqdq(ops) => match params.width {
-            64 => algorithm::update::<_, Width64>(state, bytes, params, ops),
-            32 => algorithm::update::<_, Width32>(state as u32, bytes, params, ops) as u64,
-            _ => panic!("Unsupported CRC width: {}", params.width),
-        },
-        #[cfg(target_arch = "x86_64")]
-        ArchOpsInstance::X86_64Avx512Pclmulqdq(ops) => match params.width {
-            64 => algorithm::update::<_, Width64>(state, bytes, params, ops),
-            32 => algorithm::update::<_, Width32>(state as u32, bytes, params, ops) as u64,
-            _ => panic!("Unsupported CRC width: {}", params.width),
-        },
-        ArchOpsInstance::X86SsePclmulqdq(ops) => match params.width {
-            64 => algorithm::update::<_, Width64>(state, bytes, params, ops),
-            32 => algorithm::update::<_, Width32>(state as u32, bytes, params, ops) as u64,
-            _ => panic!("Unsupported CRC width: {}", params.width),
-        },
-        ArchOpsInstance::SoftwareFallback => {
-            #[cfg(target_arch = "x86")]
-            crate::arch::software::update(state, bytes, params);
-
-            // This should never happen, but just in case
-            panic!("x86 features missing (SSE4.1 && PCLMULQDQ)");
+        ArchOpsInstance::X86_64Avx512Vpclmulqdq(ops) => {
+            update_x86_64_avx512_vpclmulqdq(state, bytes, params, *ops)
         }
+        #[cfg(target_arch = "x86_64")]
+        ArchOpsInstance::X86_64Avx512Pclmulqdq(ops) => {
+            update_x86_64_avx512_pclmulqdq(state, bytes, params, *ops)
+        }
+        ArchOpsInstance::X86SsePclmulqdq(ops) => {
+            update_x86_sse_pclmulqdq(state, bytes, params, *ops)
+        }
+        ArchOpsInstance::SoftwareFallback => crate::arch::software::update(state, bytes, params),
     }
 }
 
 #[inline]
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+#[target_feature(enable = "sse4.1,pclmulqdq")]
+unsafe fn update_x86_sse_pclmulqdq(
+    state: u64,
+    bytes: &[u8],
+    params: &CrcParams,
+    ops: crate::arch::x86::sse::X86SsePclmulqdqOps,
+) -> u64 {
+    match params.width {
+        64 => algorithm::update::<_, Width64>(state, bytes, params, &ops),
+        32 => algorithm::update::<_, Width32>(state as u32, bytes, params, &ops) as u64,
+        16 => algorithm::update::<_, Width16>(state as u16, bytes, params, &ops) as u64,
+        _ => panic!("Unsupported CRC width: {}", params.width),
+    }
+}
+
+#[inline]
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx512vl,pclmulqdq")]
+unsafe fn update_x86_64_avx512_pclmulqdq(
+    state: u64,
+    bytes: &[u8],
+    params: &CrcParams,
+    ops: crate::arch::x86_64::avx512::X86_64Avx512PclmulqdqOps,
+) -> u64 {
+    match params.width {
+        64 => algorithm::update::<_, Width64>(state, bytes, params, &ops),
+        32 => algorithm::update::<_, Width32>(state as u32, bytes, params, &ops) as u64,
+        16 => algorithm::update::<_, Width16>(state as u16, bytes, params, &ops) as u64,
+        _ => panic!("Unsupported CRC width: {}", params.width),
+    }
+}
+
+#[inline]
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx512vl,vpclmulqdq")]
+unsafe fn update_x86_64_avx512_vpclmulqdq(
+    state: u64,
+    bytes: &[u8],
+    params: &CrcParams,
+    ops: crate::arch::x86_64::avx512_vpclmulqdq::X86_64Avx512VpclmulqdqOps,
+) -> u64 {
+    match params.width {
+        64 => algorithm::update::<_, Width64>(state, bytes, params, &ops),
+        32 => algorithm::update::<_, Width32>(state as u32, bytes, params, &ops) as u64,
+        16 => algorithm::update::<_, Width16>(state as u16, bytes, params, &ops) as u64,
+        _ => panic!("Unsupported CRC width: {}", params.width),
+    }
+}
+
+#[inline(always)]
 #[cfg(all(
     not(target_arch = "x86"),
     not(target_arch = "x86_64"),
     not(target_arch = "aarch64")
 ))]
-pub(crate) unsafe fn update(state: u64, bytes: &[u8], params: CrcParams) -> u64 {
+pub(crate) unsafe fn update(state: u64, bytes: &[u8], params: &CrcParams) -> u64 {
     crate::arch::software::update(state, bytes, params)
 }
 
@@ -147,8 +194,11 @@ mod tests {
         for config in TEST_ALL_CONFIGS {
             // direct update() call, which needs XOROUT applied
             let actual = unsafe {
-                update(config.get_init(), TEST_CHECK_STRING, *config.get_params())
-                    ^ config.get_xorout()
+                update(
+                    config.get_init_algorithm(),
+                    TEST_CHECK_STRING,
+                    config.get_params(),
+                ) ^ config.get_xorout()
             };
 
             assert_eq!(
@@ -167,9 +217,9 @@ mod tests {
         for config in TEST_ALL_CONFIGS {
             let actual = unsafe {
                 update(
-                    config.get_init(),
-                    &*create_aligned_data(TEST_256_BYTES_STRING),
-                    *config.get_params(),
+                    config.get_init_algorithm(),
+                    &create_aligned_data(TEST_256_BYTES_STRING),
+                    config.get_params(),
                 ) ^ config.get_xorout()
             };
 
@@ -191,9 +241,9 @@ mod tests {
         for config in TEST_ALL_CONFIGS {
             let actual = unsafe {
                 update(
-                    config.get_init(),
-                    &*create_aligned_data(test_string),
-                    *config.get_params(),
+                    config.get_init_algorithm(),
+                    &create_aligned_data(test_string),
+                    config.get_params(),
                 ) ^ config.get_xorout()
             };
 
@@ -215,9 +265,9 @@ mod tests {
         for config in TEST_ALL_CONFIGS {
             let actual = unsafe {
                 update(
-                    config.get_init(),
-                    &*create_aligned_data(test_string),
-                    *config.get_params(),
+                    config.get_init_algorithm(),
+                    &create_aligned_data(test_string),
+                    config.get_params(),
                 ) ^ config.get_xorout()
             };
 
@@ -266,7 +316,7 @@ mod tests {
 
         for (input, expected) in CASES {
             unsafe {
-                let actual = update(CRC64_NVME.init, input, CRC64_NVME) ^ CRC64_NVME.xorout;
+                let actual = update(CRC64_NVME.init, input, &CRC64_NVME) ^ CRC64_NVME.xorout;
 
                 assert_eq!(
                     actual, *expected,
@@ -293,7 +343,7 @@ mod tests {
 
         for (input, expected) in CASES {
             let bzip2_crc = unsafe {
-                (update(CRC32_BZIP2.init, input, CRC32_BZIP2) ^ CRC32_BZIP2.xorout) as u32
+                (update(CRC32_BZIP2.init, input, &CRC32_BZIP2) ^ CRC32_BZIP2.xorout) as u32
             };
 
             // PHP reverses the byte order of the CRC for some reason
@@ -307,9 +357,44 @@ mod tests {
         }
     }
 
+    /// Test CRC-16/IBM-SDLC check value (reflected variant)
     #[test]
+    fn test_crc16_ibm_sdlc_check_value() {
+        use crate::crc16::consts::CRC16_IBM_SDLC;
+
+        let actual = unsafe {
+            update(CRC16_IBM_SDLC.init, TEST_CHECK_STRING, &CRC16_IBM_SDLC) ^ CRC16_IBM_SDLC.xorout
+        };
+
+        assert_eq!(
+            actual, 0x906E,
+            "CRC-16/IBM-SDLC check value mismatch: expected 0x906E, got {:#x}",
+            actual
+        );
+    }
+
+    /// Test CRC-16/T10-DIF check value (forward/non-reflected variant)
+    #[test]
+    fn test_crc16_t10_dif_check_value() {
+        use crate::crc16::consts::CRC16_T10_DIF;
+
+        let actual = unsafe {
+            update(CRC16_T10_DIF.init, TEST_CHECK_STRING, &CRC16_T10_DIF) ^ CRC16_T10_DIF.xorout
+        };
+
+        assert_eq!(
+            actual, 0xD0DB,
+            "CRC-16/T10-DIF check value mismatch: expected 0xD0DB, got {:#x}",
+            actual
+        );
+    }
+
+    /// Skipping for Miri runs due to time constraints, underlying code already covered by other
+    /// tests.
+    #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_small_lengths_all() {
-        // Test each CRC-64 variant
+        // Test each CRC variant
         for config in TEST_ALL_CONFIGS {
             // Test each length from 0 to 255
             for len in 0..=255 {
@@ -318,9 +403,12 @@ mod tests {
         }
     }
 
+    /// Skipping for Miri runs due to time constraints, underlying code already covered by other
+    /// tests.
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_medium_lengths() {
-        // Test each CRC-64 variant
+        // Test each CRC variant
         for config in TEST_ALL_CONFIGS {
             // Test each length from 256 to 1024, which should fold and include handling remainders
             for len in 256..=1024 {
@@ -329,9 +417,12 @@ mod tests {
         }
     }
 
+    /// Skipping for Miri runs due to time constraints, underlying code already covered by other
+    /// tests.
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_large_lengths() {
-        // Test each CRC-64 variant
+        // Test each CRC variant
         for config in TEST_ALL_CONFIGS {
             // Test ~1 MiB just before, at, and just after the folding boundaries
             for len in 1048575..=1048577 {
@@ -348,8 +439,9 @@ mod tests {
         let expected = config.checksum_with_reference(&data);
 
         // direct update() call, which needs XOROUT applied
-        let actual =
-            unsafe { update(config.get_init(), &data, *config.get_params()) ^ config.get_xorout() };
+        let actual = unsafe {
+            update(config.get_init_algorithm(), &data, config.get_params()) ^ config.get_xorout()
+        };
 
         assert_eq!(
             actual,

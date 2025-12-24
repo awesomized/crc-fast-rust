@@ -2,18 +2,21 @@
 
 #![cfg(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64"))]
 
-#[cfg(target_arch = "aarch64")]
-use std::arch::aarch64::*;
+// SIMD intrinsics for debug printing (std only)
+#[cfg(all(feature = "std", target_arch = "aarch64"))]
+use core::arch::aarch64::*;
 
-#[cfg(target_arch = "x86")]
-use std::arch::x86::*;
+#[cfg(all(feature = "std", target_arch = "x86"))]
+use core::arch::x86::*;
 
+#[cfg(all(feature = "std", target_arch = "x86_64"))]
+use core::arch::x86_64::*;
+
+// ArchOps trait for generic vector printing (std only)
+#[cfg(feature = "std")]
 use crate::traits::ArchOps;
 
-#[cfg(target_arch = "x86_64")]
-use std::arch::x86_64::*;
-
-#[cfg(target_arch = "aarch64")]
+#[cfg(all(feature = "std", target_arch = "aarch64"))]
 #[allow(dead_code)]
 #[target_feature(enable = "aes")]
 pub(crate) unsafe fn print_xmm_hex(prefix: &str, xmm: uint8x16_t) {
@@ -22,7 +25,7 @@ pub(crate) unsafe fn print_xmm_hex(prefix: &str, xmm: uint8x16_t) {
     println!("{}={:#016x}{:016x}", prefix, temp[1], temp[0]);
 }
 
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+#[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
 #[allow(dead_code)]
 #[target_feature(enable = "sse4.1")]
 pub(crate) unsafe fn print_xmm_hex(prefix: &str, xmm: __m128i) {
@@ -31,6 +34,7 @@ pub(crate) unsafe fn print_xmm_hex(prefix: &str, xmm: __m128i) {
     println!("{}={:#016x}{:016x}", prefix, temp[1], temp[0]);
 }
 
+#[cfg(feature = "std")]
 #[allow(dead_code)]
 pub(crate) unsafe fn print_vector_hex<T: ArchOps>(prefix: &str, vector: T::Vector, ops: &T) {
     // Extract the u64 values from the vector using the ArchOps trait
@@ -41,13 +45,14 @@ pub(crate) unsafe fn print_vector_hex<T: ArchOps>(prefix: &str, vector: T::Vecto
 }
 
 /// Print a vector as u8 array (useful for byte-level debugging)
+#[cfg(feature = "std")]
 #[allow(dead_code)]
 pub(crate) unsafe fn print_vector_bytes<T: ArchOps>(prefix: &str, vector: T::Vector, ops: &T) {
     // Extract the u64 values
     let values = ops.extract_u64s(vector);
 
     // Convert to bytes for detailed inspection
-    let bytes: [u8; 16] = std::mem::transmute([values[0], values[1]]);
+    let bytes: [u8; 16] = core::mem::transmute([values[0], values[1]]);
 
     println!("{}=[{:02x},{:02x},{:02x},{:02x},{:02x},{:02x},{:02x},{:02x},{:02x},{:02x},{:02x},{:02x},{:02x},{:02x},{:02x},{:02x}]",
              prefix,

@@ -109,7 +109,41 @@
 
 #![allow(dead_code)]
 
-use std::ops::{BitAnd, BitOr, Shl, Shr};
+use core::ops::{BitAnd, BitOr, Shl, Shr};
+
+/// Exponents (bit distances) for CRC-16 key generation.
+///
+/// CRC-16 uses the same exponents as CRC-32 because the folding algorithm operates on
+/// 128-bit SIMD registers regardless of CRC width. CRC-16 computation is performed by
+/// scaling 16-bit values to 32-bit space, using the CRC-32 algorithm infrastructure,
+/// and then scaling the result back to 16 bits.
+///
+/// See CRC32_EXPONENTS for detailed documentation of the exponent values.
+const CRC16_EXPONENTS: [u64; 23] = [
+    0, // unused, just aligns indexes with the literature
+    32 * 3,
+    32 * 5,
+    32 * 31,
+    32 * 33,
+    32 * 3,
+    32 * 2,
+    0, // mu, generate separately
+    0, // poly, generate separately
+    32 * 27,
+    32 * 29,
+    32 * 23,
+    32 * 25,
+    32 * 19,
+    32 * 21,
+    32 * 15,
+    32 * 17,
+    32 * 11,
+    32 * 13,
+    32 * 7,
+    32 * 9,
+    32 * 63, // for 256 byte distances (2048 - 32)
+    32 * 65, // for 256 byte distances (2048 + 32)
+];
 
 /// Exponents (bit distances) for CRC-32 key generation.
 ///
@@ -210,7 +244,9 @@ const CRC64_EXPONENTS: [u64; 23] = [
 pub fn keys(width: u8, poly: u64, reflected: bool) -> [u64; 23] {
     let mut keys: [u64; 23] = [0; 23];
 
-    let exponents = if 32 == width {
+    let exponents = if 16 == width {
+        CRC16_EXPONENTS
+    } else if 32 == width {
         CRC32_EXPONENTS
     } else if 64 == width {
         CRC64_EXPONENTS
@@ -218,7 +254,10 @@ pub fn keys(width: u8, poly: u64, reflected: bool) -> [u64; 23] {
         panic!("Unsupported width: {width}",);
     };
 
-    let poly = if 32 == width {
+    let poly = if 16 == width {
+        // CRC-16 uses a 17-bit polynomial (16 bits + implicit leading 1) scaled to 32-bit space
+        (poly << 16) | (1u64 << 32)
+    } else if 32 == width {
         poly | (1u64 << 32)
     } else {
         poly
@@ -235,12 +274,52 @@ pub fn keys(width: u8, poly: u64, reflected: bool) -> [u64; 23] {
 }
 
 fn key(width: u8, poly: u64, reflected: bool, exponent: u64) -> u64 {
-    if width == 32 {
+    if width == 16 {
+        crc16_key(exponent, reflected, poly)
+    } else if width == 32 {
         crc32_key(exponent, reflected, poly)
     } else if width == 64 {
         crc64_key(exponent, reflected, poly)
     } else {
         panic!("Unsupported width: {width}",);
+    }
+}
+
+/// Computes a CRC-16 folding key for a given bit distance (exponent).
+///
+/// # Algorithm
+///
+/// CRC-16 key generation uses the same algorithm as CRC-32 because CRC-16 computation
+/// is performed by scaling 16-bit values to 32-bit space. The polynomial is already
+/// scaled to 32-bit space (poly << 16 | 1 << 32) before this function is called.
+///
+/// 1. Start with x^32 (represented as 0x080000000, bit 35 set)
+/// 2. Multiply by x repeatedly (left shift), reducing modulo P(x) each time
+/// 3. After (exponent - 31) iterations, we have x^exponent mod P(x)
+///
+/// # Reflection
+///
+/// For reflected CRC-16, we bit-reverse the 16-bit result and shift right by 31 bits
+/// to align it properly for PCLMULQDQ operations.
+fn crc16_key(exponent: u64, reflected: bool, polynomial: u64) -> u64 {
+    if exponent < 32 {
+        return 0;
+    }
+
+    let mut n: u64 = 0x080000000;
+    let e = exponent - 31;
+
+    for _ in 0..e {
+        n <<= 1;
+        if (n & 0x100000000) != 0 {
+            n ^= polynomial;
+        }
+    }
+
+    if reflected {
+        bit_reverse(n) >> 31
+    } else {
+        n << 32
     }
 }
 
@@ -344,13 +423,44 @@ fn crc64_key(exponent: u64, reflected: bool, polynomial: u64) -> u64 {
 }
 
 fn polynomial(width: u8, polynomial: u64, reflected: bool) -> u64 {
-    if width == 32 {
+    if width == 16 {
+        crc16_polynomial(polynomial, reflected)
+    } else if width == 32 {
         crc32_polynomial(polynomial, reflected)
     } else if width == 64 {
         crc64_polynomial(polynomial, reflected)
     } else {
         panic!("Unsupported width: {width}",);
     }
+}
+
+/// Formats a CRC-16 polynomial for use in PCLMULQDQ operations.
+///
+/// # Polynomial Representation
+///
+/// The polynomial passed to this function is already scaled to 32-bit space
+/// (original_poly << 16 | 1 << 32). This function formats it for PCLMULQDQ.
+///
+/// # Non-Reflected Case
+///
+/// For non-reflected CRCs, the polynomial is already in the correct format
+/// from the scaling done in keys().
+///
+/// # Reflected Case
+///
+/// For reflected (LSB-first) CRCs, we need to:
+/// 1. Extract the original 16-bit polynomial from the scaled value
+/// 2. Bit-reverse the 16-bit polynomial
+/// 3. Shift left by 1 bit and set the LSB to 1
+fn crc16_polynomial(polynomial: u64, reflected: bool) -> u64 {
+    if !reflected {
+        return polynomial;
+    }
+
+    // Extract original 16-bit poly from scaled polynomial (poly << 16 | 1 << 32)
+    let original_poly = ((polynomial >> 16) & 0xFFFF) as u16;
+    let reversed = bit_reverse(original_poly);
+    ((reversed as u64) << 1) | 1
 }
 
 /// Formats a CRC-32 polynomial for use in PCLMULQDQ operations.
@@ -417,12 +527,52 @@ fn crc64_polynomial(polynomial: u64, reflected: bool) -> u64 {
 }
 
 fn mu(width: u8, polynomial: u64, reflected: bool) -> u64 {
-    if width == 32 {
+    if width == 16 {
+        crc16_mu(polynomial, reflected)
+    } else if width == 32 {
         crc32_mu(polynomial, reflected)
     } else if width == 64 {
         crc64_mu(polynomial, reflected)
     } else {
         panic!("Unsupported width: {width}",);
+    }
+}
+
+/// Computes the Barrett reduction constant (μ) for CRC-16.
+///
+/// # What Is μ (Mu)?
+///
+/// Mu is used in Barrett reduction for fast modular reduction without division.
+/// For CRC-16 operations (scaled to 32-bit space), μ = floor(x^64 / P(x)).
+///
+/// # Algorithm
+///
+/// This uses the same algorithm as CRC-32 mu calculation because CRC-16 is
+/// computed in 32-bit space. The polynomial is already scaled (poly << 16 | 1 << 32).
+///
+/// 1. Start with x^64 (represented as 0x100000000, bit 32 set)
+/// 2. For each bit position from MSB down:
+///    - If the dividend has a bit at position 32, record a 1 in quotient
+///    - XOR the dividend with the polynomial
+///    - Shift dividend left
+/// 3. After 33 iterations, q contains μ
+fn crc16_mu(polynomial: u64, reflected: bool) -> u64 {
+    let mut n: u64 = 0x100000000;
+    let mut q: u64 = 0;
+
+    for _ in 0..33 {
+        q <<= 1;
+        if n & 0x100000000 != 0 {
+            q |= 1;
+            n ^= polynomial;
+        }
+        n <<= 1;
+    }
+
+    if reflected {
+        bit_reverse(q) >> 31
+    } else {
+        q
     }
 }
 
@@ -561,7 +711,7 @@ where
     let mut result = T::default(); // Zero value
 
     // Get the bit size of type T
-    let bit_size = std::mem::size_of::<T>() * 8;
+    let bit_size = core::mem::size_of::<T>() * 8;
 
     for _ in 0..bit_size {
         // Shift result left by 1
@@ -580,6 +730,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::crc16::consts::{KEYS_1021_REVERSE, KEYS_8BB7_FORWARD};
     use crate::test::consts::TEST_ALL_CONFIGS;
 
     #[test]
@@ -599,6 +750,89 @@ mod tests {
                     *key
                 );
             }
+        }
+    }
+
+    #[test]
+    fn test_crc16_t10_dif_keys() {
+        // CRC-16/T10-DIF: forward mode, poly=0x8BB7
+        let generated = keys(16, 0x8BB7, false);
+
+        for (i, key) in generated.iter().enumerate().take(21) {
+            assert_eq!(
+                *key, KEYS_8BB7_FORWARD[i],
+                "CRC-16/T10-DIF key mismatch at index {}: expected 0x{:016x}, got 0x{:016x}",
+                i, KEYS_8BB7_FORWARD[i], *key
+            );
+        }
+    }
+
+    #[test]
+    fn test_crc16_ibm_sdlc_keys() {
+        // CRC-16/IBM-SDLC: reflected mode, poly=0x1021
+        let generated = keys(16, 0x1021, true);
+
+        for (i, key) in generated.iter().enumerate().take(21) {
+            assert_eq!(
+                *key, KEYS_1021_REVERSE[i],
+                "CRC-16/IBM-SDLC key mismatch at index {}: expected 0x{:016x}, got 0x{:016x}",
+                i, KEYS_1021_REVERSE[i], *key
+            );
+        }
+    }
+}
+
+#[cfg(test)]
+mod property_tests {
+    use super::*;
+    use crate::test::miri_compatible_proptest_config;
+    use proptest::prelude::*;
+
+    /// Helper function to bit-reverse a 16-bit value
+    fn bit_reverse_16(value: u16) -> u16 {
+        let mut v = value;
+        let mut result: u16 = 0;
+        for _ in 0..16 {
+            result = (result << 1) | (v & 1);
+            v >>= 1;
+        }
+        result
+    }
+
+    proptest! {
+        #![proptest_config(miri_compatible_proptest_config())]
+
+        /// Feature: crc16-hardware-acceleration, Property 1: Forward polynomial formatting
+        /// *For any* 16-bit polynomial value P, when generating the polynomial key for forward
+        /// (non-reflected) CRC-16, the result SHALL equal `(P << 16) | (1 << 32)`.
+        /// **Validates: Requirements 1.5**
+        #[test]
+        fn prop_forward_polynomial_formatting(poly in 0u16..=0xFFFFu16) {
+            let generated_keys = keys(16, poly as u64, false);
+            let polynomial_key = generated_keys[8];
+            let expected = ((poly as u64) << 16) | (1u64 << 32);
+            prop_assert_eq!(
+                polynomial_key, expected,
+                "Forward polynomial formatting failed for poly=0x{:04X}: expected 0x{:016X}, got 0x{:016X}",
+                poly, expected, polynomial_key
+            );
+        }
+
+        /// Feature: crc16-hardware-acceleration, Property 2: Reflected polynomial formatting
+        /// *For any* 16-bit polynomial value P, when generating the polynomial key for reflected
+        /// CRC-16, the result SHALL equal `(bit_reverse_16(P) << 1) | 1`.
+        /// **Validates: Requirements 1.6**
+        #[test]
+        fn prop_reflected_polynomial_formatting(poly in 0u16..=0xFFFFu16) {
+            let generated_keys = keys(16, poly as u64, true);
+            let polynomial_key = generated_keys[8];
+            let reversed = bit_reverse_16(poly);
+            let expected = ((reversed as u64) << 1) | 1;
+            prop_assert_eq!(
+                polynomial_key, expected,
+                "Reflected polynomial formatting failed for poly=0x{:04X}: expected 0x{:016X}, got 0x{:016X}",
+                poly, expected, polynomial_key
+            );
         }
     }
 }

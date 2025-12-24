@@ -6,7 +6,7 @@
 [![Documentation](https://img.shields.io/badge/api-rustdoc-blue.svg)](https://docs.rs/crc-fast)
 
 World's fastest generic CRC calculator for
-[all known CRC-32 and CRC-64 variants](https://reveng.sourceforge.io/crc-catalogue/all.htm), as well as bring-your-own
+[all known CRC-16, CRC-32, and CRC-64 variants](https://reveng.sourceforge.io/crc-catalogue/all.htm), as well as bring-your-own
 custom parameters, using SIMD intrinsics,
 which can exceed [100GiB/s](#performance) on modern systems.
 
@@ -38,21 +38,126 @@ See [CHANGELOG](CHANGELOG.md).
 
 ## Build & Install
 
-`cargo build` will obviously build the library, including
-the [C-compatible library](#cc-compatible-library).
+### Library
 
-A _very_ basic [Makefile](Makefile) is supplied which supports `make install` to install the shared library and header
-file to
-the local system. Specifying the `DESTDIR` environment variable will allow you to customize the install location.
+`cargo build --release` will obviously build the Rust library, including
+the  [C/C++ compatible dynamic and static libraries](#cc-compatible-library).
+
+### CLI tools
+
+There are some command-line tools available:
+
+- `checksum` calculates CRC checksums from the supplied string or file
+- `get-custom-params` generates the custom CRC parameters for the supplied Rocksoft model values
+- `arch-check` checks the current architecture's hardware acceleration features (primarily for debugging)
+
+To build them, enable the `cli` feature: `cargo build --features cli --release`.
+
+### Everything
+
+To build the libraries and the CLI tools, use the `--all-features` flag:  `cargo build --all-features --release`. 
+
+A _very_ basic [Makefile](Makefile) is supplied which supports `make install` to install the libraries, header file, and
+CLI binaries to the local system. Specifying the `DESTDIR` environment variable will allow you to customize the install
+location.
 
 ```
 DESTDIR=/my/custom/path make install
 ```
 
+## Features
+
+The library supports various feature flags for different environments:
+
+### Default Features
+* `std` - Standard library support, includes `alloc`
+* `ffi` - C/C++ FFI bindings for shared library (will become optional in v2.0)
+* `panic-handler` - Provides panic handler for `no_std` environments (disable when building binaries)
+
+### Optional Features
+* `alloc` - Heap allocation support (enables `Digest` trait, custom CRC params, checksum combining)
+* `cache` - Caches generated constants for custom CRC parameters (requires `alloc`)
+* `cli` - Enables command-line tools (`checksum`, `arch-check`, `get-custom-params`)
+
+### Building for `no_std`
+
+For embedded targets without standard library:
+
+```bash
+# Minimal no_std (core CRC only, no heap)
+cargo build --target thumbv7em-none-eabihf --no-default-features --lib
+
+# With heap allocation (enables Digest, custom params)
+cargo build --target thumbv7em-none-eabihf --no-default-features --features alloc --lib
+
+# With caching (requires alloc)
+cargo build --target thumbv7em-none-eabihf --no-default-features --features cache --lib
+```
+
+Tested on ARM Cortex-M (`thumbv7em-none-eabihf`, `thumbv8m.main-none-eabihf`) and RISC-V (
+`riscv32imac-unknown-none-elf`).
+
+### Building for `WASM`
+
+For WebAssembly targets:
+
+```bash
+# Minimal WASM
+cargo build --target wasm32-unknown-unknown --no-default-features --lib
+
+# With heap allocation (typical use case)
+cargo build --target wasm32-unknown-unknown --no-default-features --features alloc --lib
+
+# Using wasm-pack for browser
+wasm-pack build --target web --no-default-features --features alloc
+```
+
+Tested on `wasm32-unknown-unknown`, `wasm32-wasip1`, and `wasm32-wasip2` targets.
+
 ## Usage
 
-Add `crc-fast = version = "1.5"` to your `Cargo.toml` dependencies, which will enable every available optimization for
+Add `crc-fast = "1"` to your `Cargo.toml` dependencies, which will enable every available optimization for
 the `stable` toolchain.
+
+### Fast helper functions
+
+For the [most common and popular](#important-crc-variants) CRC variants, there are specialized one-shot functions to make adoption easier and
+performance faster, particularly for smaller input sizes, since it reduces some of the overhead of the generic 
+`checksum` path.
+
+#### CRC-32/ISCSI
+
+Also commonly known as `crc32c` in many, but not all, implementations.
+
+```rust
+use crc_fast::crc32_iscsi;
+
+let checksum = crc32_iscsi(b"123456789");
+
+assert_eq!(checksum, 0xe3069283);
+```
+
+#### CRC-32/ISO-HDLC
+
+Also commonly known as `crc32` in many, but not all, implementations.
+
+```rust
+use crc_fast::crc32_iso_hdlc;
+
+let checksum = crc32_iso_hdlc(b"123456789");
+
+assert_eq!(checksum, 0xcbf43926);
+```
+
+#### CRC-64/NVME
+
+```rust
+use crc_fast::crc64_nvme;
+
+let checksum = crc64_nvme(b"123456789");
+
+assert_eq!(checksum, 0xae8b14860a799888);
+``` 
 
 ### Digest
 
@@ -249,7 +354,8 @@ assert_eq!(checksum.unwrap(), 0xcbf43926);
 
 `cargo build` will produce a shared library target (`.so` on Linux, `.dll` on Windows, `.dylib` on macOS, etc) and an
 auto-generated [libcrc_fast.h](libcrc_fast.h) header file for use in non-Rust projects, such as through
-[FFI](https://en.wikipedia.org/wiki/Foreign_function_interface). It will also produce a static library target (`.a` on Linux and macOS, `.lib` on Windows, etc) for projects
+[FFI](https://en.wikipedia.org/wiki/Foreign_function_interface). It will also produce a static library target (`.a` on
+Linux and macOS, `.lib` on Windows, etc) for projects
 which prefer statically linking.
 
 There is a [crc-fast PHP extension](https://github.com/awesomized/crc-fast-php-ext) using it, for example.
@@ -309,8 +415,20 @@ but all known public & private implementations agree on the correct value, which
 
 # Acceleration targets
 
-This library has baseline support for accelerating all known `CRC-32` and `CRC-64` variants on `aarch64`, `x86_64`, and
-`x86` internally in pure `Rust`. 
+This library has baseline support for accelerating all known `CRC-16`, `CRC-32`, and `CRC-64` variants on `aarch64`,
+`x86_64`, and
+`x86` internally in pure `Rust`.
+
+It uses the best available acceleration method for the detected CPU features at runtime, including:
+* `aarch64`:
+  * `neon-pmull-sha3` (preferred, if available)
+  * `neon-pmull`
+* `x86_64` and `x86`:
+    * `avx512-vpclmulqdq` (preferred, if available)
+    * `avx512-pclmulqdq`
+    * `sse-pclmulqdq`
+  
+There is a safe table-based software fallback for other architectures, or if no acceleration features are detected.
 
 ### Checking your platform capabilities
 
@@ -329,7 +447,7 @@ cargo build --release
 
 ## Performance
 
-Modern systems can exceed 100 GiB/s for calculating `CRC-32/ISCSI`, `CRC-32/ISO-HDLC`,
+Modern systems can exceed 100 GiB/s for calculating `CRC-32/ISCSI`, and nearly 90 GiB/s for `CRC-32/ISO-HDLC`,
 `CRC-64/NVME`, and all other reflected variants. (Forward variants are slower, due to the extra shuffle-masking, but
 are still extremely fast in this library).
 
@@ -341,12 +459,12 @@ AKA `crc32c` in many, but not all, implementations.
 
 | Arch    | Brand | CPU             | System                    | Target            | 1KiB (GiB/s) | 1MiB (GiB/s) |
 |:--------|:------|:----------------|:--------------------------|:------------------|-------------:|-------------:|
-| x86_64  | Intel | Sapphire Rapids | EC2 c7i.metal-24xl        | avx512-vpclmulqdq |          ~52 |         ~111 |
-| x86_64  | AMD   | Genoa           | EC2 c7a.metal-48xl        | avx512-vpclmulqdq |          ~24 |          ~54 |
-| aarch64 | AWS   | Graviton4       | EC2 c8g.metal-48xl        | neon-pmull-eor3   |          ~21 |          ~53 |
+| x86_64  | Intel | Sapphire Rapids | EC2 c7i.metal-24xl        | avx512-vpclmulqdq |          ~61 |         ~111 |
+| x86_64  | AMD   | Genoa           | EC2 c7a.metal-48xl        | avx512-vpclmulqdq |          ~26 |          ~54 |
+| aarch64 | AWS   | Graviton4       | EC2 c8g.metal-48xl        | neon-pmull-sha3   |          ~23 |          ~54 |
 | aarch64 | AWS   | Graviton2       | EC2 c6g.metal             | neon-pmull        |          ~11 |          ~17 |
-| aarch64 | Apple | M3 Ultra        | Mac Studio (32 core)      | neon-pmull-eor3   |          ~49 |          ~99 |
-| aarch64 | Apple | M4 Max          | MacBook Pro 16" (16 core) | neon-pmull-eor3   |          ~56 |          ~94 |
+| aarch64 | Apple | M3 Ultra        | Mac Studio (32 core)      | neon-pmull-sha3   |          ~60 |          ~99 |
+| aarch64 | Apple | M4 Max          | MacBook Pro 16" (16 core) | neon-pmull-sha3   |          ~56 |          ~94 |
 
 ### CRC-32/ISO-HDLC (reflected)
 
@@ -354,12 +472,12 @@ AKA `crc32` in many, but not all, implementations.
 
 | Arch    | Brand | CPU             | System                    | Target            | 1KiB (GiB/s) | 1MiB (GiB/s) |
 |:--------|:------|:----------------|:--------------------------|:------------------|-------------:|-------------:|
-| x86_64  | Intel | Sapphire Rapids | EC2 c7i.metal-248xl       | avx512-vpclmulqdq |          ~20 |          ~88 |
-| x86_64  | AMD   | Genoa           | EC2 c7a.metal-48xl        | avx512-vpclmulqdq |          ~15 |          ~55 |
-| aarch64 | AWS   | Graviton4       | EC2 c8g.metal-48xl        | neon-pmull-eor3   |          ~21 |          ~53 |
+| x86_64  | Intel | Sapphire Rapids | EC2 c7i.metal-248xl       | avx512-vpclmulqdq |          ~28 |          ~88 |
+| x86_64  | AMD   | Genoa           | EC2 c7a.metal-48xl        | avx512-vpclmulqdq |          ~21 |          ~55 |
+| aarch64 | AWS   | Graviton4       | EC2 c8g.metal-48xl        | neon-pmull-sha3   |          ~23 |          ~54 |
 | aarch64 | AWS   | Graviton2       | EC2 c6g.metal             | neon-pmull        |          ~11 |          ~17 |
-| aarch64 | Apple | M3 Ultra        | Mac Studio (32 core)      | neon-pmull-eor3   |          ~48 |          ~98 |
-| aarch64 | Apple | M4 Max          | MacBook Pro 16" (16 core) | neon-pmull-eor3   |          ~56 |          ~94 |
+| aarch64 | Apple | M3 Ultra        | Mac Studio (32 core)      | neon-pmull-sha3   |          ~48 |          ~98 |
+| aarch64 | Apple | M4 Max          | MacBook Pro 16" (16 core) | neon-pmull-sha3   |          ~56 |          ~94 |
 
 ### CRC-64/NVME (reflected)
 
@@ -367,12 +485,12 @@ AKA `crc32` in many, but not all, implementations.
 
 | Arch    | Brand | CPU             | System                    | Target            | 1KiB (GiB/s) | 1MiB (GiB/s) |
 |:--------|:------|:----------------|:--------------------------|:------------------|-------------:|-------------:|
-| x86_64  | Intel | Sapphire Rapids | EC2 c7i.metal-24xl        | avx512-vpclmulqdq |          ~21 |         ~110 |
-| x86_64  | AMD   | Genoa           | EC2 c7a.metal-48xl        | avx512-vpclmulqdq |          ~16 |          ~55 |
-| aarch64 | AWS   | Graviton4       | EC2 c8g.metal-48xl        | neon-pmull-eor3   |          ~21 |          ~41 |
+| x86_64  | Intel | Sapphire Rapids | EC2 c7i.metal-24xl        | avx512-vpclmulqdq |          ~28 |          ~88 |
+| x86_64  | AMD   | Genoa           | EC2 c7a.metal-48xl        | avx512-vpclmulqdq |          ~22 |          ~55 |
+| aarch64 | AWS   | Graviton4       | EC2 c8g.metal-48xl        | neon-pmull-sha3   |          ~28 |          ~41 |
 | aarch64 | AWS   | Graviton2       | EC2 c6g.metal             | neon-pmull        |          ~11 |          ~16 |
-| aarch64 | Apple | M3 Ultra        | Mac Studio (32 core)      | neon-pmull-eor3   |          ~50 |          ~72 |
-| aarch64 | Apple | M4 Max          | MacBook Pro 16" (16 core) | neon-pmull-eor3   |          ~52 |          ~72 |
+| aarch64 | Apple | M3 Ultra        | Mac Studio (32 core)      | neon-pmull-sha3   |          ~58 |          ~72 |
+| aarch64 | Apple | M4 Max          | MacBook Pro 16" (16 core) | neon-pmull-sha3   |          ~52 |          ~72 |
 
 ### CRC-32/BZIP2 (forward)
 
@@ -401,13 +519,22 @@ AKA `crc32` in many, but not all, implementations.
 There are [a lot of other known CRC widths and variants](https://reveng.sourceforge.io/crc-catalogue/all.htm), ranging
 from `CRC-3/GSM` to `CRC-82/DARC`, and everything in between.
 
-Since [Awesome](https://awesome.co) doesn't use any that aren't `CRC-32` or `CRC-64` in length, this library doesn't
-currently support them, either. (It should support any newly created or discovered `CRC-32` and `CRC-64` variants,
-though, with zero changes other than defining the [Rocksoft](http://www.ross.net/crc/download/crc_v3.txt) parameters).
+Since [Awesome](https://awesome.co) only uses  `CRC-32` or `CRC-64` widths in our products, this library began by supporting only those
+widths, including all known variants plus support for custom [Rocksoft](http://www.ross.net/crc/download/crc_v3.txt)
+parameters.
+
+`CRC-16` has since been added, including all known variants plus support for custom parameters as well.
 
 In theory, much of the "heavy lifting" has been done, so it should be possible to add other widths with minimal effort.
 
 PRs welcome!
+
+## Memory Safety
+
+Given the heavy use of hardware intrinsics, this crate uses a decent amount of `unsafe` code.
+
+To help ensure memory safety and stability, this crate is validated using [Miri](https://github.com/rust-lang/miri) on
+`x86_64` as well as fuzz tested using [libFuzzer](https://github.com/rust-fuzz/libfuzzer) over millions of iterations.
 
 ## References
 

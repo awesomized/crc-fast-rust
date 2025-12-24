@@ -10,7 +10,7 @@ use crate::CrcParams;
 #[cfg(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64"))]
 use crate::structs::CrcState;
 
-use std::ops::BitXor;
+use core::ops::BitXor;
 
 /// Marker trait for CRC width
 pub trait CrcWidth {
@@ -21,15 +21,15 @@ pub trait CrcWidth {
 }
 
 pub(crate) trait CrcCalculator {
-    fn update(data: &[u8], state: u64, params: CrcParams) -> u64 {
+    fn update(data: &[u8], state: u64, params: &CrcParams) -> u64 {
         Self::calculate(state, data, params)
     }
 
-    fn checksum(data: &[u8], params: CrcParams) -> u64 {
+    fn checksum(data: &[u8], params: &CrcParams) -> u64 {
         Self::calculate(params.init, data, params) ^ params.xorout
     }
 
-    fn calculate(state: u64, data: &[u8], params: CrcParams) -> u64;
+    fn calculate(state: u64, data: &[u8], params: &CrcParams) -> u64;
 }
 
 #[cfg(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64"))]
@@ -48,7 +48,7 @@ pub trait ArchOps: Sized + Copy + Clone {
         _first: &[Self::Vector; 8],
         _rest: &[[Self::Vector; 8]],
         _reflector: &Reflector<Self::Vector>,
-        _keys: [u64; 23],
+        _keys: &[u64; 23],
     ) -> bool
     where
         Self::Vector: Copy,
@@ -294,7 +294,7 @@ pub trait EnhancedCrcWidth: CrcWidth {
     unsafe fn perform_final_reduction<T: ArchOps>(
         state: T::Vector,
         reflected: bool,
-        keys: [u64; 23],
+        keys: &[u64; 23],
         ops: &T,
     ) -> Self::Value
     where

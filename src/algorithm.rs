@@ -19,12 +19,12 @@ use crate::consts::CRC_CHUNK_SIZE;
 use crate::enums::{DataChunkProcessor, Reflector};
 use crate::structs::CrcState;
 use crate::traits::{ArchOps, EnhancedCrcWidth};
-use crate::{crc32, crc64, CrcParams};
+use crate::{crc16, crc32, crc64, CrcParams};
 
 /// Extract keys from CrcParams using safe accessor methods
 /// This ensures bounds checking and future compatibility
 #[inline(always)]
-fn extract_keys_array(params: CrcParams) -> [u64; 23] {
+fn extract_keys_array(params: &CrcParams) -> [u64; 23] {
     [
         params.get_key(0),
         params.get_key(1),
@@ -57,7 +57,7 @@ fn extract_keys_array(params: CrcParams) -> [u64; 23] {
 pub unsafe fn update<T: ArchOps, W: EnhancedCrcWidth>(
     state: W::Value,
     bytes: &[u8],
-    params: CrcParams,
+    params: &CrcParams,
     ops: &T,
 ) -> W::Value
 where
@@ -80,6 +80,9 @@ where
     // Create initial CRC state
     let mut crc_state = W::create_state(state, params.refin, ops);
 
+    // Extract keys once and pass by reference to avoid repeated stack copies
+    let keys = extract_keys_array(params);
+
     // Process data differently based on length
     // On ARM M4 Max, ARM c8g, x86 c7a, and x86 c7i, using 128 bytes is a measurably faster
     // threshold than 256 bytes...
@@ -91,19 +94,13 @@ where
             bytes,
             &mut crc_state,
             reflector,
-            extract_keys_array(params),
+            &keys,
             ops,
         );
     }
 
     // Process large inputs with SIMD-optimized approach
-    process_large_aligned::<T, W>(
-        bytes,
-        &mut crc_state,
-        reflector,
-        extract_keys_array(params),
-        ops,
-    )
+    process_large_aligned::<T, W>(bytes, &mut crc_state, reflector, &keys, ops)
 }
 
 /// Process data with the selected strategy
@@ -118,7 +115,7 @@ unsafe fn process_by_strategy<T: ArchOps, W: EnhancedCrcWidth>(
     data: &[u8],
     state: &mut CrcState<T::Vector>,
     reflector: Reflector<T::Vector>,
-    keys: [u64; 23],
+    keys: &[u64; 23],
     ops: &T,
 ) -> W::Value
 where
@@ -126,6 +123,7 @@ where
 {
     match strategy {
         DataChunkProcessor::From0To15 => match W::WIDTH {
+            16 => crc16::algorithm::process_0_to_15::<T, W>(data, state, &reflector, keys, ops),
             32 => crc32::algorithm::process_0_to_15::<T, W>(data, state, &reflector, keys, ops),
             64 => crc64::algorithm::process_0_to_15::<T, W>(data, state, &reflector, keys, ops),
             _ => panic!("Unsupported CRC width"),
@@ -153,7 +151,7 @@ unsafe fn process_large_aligned<T: ArchOps, W: EnhancedCrcWidth>(
     bytes: &[u8],
     state: &mut CrcState<T::Vector>,
     reflector: Reflector<T::Vector>,
-    keys: [u64; 23],
+    keys: &[u64; 23],
     ops: &T,
 ) -> W::Value
 where
@@ -207,7 +205,7 @@ unsafe fn process_simd_chunks<T: ArchOps, W: EnhancedCrcWidth>(
     first: &[T::Vector; 8],
     rest: &[[T::Vector; 8]],
     reflector: &Reflector<T::Vector>,
-    keys: [u64; 23],
+    keys: &[u64; 23],
     ops: &T,
 ) where
     T::Vector: Copy,
@@ -286,7 +284,7 @@ unsafe fn process_exactly_16<T: ArchOps, W: EnhancedCrcWidth>(
     data: &[u8],
     state: &mut CrcState<T::Vector>,
     reflector: &Reflector<T::Vector>,
-    keys: [u64; 23],
+    keys: &[u64; 23],
     ops: &T,
 ) -> W::Value
 where
@@ -386,7 +384,7 @@ unsafe fn process_17_to_31<T: ArchOps, W: EnhancedCrcWidth>(
     data: &[u8],
     state: &mut CrcState<T::Vector>,
     reflector: &Reflector<T::Vector>,
-    keys: [u64; 23],
+    keys: &[u64; 23],
     ops: &T,
 ) -> W::Value
 where
@@ -400,8 +398,11 @@ where
 
     // Use the shared function to handle the last two chunks
     let final_xmm7 = get_last_two_xmms::<T, W>(
-        &data[CRC_CHUNK_SIZE..],
-        remaining_len,
+        DataRegion {
+            full_data: data,
+            offset: CRC_CHUNK_SIZE,
+            remaining: remaining_len,
+        },
         xmm7,
         keys,
         reflector,
@@ -425,7 +426,7 @@ unsafe fn process_32_to_255<T: ArchOps, W: EnhancedCrcWidth>(
     data: &[u8],
     state: &mut CrcState<T::Vector>,
     reflector: &Reflector<T::Vector>,
-    keys: [u64; 23],
+    keys: &[u64; 23],
     ops: &T,
 ) -> W::Value
 where
@@ -461,8 +462,11 @@ where
     if remaining_len > 0 {
         // Use the shared get_last_two_xmms function to handle the remaining bytes
         xmm7 = get_last_two_xmms::<T, W>(
-            &data[current_pos..],
-            remaining_len,
+            DataRegion {
+                full_data: data,
+                offset: current_pos,
+                remaining: remaining_len,
+            },
             xmm7,
             keys,
             reflector,
@@ -475,8 +479,28 @@ where
     W::perform_final_reduction(xmm7, state.reflected, keys, ops)
 }
 
-/// Handle the last two chunks of data (for small inputs)
-/// This shared implementation works for both CRC-32 and CRC-64
+/// Data region descriptor for overlapping SIMD reads in CRC processing
+///
+/// # Safety Invariants
+///
+/// When this struct is used with overlapping SIMD reads:
+/// - `offset` must be >= `CRC_CHUNK_SIZE` (16 bytes)
+/// - `remaining` must be in range 1..=15
+/// - `full_data` must contain at least `offset + remaining` bytes
+struct DataRegion<'a> {
+    full_data: &'a [u8],
+    offset: usize,
+    remaining: usize,
+}
+
+/// Handle the last two chunks of data using an overlapping SIMD read
+///
+/// # Safety
+///
+/// - `region.full_data` must contain at least `region.offset + region.remaining` bytes
+/// - `region.offset` must be >= `CRC_CHUNK_SIZE` (16 bytes)
+/// - `region.remaining` must be in range 1..=15
+/// - Caller must ensure appropriate SIMD features are available
 #[inline]
 #[cfg_attr(
     any(target_arch = "x86", target_arch = "x86_64"),
@@ -484,10 +508,9 @@ where
 )]
 #[cfg_attr(target_arch = "aarch64", target_feature(enable = "aes"))]
 unsafe fn get_last_two_xmms<T: ArchOps, W: EnhancedCrcWidth>(
-    data: &[u8],
-    remaining_len: usize,
+    region: DataRegion,
     current_state: T::Vector,
-    keys: [u64; 23],
+    keys: &[u64; 23],
     reflector: &Reflector<T::Vector>,
     reflected: bool,
     ops: &T,
@@ -495,33 +518,26 @@ unsafe fn get_last_two_xmms<T: ArchOps, W: EnhancedCrcWidth>(
 where
     T::Vector: Copy,
 {
-    // Create coefficient for folding operations
+    debug_assert!(region.offset >= CRC_CHUNK_SIZE);
+    debug_assert!(region.remaining > 0 && region.remaining < CRC_CHUNK_SIZE);
+    debug_assert!(region.offset + region.remaining <= region.full_data.len());
+
     let coefficient = W::create_coefficient(keys[2], keys[1], reflected, ops);
-
     let const_mask = ops.set_all_bytes(0x80);
-
-    // Get table pointer and offset based on CRC width
-    let (table_ptr, offset) = W::get_last_bytes_table_ptr(reflected, remaining_len);
+    let (table_ptr, offset) = W::get_last_bytes_table_ptr(reflected, region.remaining);
 
     if reflected {
-        // For reflected mode (CRC-32r, CRC-64r)
-
-        // Load the remaining data
-        // Special pointer arithmetic to match the original implementation
-        let xmm1 = ops.load_bytes(data.as_ptr().sub(CRC_CHUNK_SIZE).add(remaining_len)); // DON: looks correct
-
-        // Load the shuffle mask
+        // Overlapping read: loads tail of previous chunk + remaining data
+        let read_offset = region.offset - CRC_CHUNK_SIZE + region.remaining;
+        let xmm1 = ops.load_bytes(region.full_data.as_ptr().add(read_offset));
         let mut xmm0 = ops.load_bytes(table_ptr.add(offset));
-
-        // Apply different shuffle operations
         let shuffled = ops.shuffle_bytes(current_state, xmm0);
-
-        // Create masked version for shuffling
         xmm0 = ops.xor_vectors(xmm0, const_mask);
 
         let shuffled_masked = ops.shuffle_bytes(current_state, xmm0);
 
-        let (xmm2_blended, mut temp_state) = if 32 == W::WIDTH {
+        // CRC-16 and CRC-32 use the same logic (both operate in 32-bit space)
+        let (xmm2_blended, mut temp_state) = if W::WIDTH <= 32 {
             let compare_mask = ops.create_compare_mask(xmm0);
 
             let xmm2_blended = ops.blend_vectors(xmm1, shuffled, compare_mask);
@@ -547,29 +563,17 @@ where
 
         temp_state.value
     } else {
-        // For non-reflected mode (CRC-32f, CRC-64f)
+        let read_offset = region.offset - CRC_CHUNK_SIZE + region.remaining;
+        let mut xmm1 = ops.load_bytes(region.full_data.as_ptr().add(read_offset));
 
-        // Load the remaining data and apply reflection if needed
-        let data_ptr = data.as_ptr().sub(CRC_CHUNK_SIZE).add(remaining_len);
-        let mut xmm1 = ops.load_bytes(data_ptr);
-
-        // Apply reflection if in forward mode
         if let Reflector::ForwardReflector { smask } = reflector {
             xmm1 = ops.shuffle_bytes(xmm1, *smask);
         }
 
-        // Load the shuffle mask
         let xmm0 = ops.load_bytes(table_ptr.add(offset));
-
-        // Apply initial shuffle
         let shuffled = ops.shuffle_bytes(current_state, xmm0);
-
-        // Create masked version for another shuffle
         let xmm0_masked = ops.xor_vectors(xmm0, const_mask);
-
         let shuffled_masked = ops.shuffle_bytes(current_state, xmm0_masked);
-
-        // Blend the shuffled values using the masked shuffle as the mask
         let xmm2_blended = ops.blend_vectors(xmm1, shuffled, xmm0_masked);
 
         // Create a temporary state for folding

@@ -5,6 +5,15 @@
 use crate::traits::{CrcCalculator, CrcWidth};
 use crate::{arch, cache, CrcAlgorithm, CrcParams};
 
+/// CRC-16 width implementation
+#[derive(Clone, Copy)]
+pub struct Width16;
+
+impl CrcWidth for Width16 {
+    const WIDTH: u32 = 16;
+    type Value = u16;
+}
+
 /// CRC-32 width implementation
 #[derive(Clone, Copy)]
 pub struct Width32;
@@ -34,7 +43,7 @@ pub(crate) struct Calculator {}
 
 impl CrcCalculator for Calculator {
     #[inline(always)]
-    fn calculate(state: u64, data: &[u8], params: CrcParams) -> u64 {
+    fn calculate(state: u64, data: &[u8], params: &CrcParams) -> u64 {
         unsafe { arch::update(state, data, params) }
     }
 }
@@ -61,18 +70,25 @@ impl CrcParams {
         let keys_array = cache::get_or_generate_keys(width, poly, reflected);
         let keys = crate::CrcKeysStorage::from_keys_fold_256(keys_array);
 
-        let algorithm = match width {
-            32 => CrcAlgorithm::Crc32Custom,
-            64 => CrcAlgorithm::Crc64Custom,
-            _ => panic!("Unsupported width: {width}",),
+        // Validate width is supported
+        if width != 16 && width != 32 && width != 64 {
+            panic!("Unsupported width: {width}");
+        }
+
+        // For reflected CRC-16, bit-reverse the init value for the SIMD algorithm
+        let init_algorithm = if width == 16 && reflected {
+            (init as u16).reverse_bits() as u64
+        } else {
+            init
         };
 
         Self {
-            algorithm,
+            algorithm: CrcAlgorithm::CrcCustom,
             name,
             width,
             poly,
             init,
+            init_algorithm,
             refin: reflected,
             refout: reflected,
             xorout,
@@ -84,14 +100,14 @@ impl CrcParams {
     /// Gets a key at the specified index, returning 0 if out of bounds.
     /// This provides safe access regardless of internal key storage format.
     #[inline(always)]
-    pub fn get_key(self, index: usize) -> u64 {
+    pub fn get_key(&self, index: usize) -> u64 {
         self.keys.get_key(index)
     }
 
     /// Gets a key at the specified index, returning None if out of bounds.
     /// This provides optional key access for cases where bounds checking is needed.
     #[inline(always)]
-    pub fn get_key_checked(self, index: usize) -> Option<u64> {
+    pub fn get_key_checked(&self, index: usize) -> Option<u64> {
         if index < self.keys.key_count() {
             Some(self.keys.get_key(index))
         } else {
@@ -101,7 +117,7 @@ impl CrcParams {
 
     /// Returns the number of keys available in this CrcParams instance.
     #[inline(always)]
-    pub fn key_count(self) -> usize {
+    pub fn key_count(&self) -> usize {
         self.keys.key_count()
     }
 }
