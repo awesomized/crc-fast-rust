@@ -269,6 +269,7 @@ pub(crate) fn select_performance_tier(capabilities: &ArchCapabilities) -> Perfor
 
 /// Enum that holds the different ArchOps implementations for compile-time dispatch
 /// This avoids the need for trait objects while still providing factory-based selection
+#[cfg(any(target_arch = "aarch64", target_arch = "x86", target_arch = "x86_64"))]
 #[derive(Debug, Clone, Copy)]
 pub enum ArchOpsInstance {
     #[cfg(target_arch = "aarch64")]
@@ -285,6 +286,7 @@ pub enum ArchOpsInstance {
     SoftwareFallback,
 }
 
+#[cfg(any(target_arch = "aarch64", target_arch = "x86", target_arch = "x86_64"))]
 impl ArchOpsInstance {
     #[inline(always)]
     pub fn get_tier(&self) -> PerformanceTier {
@@ -304,7 +306,10 @@ impl ArchOpsInstance {
     }
 
     /// Get a human-readable target string describing the active configuration
-    #[cfg(feature = "alloc")]
+    #[cfg(all(
+        feature = "alloc",
+        any(target_arch = "aarch64", target_arch = "x86", target_arch = "x86_64")
+    ))]
     #[inline(always)]
     pub fn get_target_string(&self) -> String {
         tier_to_target_string(self.get_tier())
@@ -346,6 +351,7 @@ fn create_arch_ops() -> ArchOpsInstance {
 }
 
 /// Helper function to create ArchOpsInstance from a performance tier
+#[cfg(any(target_arch = "aarch64", target_arch = "x86", target_arch = "x86_64"))]
 fn create_arch_ops_from_tier(tier: PerformanceTier) -> ArchOpsInstance {
     match tier {
         #[cfg(target_arch = "aarch64")]

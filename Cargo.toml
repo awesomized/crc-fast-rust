@@ -22,7 +22,6 @@ crate-type = ["lib", "cdylib", "staticlib"]
 bench = true
 
 [dependencies]
-# can move to crc 3.4+ once our MSRV is Rust 1.82+
 crc = "3.4"
 
 # We use digest with default-features = false and features = ["alloc"] to enable heap allocation support in no_std
