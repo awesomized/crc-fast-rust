@@ -231,7 +231,7 @@ use alloc::boxed::Box;
 use alloc::string::String;
 
 mod algorithm;
-mod arch;
+pub mod arch;
 mod cache;
 mod combine;
 mod consts;
@@ -244,6 +244,7 @@ mod feature_detection;
 mod ffi;
 mod generate;
 mod structs;
+mod tables;
 mod test;
 mod traits;
 
@@ -928,7 +929,7 @@ pub fn checksum(algorithm: CrcAlgorithm, buf: &[u8]) -> u64 {
 pub fn checksum_with_params(params: CrcParams, buf: &[u8]) -> u64 {
     let calculator = Calculator::calculate as CalculatorFn;
 
-    calculator(params.init, buf, &params) ^ params.xorout
+    calculator(params.init_algorithm, buf, &params) ^ params.xorout
 }
 
 /// Computes the CRC checksum for the given file using the specified algorithm.

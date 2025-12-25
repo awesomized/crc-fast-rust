@@ -22,9 +22,6 @@ crate-type = ["lib", "cdylib", "staticlib"]
 bench = true
 
 [dependencies]
-# can move to crc 3.4+ once our MSRV is Rust 1.82+
-crc = "3.4"
-
 # We use digest with default-features = false and features = ["alloc"] to enable heap allocation support in no_std
 # environments. This configuration is safe because the alloc feature in digest does not depend on its default features
 # as of digest v0.10.
@@ -69,6 +66,7 @@ spin = { version = "0.10.0", default-features = false, features = [
 ] }
 
 [dev-dependencies]
+crc = "3.4"
 criterion = "0.7"
 cbindgen = "0.29"
 proptest = "1.9"
@@ -96,6 +94,11 @@ required-features = ["cli"]
 [[bin]]
 name = "get-custom-params"
 path = "src/bin/get-custom-params.rs"
+required-features = ["cli"]
+
+[[bin]]
+name = "generate-tables"
+path = "src/bin/generate-tables.rs"
 required-features = ["cli"]
 
 [[bench]]

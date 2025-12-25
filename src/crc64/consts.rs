@@ -3,9 +3,86 @@
 #![allow(dead_code)]
 
 use crate::consts::*;
+use crate::structs::Algorithm;
 use crate::CrcAlgorithm;
 use crate::CrcParams;
-use crc::{CRC_64_ECMA_182, CRC_64_GO_ISO, CRC_64_MS, CRC_64_REDIS, CRC_64_WE, CRC_64_XZ};
+
+pub const CRC_64_ECMA_182: Algorithm<u64> = Algorithm {
+    width: 64,
+    poly: 0x42f0e1eba9ea3693,
+    init: 0x0,
+    refin: false,
+    refout: false,
+    xorout: 0x0,
+    check: 0x6c40df5f0b497347,
+    residue: 0x0,
+};
+
+pub const CRC_64_GO_ISO: Algorithm<u64> = Algorithm {
+    width: 64,
+    poly: 0x1b,
+    init: 0xffffffffffffffff,
+    refin: true,
+    refout: true,
+    xorout: 0xffffffffffffffff,
+    check: 0xb90956c775a41001,
+    residue: 0x5300000000000000,
+};
+
+pub const CRC_64_MS: Algorithm<u64> = Algorithm {
+    width: 64,
+    poly: 0x259c84cba6426349,
+    init: 0xffffffffffffffff,
+    refin: true,
+    refout: true,
+    xorout: 0x0,
+    check: 0x75d4b74f024eceea,
+    residue: 0x0,
+};
+
+pub const CRC_64_NVME: Algorithm<u64> = Algorithm {
+    width: 64,
+    poly: 0xad93d23594c93659,
+    init: 0xffffffffffffffff,
+    refin: true,
+    refout: true,
+    xorout: 0xffffffffffffffff,
+    check: 0xae8b14860a799888,
+    residue: 0xf310303b2b6f6e42,
+};
+
+pub const CRC_64_REDIS: Algorithm<u64> = Algorithm {
+    width: 64,
+    poly: 0xad93d23594c935a9,
+    init: 0x0,
+    refin: true,
+    refout: true,
+    xorout: 0x0,
+    check: 0xe9c6d914c4b8d9ca,
+    residue: 0x0,
+};
+
+pub const CRC_64_WE: Algorithm<u64> = Algorithm {
+    width: 64,
+    poly: 0x42f0e1eba9ea3693,
+    init: 0xffffffffffffffff,
+    refin: false,
+    refout: false,
+    xorout: 0xffffffffffffffff,
+    check: 0x62ec59e3f1a4f00a,
+    residue: 0xfcacbebd5931a992,
+};
+
+pub const CRC_64_XZ: Algorithm<u64> = Algorithm {
+    width: 64,
+    poly: 0x42f0e1eba9ea3693,
+    init: 0xffffffffffffffff,
+    refin: true,
+    refout: true,
+    xorout: 0xffffffffffffffff,
+    check: 0x995dc9bbdf1939fa,
+    residue: 0x49958c9abd7d353f,
+};
 
 // width=64 poly=0x42f0e1eba9ea3693 init=0x0000000000000000 refin=false refout=false xorout=0x0000000000000000 check=0x6c40df5f0b497347 residue=0x0000000000000000 name="CRC-64/ECMA-182"
 pub const CRC64_ECMA_182: CrcParams = CrcParams {

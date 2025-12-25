@@ -14,6 +14,12 @@ use core::arch::aarch64::*;
 #[derive(Debug, Copy, Clone)]
 pub struct Aarch64AesSha3Ops(Aarch64AesOps);
 
+impl Default for Aarch64AesSha3Ops {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Aarch64AesSha3Ops {
     #[inline(always)]
     pub fn new() -> Self {

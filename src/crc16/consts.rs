@@ -11,15 +11,352 @@ use crate::consts::{
     NAME_CRC16_RIELLO, NAME_CRC16_SPI_FUJITSU, NAME_CRC16_T10_DIF, NAME_CRC16_TELEDISK,
     NAME_CRC16_TMS37157, NAME_CRC16_UMTS, NAME_CRC16_USB, NAME_CRC16_XMODEM,
 };
+use crate::structs::Algorithm;
 use crate::CrcAlgorithm;
 use crate::CrcParams;
-use crc::{
-    CRC_16_ARC, CRC_16_CDMA2000, CRC_16_CMS, CRC_16_DDS_110, CRC_16_DECT_R, CRC_16_DECT_X,
-    CRC_16_DNP, CRC_16_EN_13757, CRC_16_GENIBUS, CRC_16_GSM, CRC_16_IBM_3740, CRC_16_IBM_SDLC,
-    CRC_16_ISO_IEC_14443_3_A, CRC_16_KERMIT, CRC_16_LJ1200, CRC_16_M17, CRC_16_MAXIM_DOW,
-    CRC_16_MCRF4XX, CRC_16_MODBUS, CRC_16_NRSC_5, CRC_16_OPENSAFETY_A, CRC_16_OPENSAFETY_B,
-    CRC_16_PROFIBUS, CRC_16_RIELLO, CRC_16_SPI_FUJITSU, CRC_16_T10_DIF, CRC_16_TELEDISK,
-    CRC_16_TMS37157, CRC_16_UMTS, CRC_16_USB, CRC_16_XMODEM,
+
+// Native CRC-16 algorithm constants matching the CRC catalogue specification
+// https://reveng.sourceforge.io/crc-catalogue/all.htm
+
+pub const CRC_16_ARC: Algorithm<u16> = Algorithm {
+    width: 16,
+    poly: 0x8005,
+    init: 0x0,
+    refin: true,
+    refout: true,
+    xorout: 0x0,
+    check: 0xbb3d,
+    residue: 0x0,
+};
+
+pub const CRC_16_CDMA2000: Algorithm<u16> = Algorithm {
+    width: 16,
+    poly: 0xc867,
+    init: 0xffff,
+    refin: false,
+    refout: false,
+    xorout: 0x0,
+    check: 0x4c06,
+    residue: 0x0,
+};
+
+pub const CRC_16_CMS: Algorithm<u16> = Algorithm {
+    width: 16,
+    poly: 0x8005,
+    init: 0xffff,
+    refin: false,
+    refout: false,
+    xorout: 0x0,
+    check: 0xaee7,
+    residue: 0x0,
+};
+
+pub const CRC_16_DDS_110: Algorithm<u16> = Algorithm {
+    width: 16,
+    poly: 0x8005,
+    init: 0x800d,
+    refin: false,
+    refout: false,
+    xorout: 0x0,
+    check: 0x9ecf,
+    residue: 0x0,
+};
+
+pub const CRC_16_DECT_R: Algorithm<u16> = Algorithm {
+    width: 16,
+    poly: 0x0589,
+    init: 0x0,
+    refin: false,
+    refout: false,
+    xorout: 0x1,
+    check: 0x007e,
+    residue: 0x0589,
+};
+
+pub const CRC_16_DECT_X: Algorithm<u16> = Algorithm {
+    width: 16,
+    poly: 0x0589,
+    init: 0x0,
+    refin: false,
+    refout: false,
+    xorout: 0x0,
+    check: 0x007f,
+    residue: 0x0,
+};
+
+pub const CRC_16_DNP: Algorithm<u16> = Algorithm {
+    width: 16,
+    poly: 0x3d65,
+    init: 0x0,
+    refin: true,
+    refout: true,
+    xorout: 0xffff,
+    check: 0xea82,
+    residue: 0x66c5,
+};
+
+pub const CRC_16_EN_13757: Algorithm<u16> = Algorithm {
+    width: 16,
+    poly: 0x3d65,
+    init: 0x0,
+    refin: false,
+    refout: false,
+    xorout: 0xffff,
+    check: 0xc2b7,
+    residue: 0xa366,
+};
+
+pub const CRC_16_GENIBUS: Algorithm<u16> = Algorithm {
+    width: 16,
+    poly: 0x1021,
+    init: 0xffff,
+    refin: false,
+    refout: false,
+    xorout: 0xffff,
+    check: 0xd64e,
+    residue: 0x1d0f,
+};
+
+pub const CRC_16_GSM: Algorithm<u16> = Algorithm {
+    width: 16,
+    poly: 0x1021,
+    init: 0x0,
+    refin: false,
+    refout: false,
+    xorout: 0xffff,
+    check: 0xce3c,
+    residue: 0x1d0f,
+};
+
+pub const CRC_16_IBM_3740: Algorithm<u16> = Algorithm {
+    width: 16,
+    poly: 0x1021,
+    init: 0xffff,
+    refin: false,
+    refout: false,
+    xorout: 0x0,
+    check: 0x29b1,
+    residue: 0x0,
+};
+
+pub const CRC_16_IBM_SDLC: Algorithm<u16> = Algorithm {
+    width: 16,
+    poly: 0x1021,
+    init: 0xffff,
+    refin: true,
+    refout: true,
+    xorout: 0xffff,
+    check: 0x906e,
+    residue: 0xf0b8,
+};
+
+pub const CRC_16_ISO_IEC_14443_3_A: Algorithm<u16> = Algorithm {
+    width: 16,
+    poly: 0x1021,
+    init: 0xc6c6,
+    refin: true,
+    refout: true,
+    xorout: 0x0,
+    check: 0xbf05,
+    residue: 0x0,
+};
+
+pub const CRC_16_KERMIT: Algorithm<u16> = Algorithm {
+    width: 16,
+    poly: 0x1021,
+    init: 0x0,
+    refin: true,
+    refout: true,
+    xorout: 0x0,
+    check: 0x2189,
+    residue: 0x0,
+};
+
+pub const CRC_16_LJ1200: Algorithm<u16> = Algorithm {
+    width: 16,
+    poly: 0x6f63,
+    init: 0x0,
+    refin: false,
+    refout: false,
+    xorout: 0x0,
+    check: 0xbdf4,
+    residue: 0x0,
+};
+
+pub const CRC_16_M17: Algorithm<u16> = Algorithm {
+    width: 16,
+    poly: 0x5935,
+    init: 0xffff,
+    refin: false,
+    refout: false,
+    xorout: 0x0,
+    check: 0x772b,
+    residue: 0x0,
+};
+
+pub const CRC_16_MAXIM_DOW: Algorithm<u16> = Algorithm {
+    width: 16,
+    poly: 0x8005,
+    init: 0x0,
+    refin: true,
+    refout: true,
+    xorout: 0xffff,
+    check: 0x44c2,
+    residue: 0xb001,
+};
+
+pub const CRC_16_MCRF4XX: Algorithm<u16> = Algorithm {
+    width: 16,
+    poly: 0x1021,
+    init: 0xffff,
+    refin: true,
+    refout: true,
+    xorout: 0x0,
+    check: 0x6f91,
+    residue: 0x0,
+};
+
+pub const CRC_16_MODBUS: Algorithm<u16> = Algorithm {
+    width: 16,
+    poly: 0x8005,
+    init: 0xffff,
+    refin: true,
+    refout: true,
+    xorout: 0x0,
+    check: 0x4b37,
+    residue: 0x0,
+};
+
+pub const CRC_16_NRSC_5: Algorithm<u16> = Algorithm {
+    width: 16,
+    poly: 0x080b,
+    init: 0xffff,
+    refin: true,
+    refout: true,
+    xorout: 0x0,
+    check: 0xa066,
+    residue: 0x0,
+};
+
+pub const CRC_16_OPENSAFETY_A: Algorithm<u16> = Algorithm {
+    width: 16,
+    poly: 0x5935,
+    init: 0x0,
+    refin: false,
+    refout: false,
+    xorout: 0x0,
+    check: 0x5d38,
+    residue: 0x0,
+};
+
+pub const CRC_16_OPENSAFETY_B: Algorithm<u16> = Algorithm {
+    width: 16,
+    poly: 0x755b,
+    init: 0x0,
+    refin: false,
+    refout: false,
+    xorout: 0x0,
+    check: 0x20fe,
+    residue: 0x0,
+};
+
+pub const CRC_16_PROFIBUS: Algorithm<u16> = Algorithm {
+    width: 16,
+    poly: 0x1dcf,
+    init: 0xffff,
+    refin: false,
+    refout: false,
+    xorout: 0xffff,
+    check: 0xa819,
+    residue: 0xe394,
+};
+
+pub const CRC_16_RIELLO: Algorithm<u16> = Algorithm {
+    width: 16,
+    poly: 0x1021,
+    init: 0xb2aa,
+    refin: true,
+    refout: true,
+    xorout: 0x0,
+    check: 0x63d0,
+    residue: 0x0,
+};
+
+pub const CRC_16_SPI_FUJITSU: Algorithm<u16> = Algorithm {
+    width: 16,
+    poly: 0x1021,
+    init: 0x1d0f,
+    refin: false,
+    refout: false,
+    xorout: 0x0,
+    check: 0xe5cc,
+    residue: 0x0,
+};
+
+pub const CRC_16_T10_DIF: Algorithm<u16> = Algorithm {
+    width: 16,
+    poly: 0x8bb7,
+    init: 0x0,
+    refin: false,
+    refout: false,
+    xorout: 0x0,
+    check: 0xd0db,
+    residue: 0x0,
+};
+
+pub const CRC_16_TELEDISK: Algorithm<u16> = Algorithm {
+    width: 16,
+    poly: 0xa097,
+    init: 0x0,
+    refin: false,
+    refout: false,
+    xorout: 0x0,
+    check: 0x0fb3,
+    residue: 0x0,
+};
+
+pub const CRC_16_TMS37157: Algorithm<u16> = Algorithm {
+    width: 16,
+    poly: 0x1021,
+    init: 0x89ec,
+    refin: true,
+    refout: true,
+    xorout: 0x0,
+    check: 0x26b1,
+    residue: 0x0,
+};
+
+pub const CRC_16_UMTS: Algorithm<u16> = Algorithm {
+    width: 16,
+    poly: 0x8005,
+    init: 0x0,
+    refin: false,
+    refout: false,
+    xorout: 0x0,
+    check: 0xfee8,
+    residue: 0x0,
+};
+
+pub const CRC_16_USB: Algorithm<u16> = Algorithm {
+    width: 16,
+    poly: 0x8005,
+    init: 0xffff,
+    refin: true,
+    refout: true,
+    xorout: 0xffff,
+    check: 0xb4c8,
+    residue: 0xb001,
+};
+
+pub const CRC_16_XMODEM: Algorithm<u16> = Algorithm {
+    width: 16,
+    poly: 0x1021,
+    init: 0x0,
+    refin: false,
+    refout: false,
+    xorout: 0x0,
+    check: 0x31c3,
+    residue: 0x0,
 };
 
 // width=16 poly=0x8005 init=0x0000 refin=true refout=true xorout=0x0000 check=0xbb3d residue=0x0000 name="CRC-16/ARC"

@@ -7,11 +7,140 @@ use crate::consts::{
     NAME_CRC32_CD_ROM_EDC, NAME_CRC32_CKSUM, NAME_CRC32_ISCSI, NAME_CRC32_ISO_HDLC,
     NAME_CRC32_JAMCRC, NAME_CRC32_MEF, NAME_CRC32_MPEG_2, NAME_CRC32_XFER,
 };
+use crate::structs::Algorithm;
 use crate::CrcAlgorithm;
 use crate::CrcParams;
-use crc::{
-    CRC_32_AIXM, CRC_32_AUTOSAR, CRC_32_BASE91_D, CRC_32_BZIP2, CRC_32_CD_ROM_EDC, CRC_32_CKSUM,
-    CRC_32_ISCSI, CRC_32_ISO_HDLC, CRC_32_JAMCRC, CRC_32_MEF, CRC_32_MPEG_2, CRC_32_XFER,
+
+pub const CRC_32_AIXM: Algorithm<u32> = Algorithm {
+    width: 32,
+    poly: 0x814141ab,
+    init: 0x0,
+    refin: false,
+    refout: false,
+    xorout: 0x0,
+    check: 0x3010bf7f,
+    residue: 0x0,
+};
+
+pub const CRC_32_AUTOSAR: Algorithm<u32> = Algorithm {
+    width: 32,
+    poly: 0xf4acfb13,
+    init: 0xffffffff,
+    refin: true,
+    refout: true,
+    xorout: 0xffffffff,
+    check: 0x1697d06a,
+    residue: 0x904cddbf,
+};
+
+pub const CRC_32_BASE91_D: Algorithm<u32> = Algorithm {
+    width: 32,
+    poly: 0xa833982b,
+    init: 0xffffffff,
+    refin: true,
+    refout: true,
+    xorout: 0xffffffff,
+    check: 0x87315576,
+    residue: 0x45270551,
+};
+
+pub const CRC_32_BZIP2: Algorithm<u32> = Algorithm {
+    width: 32,
+    poly: 0x4c11db7,
+    init: 0xffffffff,
+    refin: false,
+    refout: false,
+    xorout: 0xffffffff,
+    check: 0xfc891918,
+    residue: 0xc704dd7b,
+};
+
+pub const CRC_32_CD_ROM_EDC: Algorithm<u32> = Algorithm {
+    width: 32,
+    poly: 0x8001801b,
+    init: 0x0,
+    refin: true,
+    refout: true,
+    xorout: 0x0,
+    check: 0x6ec2edc4,
+    residue: 0x0,
+};
+
+pub const CRC_32_CKSUM: Algorithm<u32> = Algorithm {
+    width: 32,
+    poly: 0x4c11db7,
+    init: 0x0,
+    refin: false,
+    refout: false,
+    xorout: 0xffffffff,
+    check: 0x765e7680,
+    residue: 0xc704dd7b,
+};
+
+pub const CRC_32_ISCSI: Algorithm<u32> = Algorithm {
+    width: 32,
+    poly: 0x1edc6f41,
+    init: 0xffffffff,
+    refin: true,
+    refout: true,
+    xorout: 0xffffffff,
+    check: 0xe3069283,
+    residue: 0xb798b438,
+};
+
+pub const CRC_32_ISO_HDLC: Algorithm<u32> = Algorithm {
+    width: 32,
+    poly: 0x4c11db7,
+    init: 0xffffffff,
+    refin: true,
+    refout: true,
+    xorout: 0xffffffff,
+    check: 0xcbf43926,
+    residue: 0xdebb20e3,
+};
+
+pub const CRC_32_JAMCRC: Algorithm<u32> = Algorithm {
+    width: 32,
+    poly: 0x4c11db7,
+    init: 0xffffffff,
+    refin: true,
+    refout: true,
+    xorout: 0x0,
+    check: 0x340bc6d9,
+    residue: 0x0,
+};
+
+pub const CRC_32_MEF: Algorithm<u32> = Algorithm {
+    width: 32,
+    poly: 0x741b8cd7,
+    init: 0xffffffff,
+    refin: true,
+    refout: true,
+    xorout: 0x0,
+    check: 0xd2c22f51,
+    residue: 0x0,
+};
+
+pub const CRC_32_MPEG_2: Algorithm<u32> = Algorithm {
+    width: 32,
+    poly: 0x4c11db7,
+    init: 0xffffffff,
+    refin: false,
+    refout: false,
+    xorout: 0x0,
+    check: 0x376e6e7,
+    residue: 0x0,
+};
+
+pub const CRC_32_XFER: Algorithm<u32> = Algorithm {
+    width: 32,
+    poly: 0xaf,
+    init: 0x0,
+    refin: false,
+    refout: false,
+    xorout: 0x0,
+    check: 0xbd0be338,
+    residue: 0x0,
 };
 
 // width=32 poly=0x814141ab init=0x00000000 refin=false refout=false xorout=0x00000000 check=0x3010bf7f residue=0x00000000 name="CRC-32/AIXM"

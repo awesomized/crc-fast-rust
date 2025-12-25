@@ -5,6 +5,37 @@
 use crate::traits::{CrcCalculator, CrcWidth};
 use crate::{arch, cache, CrcAlgorithm, CrcParams};
 
+/// CRC algorithm parameters matching the CRC catalogue specification.
+///
+/// This struct describes a CRC algorithm using the fields specified by the
+/// [Catalogue of parametrised CRC algorithms](https://reveng.sourceforge.io/crc-catalogue/all.htm).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Algorithm<W> {
+    /// The number of bit cells in the linear feedback shift register; the degree of the generator
+    /// polynomial, minus one.
+    pub width: u8,
+    /// The generator polynomial that sets the feedback tap positions of the shift register.
+    pub poly: W,
+    /// The settings of the bit cells at the start of each calculation, before reading the first
+    /// message bit.
+    pub init: W,
+    /// If `true`, characters are read bit-by-bit, least significant bit (LSB) first;
+    /// if `false`, most significant bit (MSB) first.
+    pub refin: bool,
+    /// If `true`, the contents of the register after reading the last message bit are reflected
+    /// before presentation; if `false`, they are unreflected.
+    pub refout: bool,
+    /// The XOR value applied to the contents of the register after the last message bit has been
+    /// read and after the optional reflection.
+    pub xorout: W,
+    /// The contents of the register after initialising, reading the UTF-8 string `"123456789"`,
+    /// optionally reflecting, and applying the final XOR.
+    pub check: W,
+    /// The contents of the register after initialising, reading an error-free codeword and
+    /// optionally reflecting the register, but not applying the final XOR.
+    pub residue: W,
+}
+
 /// CRC-16 width implementation
 #[derive(Clone, Copy)]
 pub struct Width16;
