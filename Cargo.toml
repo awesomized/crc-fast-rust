@@ -25,12 +25,10 @@ bench = true
 # can move to crc 3.4+ once our MSRV is Rust 1.82+
 crc = "3.4"
 
-# We use digest with default-features = false and features = ["alloc"] to enable heap allocation support in no_std environments.
-# This configuration is safe because the alloc feature in digest does not depend on its default features as of digest v0.10.
+# We use digest with default-features = false and features = ["alloc"] to enable heap allocation support in no_std
+# environments. This configuration is safe because the alloc feature in digest does not depend on its default features
+# as of digest v0.10.
 digest = { version = "0.10", optional = true, default-features = false, features = ["alloc"] }
-
-# constrain indexmap (transitive) to a version compatible with Rust 1.81.0
-indexmap = { version = ">=2.11.0, <2.12.0", optional = true }
 
 # no_std support
 # spin is optional - only needed on architectures with SIMD (for feature detection)
@@ -41,6 +39,7 @@ spin = { version = "0.10.0", default-features = false, features = [
     "mutex",
     "spin_mutex",
 ], optional = true }
+
 # hashbrown is only needed when caching is enabled in no_std
 hashbrown = { version = "0.16.0", optional = true }
 
@@ -72,10 +71,7 @@ spin = { version = "0.10.0", default-features = false, features = [
 [dev-dependencies]
 criterion = "0.7"
 cbindgen = "0.29"
-
-# can move to proptest 1.9+ once our MSRV is Rust 1.82+
-proptest = "~1.8"
-
+proptest = "1.9"
 rand = "0.9"
 regex = "1.12"
 wasm-bindgen-test = "0.3"
