@@ -134,7 +134,7 @@ jobs:
     strategy:
       matrix:
         rust-toolchain:
-          - "1.81" # minimum for this crate
+          - "1.89" # minimum for this crate, when AVX-512 VPCLMULQDQ was stabilized
           - "stable"
           - "nightly"
     steps:
@@ -226,7 +226,7 @@ jobs:
           - thumbv8m.main-none-eabihf  # ARM Cortex-M33/M35P
           - riscv32imac-unknown-none-elf  # RISC-V 32-bit
         rust-toolchain:
-          - "1.81" # minimum for this crate
+          - "1.89" # minimum for this crate, when AVX-512 VPCLMULQDQ was stabilized
           - "stable"
           - "nightly"
     steps:
@@ -256,14 +256,14 @@ jobs:
         include:
           # WASM 1.0/2.0 (32-bit) - all toolchains
           - target: wasm32-unknown-unknown
-            rust-toolchain: "1.81"
+            rust-toolchain: "1.89" # minimum for this crate, when AVX-512 VPCLMULQDQ was stabilized
           - target: wasm32-unknown-unknown
             rust-toolchain: "stable"
           - target: wasm32-unknown-unknown
             rust-toolchain: "nightly"
           # WASI preview 1 (32-bit) - all toolchains
           - target: wasm32-wasip1
-            rust-toolchain: "1.81"
+            rust-toolchain: "1.89" # minimum for this crate, when AVX-512 VPCLMULQDQ was stabilized
           - target: wasm32-wasip1
             rust-toolchain: "stable"
           - target: wasm32-wasip1
