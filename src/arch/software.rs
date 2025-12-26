@@ -307,10 +307,7 @@ fn update_crc16(state: u16, data: &[u8], params: &CrcParams) -> u16 {
         _ => panic!("Invalid algorithm for u16 CRC"),
     };
 
-    let result = native_update_u16(state, table, refin, data);
-
-    // Remove XOR since this will be applied in the library Digest::finalize() step
-    result ^ params.xorout as u16
+    native_update_u16(state, table, refin, data)
 }
 
 #[cfg(feature = "alloc")]
@@ -360,10 +357,7 @@ fn update_crc16_custom(state: u16, data: &[u8], params: &CrcParams) -> u16 {
         Box::leak(Box::new(table))
     };
 
-    let result = native_update_u16(state, table, refin, data);
-
-    // Remove XOR since this will be applied in the library Digest::finalize() step
-    result ^ params.xorout as u16
+    native_update_u16(state, table, refin, data)
 }
 
 #[cfg(not(feature = "alloc"))]
@@ -396,10 +390,7 @@ fn update_crc32(state: u32, data: &[u8], params: &CrcParams) -> u32 {
         _ => panic!("Invalid algorithm for u32 CRC"),
     };
 
-    let result = native_update_u32(state, table, refin, data);
-
-    // Remove XOR since this will be applied in the library Digest::finalize() step
-    result ^ params.xorout as u32
+    native_update_u32(state, table, refin, data)
 }
 
 #[cfg(feature = "alloc")]
@@ -449,10 +440,7 @@ fn update_crc32_custom(state: u32, data: &[u8], params: &CrcParams) -> u32 {
         Box::leak(Box::new(table))
     };
 
-    let result = native_update_u32(state, table, refin, data);
-
-    // Remove XOR since this will be applied in the library Digest::finalize() step
-    result ^ params.xorout as u32
+    native_update_u32(state, table, refin, data)
 }
 
 #[cfg(not(feature = "alloc"))]
@@ -480,10 +468,7 @@ fn update_crc64(state: u64, data: &[u8], params: &CrcParams) -> u64 {
         _ => panic!("Invalid algorithm for u64 CRC"),
     };
 
-    let result = native_update_u64(state, table, refin, data);
-
-    // Remove XOR since this will be applied in the library Digest::finalize() step
-    result ^ params.xorout
+    native_update_u64(state, table, refin, data)
 }
 
 #[cfg(feature = "alloc")]
@@ -533,10 +518,7 @@ fn update_crc64_custom(state: u64, data: &[u8], params: &CrcParams) -> u64 {
         Box::leak(Box::new(table))
     };
 
-    let result = native_update_u64(state, table, refin, data);
-
-    // Remove XOR since this will be applied in the library Digest::finalize() step
-    result ^ params.xorout
+    native_update_u64(state, table, refin, data)
 }
 
 #[cfg(not(feature = "alloc"))]
