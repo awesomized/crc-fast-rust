@@ -18,6 +18,12 @@ use core::ops::BitXor;
 #[derive(Debug, Copy, Clone)]
 pub struct X86_64Avx512VpclmulqdqOps(X86SsePclmulqdqOps);
 
+impl Default for X86_64Avx512VpclmulqdqOps {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl X86_64Avx512VpclmulqdqOps {
     #[inline(always)]
     pub fn new() -> Self {

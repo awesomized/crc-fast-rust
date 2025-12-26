@@ -15,6 +15,12 @@ use std::arch::x86_64::*;
 #[derive(Debug, Copy, Clone)]
 pub struct X86_64Avx512PclmulqdqOps(X86SsePclmulqdqOps);
 
+impl Default for X86_64Avx512PclmulqdqOps {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl X86_64Avx512PclmulqdqOps {
     #[inline(always)]
     pub fn new() -> Self {
