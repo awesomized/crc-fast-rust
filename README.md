@@ -445,6 +445,17 @@ cargo run arch-check
 cargo build --release
 ```
 
+## Minimum Supported Rust Version (MSRV)
+
+This crate targets a `stable-2` policy (ie, the latest stable Rust version minus 2 minor versions) as the Minimum
+Supported Rust Version (MSRV).
+
+Bumping the `rust-version` will be considered a **MINOR** version bump.
+
+We'll try to support even older versions when possible, but given the high-performance use of SIMD intrinsics and other
+modern Rust features, this is merely a stated goal. We'll move up to `stable-2` ASAP when a sufficiently high 
+performance improvement or necessary feature requires it.
+
 ## Performance
 
 Modern systems can exceed 100 GiB/s for calculating `CRC-32/ISCSI`, and nearly 90 GiB/s for `CRC-32/ISO-HDLC`,
