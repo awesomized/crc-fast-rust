@@ -1,5 +1,9 @@
 # Changes for crc-fast-rust
 
+## [1.10.0](https://github.com/awesomized/crc-fast-rust/releases/tag/1.10.0) - 2025-12-26
+* [Rust 1.89 baseline](https://github.com/awesomized/crc-fast-rust/pull/27)
+* [Remove 'crc' dependency](https://github.com/awesomized/crc-fast-rust/pull/40)
+
 ## [1.9.0](https://github.com/awesomized/crc-fast-rust/releases/tag/1.9.0) - 2025-12-22
 * [Optimize performance for smaller sizes](https://github.com/awesomized/crc-fast-rust/pull/38)
 * [Add CRC-16 support](https://github.com/awesomized/crc-fast-rust/pull/39)
