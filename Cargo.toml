@@ -3,7 +3,8 @@ name = "crc-fast"
 version = "1.10.0"
 edition = "2021"
 authors = ["Don MacAskill"]
-license = "MIT OR Apache-2.0"
+# src/combine.rs contains some Zlib-licensed code; details in the source
+license = "(MIT OR Apache-2.0) AND Zlib"
 keywords = ["crc", "checksum", "simd", "accelerated", "fast"]
 categories = ["algorithms", "encoding", "hardware-support"]
 repository = "https://github.com/awesomized/crc-fast-rust"
