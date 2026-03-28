@@ -24,8 +24,8 @@ bench = true
 [dependencies]
 # We use digest with default-features = false and features = ["alloc"] to enable heap allocation support in no_std
 # environments. This configuration is safe because the alloc feature in digest does not depend on its default features
-# as of digest v0.10.
-digest = { version = "0.10", optional = true, default-features = false, features = ["alloc"] }
+# as of digest v0.11.
+digest = { version = "0.11", optional = true, default-features = false, features = ["alloc"] }
 
 # no_std support
 # spin is optional - only needed on architectures with SIMD (for feature detection)
