@@ -8,7 +8,7 @@
 
 use crate::arch::x86::sse::X86SsePclmulqdqOps;
 use crate::traits::ArchOps;
-use std::arch::x86_64::*;
+use core::arch::x86_64::*;
 
 /// x86_64-only AVX512+PCLMULQDQ tier - delegates to SSE tier and overrides XOR3 operations
 /// Uses AVX512 ternary logic for XOR3 operations with PCLMULQDQ
