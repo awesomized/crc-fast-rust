@@ -187,7 +187,7 @@ mod tests {
     use crate::test::consts::{TEST_256_BYTES_STRING, TEST_ALL_CONFIGS, TEST_CHECK_STRING};
     use crate::test::create_aligned_data;
     use crate::test::enums::AnyCrcTestConfig;
-    use rand::{rng, Rng};
+    use rand::{rng, RngExt};
 
     #[test]
     fn test_check_value() {

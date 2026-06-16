@@ -1353,7 +1353,7 @@ mod lib {
     use crate::test::enums::AnyCrcTestConfig;
     use cbindgen::Language::C;
     use cbindgen::Style::Both;
-    use rand::{rng, Rng};
+    use rand::{rng, RngExt};
     use std::fs::{read, write};
 
     #[test]

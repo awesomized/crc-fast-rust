@@ -225,7 +225,7 @@ mod tests {
     use super::*;
     use crate::test::consts::TEST_CHECK_STRING;
     use crc::{Crc, Table};
-    use rand::{rng, Rng};
+    use rand::{rng, RngExt};
 
     const RUST_CRC32_ISO_HDLC: Crc<u32, Table<16>> =
         Crc::<u32, Table<16>>::new(&crc::CRC_32_ISO_HDLC);
