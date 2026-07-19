@@ -30,7 +30,7 @@ digest = { version = "0.10", optional = true, default-features = false, features
 # no_std support
 # spin is optional - only needed on architectures with SIMD (for feature detection)
 # or when cache feature is enabled
-spin = { version = "0.10.0", default-features = false, features = [
+spin = { version = "0.10.1", default-features = false, features = [
     "once",
     "rwlock",
     "mutex",
