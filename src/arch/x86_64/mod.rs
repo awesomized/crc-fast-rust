@@ -4,5 +4,6 @@
 
 #![cfg(target_arch = "x86_64")]
 
+pub mod avx2_vpclmulqdq;
 pub mod avx512;
 pub mod avx512_vpclmulqdq;

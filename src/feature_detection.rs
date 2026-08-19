@@ -54,6 +54,7 @@ pub enum PerformanceTier {
     // x86_64 tiers
     X86_64Avx512Vpclmulqdq,
     X86_64Avx512Pclmulqdq,
+    X86_64Avx2Vpclmulqdq,
     X86_64SsePclmulqdq,
 
     // x86 tiers
@@ -76,6 +77,7 @@ pub struct ArchCapabilities {
     pub has_sse41: bool,
     pub has_sse42: bool, // provides native CRC32C instructions for fusion techniques
     pub has_pclmulqdq: bool,
+    pub has_avx2: bool,     // required to use vpclmulqdq on 256-bit registers
     pub has_avx512vl: bool, // implicitly enables avx512f, has XOR3 operations
     pub has_vpclmulqdq: bool,
 }
@@ -96,6 +98,7 @@ fn tier_to_target_string(tier: PerformanceTier) -> String {
         PerformanceTier::AArch64Aes => "aarch64-neon-pmull".to_string(),
         PerformanceTier::X86_64Avx512Vpclmulqdq => "x86_64-avx512-vpclmulqdq".to_string(),
         PerformanceTier::X86_64Avx512Pclmulqdq => "x86_64-avx512-pclmulqdq".to_string(),
+        PerformanceTier::X86_64Avx2Vpclmulqdq => "x86_64-avx2-vpclmulqdq".to_string(),
         PerformanceTier::X86_64SsePclmulqdq => "x86_64-sse-pclmulqdq".to_string(),
         PerformanceTier::X86SsePclmulqdq => "x86-sse-pclmulqdq".to_string(),
         PerformanceTier::SoftwareTable => "software-fallback-tables".to_string(),
@@ -128,6 +131,7 @@ unsafe fn detect_arch_capabilities() -> ArchCapabilities {
             has_sse41: false,
             has_sse42: false,
             has_pclmulqdq: false,
+            has_avx2: false,
             has_avx512vl: false,
             has_vpclmulqdq: false,
         }
@@ -160,6 +164,7 @@ unsafe fn detect_aarch64_features() -> ArchCapabilities {
         has_sse41: false,
         has_sse42: false,
         has_pclmulqdq: false,
+        has_avx2: false,
         has_avx512vl: false,
         has_vpclmulqdq: false,
     }
@@ -175,6 +180,7 @@ unsafe fn detect_aarch64_features() -> ArchCapabilities {
         has_sse41: false,
         has_sse42: false,
         has_pclmulqdq: false,
+        has_avx2: false,
         has_avx512vl: false,
         has_vpclmulqdq: false,
     }
@@ -191,7 +197,13 @@ unsafe fn detect_x86_features() -> ArchCapabilities {
     let has_pclmulqdq = has_sse41 && is_x86_feature_detected!("pclmulqdq");
 
     let has_avx512vl = has_pclmulqdq && is_x86_feature_detected!("avx512vl");
-    let has_vpclmulqdq = has_avx512vl && is_x86_feature_detected!("vpclmulqdq");
+
+    // VPCLMULQDQ is a separate CPUID feature from AVX-512, and several families expose it without
+    // one: AMD Zen 3, Intel hybrid client parts from Alder Lake onward (AVX-512 is fused off
+    // there), and Intel E-core server parts such as Sierra Forest. Those drive the 256-bit kernel.
+    let has_vpclmulqdq = has_pclmulqdq && is_x86_feature_detected!("vpclmulqdq");
+    let has_avx2 = is_x86_feature_detected!("avx2");
+
     // SSE 4.2 provides native CRC32C instructions for fusion techniques
     let has_sse42 = is_x86_feature_detected!("sse4.2");
 
@@ -202,6 +214,7 @@ unsafe fn detect_x86_features() -> ArchCapabilities {
         has_sse41,
         has_sse42,
         has_pclmulqdq,
+        has_avx2,
         has_avx512vl,
         has_vpclmulqdq,
     }
@@ -214,7 +227,8 @@ unsafe fn detect_x86_features() -> ArchCapabilities {
     let has_sse42 = cfg!(target_feature = "sse4.2");
     let has_pclmulqdq = has_sse41 && cfg!(target_feature = "pclmulqdq");
     let has_avx512vl = has_pclmulqdq && cfg!(target_feature = "avx512vl");
-    let has_vpclmulqdq = has_avx512vl && cfg!(target_feature = "vpclmulqdq");
+    let has_vpclmulqdq = has_pclmulqdq && cfg!(target_feature = "vpclmulqdq");
+    let has_avx2 = cfg!(target_feature = "avx2");
 
     ArchCapabilities {
         has_aes: false,
@@ -223,6 +237,7 @@ unsafe fn detect_x86_features() -> ArchCapabilities {
         has_sse41,
         has_sse42,
         has_pclmulqdq,
+        has_avx2,
         has_avx512vl,
         has_vpclmulqdq,
     }
@@ -245,11 +260,14 @@ pub(crate) fn select_performance_tier(capabilities: &ArchCapabilities) -> Perfor
 
     #[cfg(target_arch = "x86_64")]
     {
-        if capabilities.has_vpclmulqdq {
+        if capabilities.has_vpclmulqdq && capabilities.has_avx512vl {
             return PerformanceTier::X86_64Avx512Vpclmulqdq;
         }
         if capabilities.has_avx512vl {
             return PerformanceTier::X86_64Avx512Pclmulqdq;
+        }
+        if capabilities.has_vpclmulqdq && capabilities.has_avx2 {
+            return PerformanceTier::X86_64Avx2Vpclmulqdq;
         }
         if capabilities.has_pclmulqdq {
             return PerformanceTier::X86_64SsePclmulqdq;
@@ -282,6 +300,8 @@ pub enum ArchOpsInstance {
     X86_64Avx512Pclmulqdq(crate::arch::x86_64::avx512::X86_64Avx512PclmulqdqOps),
     #[cfg(target_arch = "x86_64")]
     X86_64Avx512Vpclmulqdq(crate::arch::x86_64::avx512_vpclmulqdq::X86_64Avx512VpclmulqdqOps),
+    #[cfg(target_arch = "x86_64")]
+    X86_64Avx2Vpclmulqdq(crate::arch::x86_64::avx2_vpclmulqdq::X86_64Avx2VpclmulqdqOps),
     /// Software fallback - no ArchOps struct needed
     SoftwareFallback,
 }
@@ -301,6 +321,8 @@ impl ArchOpsInstance {
             ArchOpsInstance::X86_64Avx512Pclmulqdq(_) => PerformanceTier::X86_64Avx512Pclmulqdq,
             #[cfg(target_arch = "x86_64")]
             ArchOpsInstance::X86_64Avx512Vpclmulqdq(_) => PerformanceTier::X86_64Avx512Vpclmulqdq,
+            #[cfg(target_arch = "x86_64")]
+            ArchOpsInstance::X86_64Avx2Vpclmulqdq(_) => PerformanceTier::X86_64Avx2Vpclmulqdq,
             ArchOpsInstance::SoftwareFallback => PerformanceTier::SoftwareTable,
         }
     }
@@ -374,6 +396,11 @@ fn create_arch_ops_from_tier(tier: PerformanceTier) -> ArchOpsInstance {
             use crate::arch::x86_64::avx512::X86_64Avx512PclmulqdqOps;
             ArchOpsInstance::X86_64Avx512Pclmulqdq(X86_64Avx512PclmulqdqOps::new())
         }
+        #[cfg(target_arch = "x86_64")]
+        PerformanceTier::X86_64Avx2Vpclmulqdq => {
+            use crate::arch::x86_64::avx2_vpclmulqdq::X86_64Avx2VpclmulqdqOps;
+            ArchOpsInstance::X86_64Avx2Vpclmulqdq(X86_64Avx2VpclmulqdqOps::new())
+        }
         #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
         PerformanceTier::X86_64SsePclmulqdq | PerformanceTier::X86SsePclmulqdq => {
             create_x86_sse_pclmulqdq_ops()
@@ -443,6 +470,7 @@ mod tests {
             has_sse41: false,
             has_sse42: false,
             has_pclmulqdq: false,
+            has_avx2: false,
             has_avx512vl: false,
             has_vpclmulqdq: false,
         };
@@ -459,6 +487,7 @@ mod tests {
             has_sse41: false,
             has_sse42: false,
             has_pclmulqdq: false,
+            has_avx2: false,
             has_avx512vl: false,
             has_vpclmulqdq: false,
         };
@@ -475,6 +504,7 @@ mod tests {
             has_sse41: false,
             has_sse42: false,
             has_pclmulqdq: false,
+            has_avx2: false,
             has_avx512vl: false,
             has_vpclmulqdq: false,
         };
@@ -498,6 +528,7 @@ mod tests {
             has_sse41: false,
             has_sse42: false,
             has_pclmulqdq: false,
+            has_avx2: false,
             has_avx512vl: false,
             has_vpclmulqdq: false,
         };
@@ -513,6 +544,7 @@ mod tests {
             has_sse41: false,
             has_sse42: false,
             has_pclmulqdq: false,
+            has_avx2: false,
             has_avx512vl: false,
             has_vpclmulqdq: false,
         };
@@ -534,6 +566,7 @@ mod tests {
             has_sse41: true,
             has_sse42: false,
             has_pclmulqdq: true,
+            has_avx2: false,
             has_avx512vl: true,
             has_vpclmulqdq: true,
         };
@@ -550,6 +583,7 @@ mod tests {
             has_sse41: true,
             has_sse42: false,
             has_pclmulqdq: true,
+            has_avx2: false,
             has_avx512vl: true,
             has_vpclmulqdq: false,
         };
@@ -566,6 +600,7 @@ mod tests {
             has_sse41: true,
             has_sse42: false,
             has_pclmulqdq: true,
+            has_avx2: false,
             has_avx512vl: false,
             has_vpclmulqdq: false,
         };
@@ -582,6 +617,7 @@ mod tests {
             has_sse41: true,
             has_sse42: false,
             has_pclmulqdq: false,
+            has_avx2: false,
             has_avx512vl: false,
             has_vpclmulqdq: false,
         };
@@ -604,6 +640,7 @@ mod tests {
             has_sse41: true,
             has_sse42: false,
             has_pclmulqdq: true,
+            has_avx2: false,
             has_avx512vl: false,
             has_vpclmulqdq: false,
         };
@@ -621,6 +658,7 @@ mod tests {
             has_sse41: true,
             has_sse42: false,
             has_pclmulqdq: true,
+            has_avx2: false,
             has_avx512vl: false, // No AVX512 on 32-bit x86
             has_vpclmulqdq: false,
         };
@@ -638,6 +676,7 @@ mod tests {
             has_sse41: true,
             has_sse42: false,
             has_pclmulqdq: false,
+            has_avx2: false,
             has_avx512vl: false,
             has_vpclmulqdq: false,
         };
@@ -662,6 +701,7 @@ mod tests {
             has_sse41: true,
             has_sse42: false,
             has_pclmulqdq: true,
+            has_avx2: false,
             has_avx512vl: true,
             has_vpclmulqdq: true,
         };
@@ -689,6 +729,7 @@ mod tests {
                 has_sse41: false,
                 has_sse42: false,
                 has_pclmulqdq: false,
+                has_avx2: false,
                 has_avx512vl: false,
                 has_vpclmulqdq: false,
             };
@@ -707,6 +748,7 @@ mod tests {
                 has_sse41: true,
                 has_sse42: false,
                 has_pclmulqdq: true,
+                has_avx2: false,
                 has_avx512vl: false,  // Missing required dependency
                 has_vpclmulqdq: true, // This should be impossible in real detection
             };
@@ -735,6 +777,7 @@ mod tests {
                 has_sse41: false,
                 has_sse42: false,
                 has_pclmulqdq: false,
+                has_avx2: false,
                 has_avx512vl: false,
                 has_vpclmulqdq: false,
             };
@@ -751,6 +794,7 @@ mod tests {
                 has_sse41: false,
                 has_sse42: false,
                 has_pclmulqdq: false,
+                has_avx2: false,
                 has_avx512vl: false,
                 has_vpclmulqdq: false,
             };
@@ -767,6 +811,7 @@ mod tests {
                 has_sse41: false,
                 has_sse42: false,
                 has_pclmulqdq: false,
+                has_avx2: false,
                 has_avx512vl: false,
                 has_vpclmulqdq: false,
             };
@@ -788,6 +833,7 @@ mod tests {
                 has_sse41: false,
                 has_sse42: false,
                 has_pclmulqdq: false,
+                has_avx2: false,
                 has_avx512vl: false,
                 has_vpclmulqdq: false,
             };
@@ -804,6 +850,7 @@ mod tests {
                 has_sse41: true,
                 has_sse42: false,
                 has_pclmulqdq: false,
+                has_avx2: false,
                 has_avx512vl: false,
                 has_vpclmulqdq: false,
             };
@@ -820,6 +867,7 @@ mod tests {
                 has_sse41: true,
                 has_sse42: false,
                 has_pclmulqdq: true,
+                has_avx2: false,
                 has_avx512vl: false,
                 has_vpclmulqdq: false,
             };
@@ -836,6 +884,7 @@ mod tests {
                 has_sse41: true,
                 has_sse42: false,
                 has_pclmulqdq: true,
+                has_avx2: false,
                 has_avx512vl: true,
                 has_vpclmulqdq: false,
             };
@@ -852,6 +901,7 @@ mod tests {
                 has_sse41: true,
                 has_sse42: false,
                 has_pclmulqdq: true,
+                has_avx2: false,
                 has_avx512vl: true,
                 has_vpclmulqdq: true,
             };
@@ -873,6 +923,7 @@ mod tests {
                 has_sse41: false,
                 has_sse42: false,
                 has_pclmulqdq: false,
+                has_avx2: false,
                 has_avx512vl: false,
                 has_vpclmulqdq: false,
             };
@@ -890,6 +941,7 @@ mod tests {
                 has_sse41: true,
                 has_sse42: false,
                 has_pclmulqdq: true,
+                has_avx2: false,
                 has_avx512vl: false, // AVX512 not available on 32-bit x86
                 has_vpclmulqdq: false,
             };
@@ -942,6 +994,7 @@ mod tests {
                 has_sse41: false,
                 has_sse42: false,
                 has_pclmulqdq: false,
+                has_avx2: false,
                 has_avx512vl: false,
                 has_vpclmulqdq: false,
             };
@@ -979,6 +1032,7 @@ mod tests {
                 has_sse41: true,
                 has_sse42: false,
                 has_pclmulqdq: true,
+                has_avx2: false,
                 has_avx512vl: true,
                 has_vpclmulqdq: true,
             };
@@ -1030,6 +1084,7 @@ mod tests {
                 has_sse41: false,
                 has_sse42: false,
                 has_pclmulqdq: false,
+                has_avx2: false,
                 has_avx512vl: false,
                 has_vpclmulqdq: false,
             };
@@ -1047,6 +1102,7 @@ mod tests {
                 has_sse41: true,
                 has_sse42: false,
                 has_pclmulqdq: true,
+                has_avx2: false,
                 has_avx512vl: false,
                 has_vpclmulqdq: true, // This would be impossible in real detection
             };
@@ -1072,6 +1128,7 @@ mod software_fallback_tests {
             has_sse41: false,
             has_sse42: false,
             has_pclmulqdq: false,
+            has_avx2: false,
             has_avx512vl: false,
             has_vpclmulqdq: false,
         };
@@ -1094,6 +1151,7 @@ mod software_fallback_tests {
             has_sse41: true, // SSE4.1 available
             has_sse42: false,
             has_pclmulqdq: false, // But PCLMULQDQ not available
+            has_avx2: false,
             has_avx512vl: false,
             has_vpclmulqdq: false,
         };
@@ -1113,6 +1171,7 @@ mod software_fallback_tests {
             has_sse41: false, // No SSE4.1 support
             has_sse42: false,
             has_pclmulqdq: false, // PCLMULQDQ requires SSE4.1
+            has_avx2: false,
             has_avx512vl: false,
             has_vpclmulqdq: false,
         };
