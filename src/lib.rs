@@ -1040,6 +1040,10 @@ fn checksum_file_with_digest(
 
 /// Combines two CRC checksums using the specified algorithm.
 ///
+/// With `std` or `cache`, CRC-64/NVME reuses 32 KiB of shift operators, initialized
+/// on the first nontrivial combine. Subsequent calls only apply the operators for
+/// the set bits of `checksum2_len`. Other algorithms use the generic implementation.
+///
 /// # Examples
 ///```rust
 /// use crc_fast::{checksum, checksum_combine, CrcAlgorithm::Crc32IsoHdlc};

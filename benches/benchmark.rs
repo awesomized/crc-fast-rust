@@ -235,7 +235,7 @@ fn bench_combine(c: &mut Criterion) {
         })
     });
 
-    // Controls for the unchanged generic path, reflected and forward.
+    // Exercise the generic matrix path with reflected and forward CRCs.
     for (name, algorithm) in [
         ("CRC32-ISCSI", CrcAlgorithm::Crc32Iscsi),
         ("CRC64-ECMA182", CrcAlgorithm::Crc64Ecma182),

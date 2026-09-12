@@ -52,6 +52,9 @@
 
 use crate::CrcParams;
 
+#[cfg(any(feature = "std", feature = "cache"))]
+mod crc64_nvme;
+
 /* Multiply the GF(2) vector vec by the GF(2) matrix mat, returning the
 resulting vector.  The vector is stored as bits in a crc_t.  The matrix is
 similarly stored with each column as a crc_t, where the number of columns is
@@ -59,13 +62,9 @@ at least enough to cover the position of the most significant 1 bit in the
 vector (so a dimension parameter is not needed). */
 fn gf2_matrix_times(mat: &[u64; 64], mut vec: u64) -> u64 {
     let mut sum = 0;
-    let mut idx = 0;
-    while vec > 0 {
-        if vec & 1 == 1 {
-            sum ^= mat[idx];
-        }
-        vec >>= 1;
-        idx += 1;
+    while vec != 0 {
+        sum ^= mat[vec.trailing_zeros() as usize];
+        vec &= vec - 1;
     }
 
     sum
@@ -84,7 +83,22 @@ fn gf2_matrix_square(square: &mut [u64; 64], mat: &[u64; 64]) {
 first sequence of bytes, crc2 is the CRC of the immediately following
 sequence of bytes, and len2 is the length of the second sequence.  The CRC
 of the combined sequence is returned. */
-pub fn checksums(mut crc1: u64, crc2: u64, mut len2: u64, params: &CrcParams) -> u64 {
+pub fn checksums(crc1: u64, crc2: u64, len2: u64, params: &CrcParams) -> u64 {
+    #[cfg(any(feature = "std", feature = "cache"))]
+    if params.width == 64
+        && params.poly == crate::crc64::consts::CRC64_NVME.poly
+        && params.refin
+        && params.refout
+    {
+        // Match the polynomial and reflection, not the algorithm enum: custom
+        // parameters can share these operators while using different init/xorout.
+        return crc64_nvme::checksums(crc1 ^ params.init_algorithm ^ params.xorout, crc2, len2);
+    }
+
+    checksums_uncached(crc1, crc2, len2, params)
+}
+
+fn checksums_uncached(mut crc1: u64, crc2: u64, mut len2: u64, params: &CrcParams) -> u64 {
     let mut col: u64;
     let mut even = [0u64; 64]; /* even-power-of-two zeros operator */
     let mut odd = [0u64; 64]; /* odd-power-of-two zeros operator */
@@ -185,4 +199,87 @@ fn bit_reverse(mut forward: u64) -> u64 {
     }
 
     reversed
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::crc64::consts::CRC64_NVME;
+    use crate::{checksum_combine_with_params, checksum_with_params, Digest};
+    use proptest::prelude::*;
+
+    #[test]
+    fn nvme_combine_covers_all_length_bits() {
+        let first = 0xae8b_1486_0a79_9888;
+        let second = 0x9f21_c83a_dbc1_cd7d;
+        // Exercise every operator and carry across adjacent length bits without
+        // allocating enormous payloads. The generic implementation is the oracle.
+        for len in [0, u64::MAX].into_iter().chain((0..64).flat_map(|bit| {
+            let len = 1u64 << bit;
+            [len - 1, len, len + 1]
+        })) {
+            assert_eq!(
+                checksums(first, second, len, &CRC64_NVME),
+                checksums_uncached(first, second, len, &CRC64_NVME),
+                "second length {len}",
+            );
+        }
+        assert_eq!(checksums(0, second, u64::MAX, &CRC64_NVME), second);
+    }
+
+    proptest! {
+        #![proptest_config(crate::test::miri_compatible_proptest_config())]
+
+        #[test]
+        fn nvme_combine_matches_generic(
+            first in any::<u64>(), second in any::<u64>(), len in any::<u64>(),
+            init in any::<u64>(), xorout in any::<u64>(),
+        ) {
+            let params = CrcParams {
+                algorithm: crate::CrcAlgorithm::CrcCustom,
+                init, init_algorithm: init, xorout, ..CRC64_NVME
+            };
+            prop_assert_eq!(
+                checksums(first, second, len, &params),
+                checksums_uncached(first, second, len, &params),
+            );
+        }
+
+        #[test]
+        fn nvme_combine_matches_concatenation(
+            first in proptest::collection::vec(any::<u8>(), 0..1024),
+            second in proptest::collection::vec(any::<u8>(), 0..1024),
+            init in any::<u64>(), xorout in any::<u64>(),
+        ) {
+            let params = CrcParams {
+                algorithm: crate::CrcAlgorithm::CrcCustom,
+                init, init_algorithm: init, xorout, ..CRC64_NVME
+            };
+            // The reference crate reflects its initial value; start both
+            // implementations with the same raw state, then adjust the final XOR.
+            let mut reference = crate::test::consts::RUST_CRC64_NVME
+                .digest_with_initial(init.reverse_bits());
+            reference.update(&first);
+            reference.update(&second);
+            let expected = reference.finalize() ^ CRC64_NVME.xorout ^ xorout;
+            let c1 = checksum_with_params(params, &first);
+            let c2 = checksum_with_params(params, &second);
+            prop_assert_eq!(
+                checksum_combine_with_params(params, c1, c2, second.len() as u64),
+                expected,
+            );
+            // Empty regions must preserve custom init/xorout semantics too.
+            let empty = checksum_with_params(params, &[]);
+            prop_assert_eq!(checksum_combine_with_params(params, c1, empty, 0), c1);
+            prop_assert_eq!(
+                checksum_combine_with_params(params, empty, c2, second.len() as u64), c2,
+            );
+            let mut digest = Digest::new_with_params(params);
+            digest.update(&first);
+            let mut next = Digest::new_with_params(params);
+            next.update(&second);
+            digest.combine(&next);
+            prop_assert_eq!(digest.finalize(), expected);
+        }
+    }
 }
