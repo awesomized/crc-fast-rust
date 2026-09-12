@@ -174,6 +174,85 @@ fn bench_crc64(c: &mut Criterion) {
     }
 }
 
-criterion_group!(benches, bench_crc32, bench_crc64);
+// These benchmarks time composition of already-computed checksums. Payload
+// hashing and data generation deliberately stay outside the timed region.
+fn bench_combine(c: &mut Criterion) {
+    let mut group = c.benchmark_group("combine");
+    group.sample_size(100);
+    group.warm_up_time(Duration::from_secs(1));
+    group.measurement_time(Duration::from_secs(3));
+
+    let first = 0xae8b_1486_0a79_9888u64;
+    let second = 0x9f21_c83a_dbc1_cd7du64;
+    for (name, len) in [
+        ("empty", 0),
+        ("1B", 1),
+        ("1KiB", 1024),
+        ("16KiB-1", 16 * 1024 - 1),
+        ("16KiB", 16 * 1024),
+        ("1MiB", 1024 * 1024),
+        ("1GiB", 1024 * 1024 * 1024),
+        ("2^63", 1u64 << 63),
+        ("u64-max", u64::MAX),
+    ] {
+        group.bench_function(BenchmarkId::new("CRC64-NVME", name), |b| {
+            b.iter(|| {
+                crc_fast::checksum_combine(
+                    black_box(CrcAlgorithm::Crc64Nvme),
+                    black_box(first),
+                    black_box(second),
+                    black_box(len),
+                )
+            })
+        });
+    }
+
+    group.bench_function("CRC64-NVME/empty-first", |b| {
+        b.iter(|| {
+            crc_fast::checksum_combine(
+                black_box(CrcAlgorithm::Crc64Nvme),
+                black_box(0),
+                black_box(second),
+                black_box(16 * 1024),
+            )
+        })
+    });
+
+    // A serial fold models combining a sparse index or a multipart object.
+    // The accumulator changes on every call; no payload is read.
+    group.bench_function("CRC64-NVME/256x16KiB", |b| {
+        b.iter(|| {
+            let mut combined = black_box(first);
+            for _ in 0..256 {
+                combined = crc_fast::checksum_combine(
+                    black_box(CrcAlgorithm::Crc64Nvme),
+                    combined,
+                    black_box(second),
+                    black_box(16 * 1024),
+                );
+            }
+            combined
+        })
+    });
+
+    // Controls for the unchanged generic path, reflected and forward.
+    for (name, algorithm) in [
+        ("CRC32-ISCSI", CrcAlgorithm::Crc32Iscsi),
+        ("CRC64-ECMA182", CrcAlgorithm::Crc64Ecma182),
+    ] {
+        group.bench_function(BenchmarkId::new(name, "16KiB"), |b| {
+            b.iter(|| {
+                crc_fast::checksum_combine(
+                    black_box(algorithm),
+                    black_box(first as u32 as u64),
+                    black_box(second as u32 as u64),
+                    black_box(16 * 1024),
+                )
+            })
+        });
+    }
+}
+
+criterion_group!(benches, bench_crc32, bench_crc64, bench_combine);
 
 criterion_main!(benches);
