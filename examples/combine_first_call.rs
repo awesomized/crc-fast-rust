@@ -15,8 +15,7 @@ fn main() {
     let second = black_box(0x9f21_c83a_dbc1_cd7d);
     let algorithm = black_box(CrcAlgorithm::Crc64Nvme);
     let start = Instant::now();
-    let combined = checksum_combine(algorithm, first, second, black_box(len));
+    black_box(checksum_combine(algorithm, first, second, black_box(len)));
     let elapsed = start.elapsed();
-    black_box(combined);
     println!("{}", elapsed.as_nanos());
 }

@@ -1,5 +1,8 @@
 # Performance
 
+See [checksum combination benchmarks](COMBINE.md) for combine latency, first-call
+cost, and reproduction steps.
+
 ## "Reflected" vs "Forward"
 
 There is a significant performance penalty for the "forward" implementations, due to the extra shuffle-masking. I've
