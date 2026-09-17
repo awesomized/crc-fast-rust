@@ -2,6 +2,7 @@
 
 #![allow(dead_code)]
 
+use crate::combine::CombineKeys;
 use crate::consts::{
     NAME_CRC32_AIXM, NAME_CRC32_AUTOSAR, NAME_CRC32_BASE91_D, NAME_CRC32_BZIP2,
     NAME_CRC32_CD_ROM_EDC, NAME_CRC32_CKSUM, NAME_CRC32_ISCSI, NAME_CRC32_ISO_HDLC,
@@ -156,6 +157,7 @@ pub const CRC32_AIXM: CrcParams = CrcParams {
     xorout: CRC_32_AIXM.xorout as u64,
     check: CRC_32_AIXM.check as u64,
     keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_814141AB_FORWARD),
+    combine_keys: Some(&COMBINE_KEYS_CRC32_AIXM),
 };
 
 // width=32 poly=0xf4acfb13 init=0xffffffff refin=true refout=true xorout=0xffffffff check=0x1697d06a residue=0x904cddbf name="CRC-32/AUTOSAR"
@@ -171,6 +173,7 @@ pub const CRC32_AUTOSAR: CrcParams = CrcParams {
     xorout: CRC_32_AUTOSAR.xorout as u64,
     check: CRC_32_AUTOSAR.check as u64,
     keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_F4ACFB13_REFLECTED),
+    combine_keys: Some(&COMBINE_KEYS_CRC32_AUTOSAR),
 };
 
 // width=32 poly=0xa833982b init=0xffffffff refin=true refout=true xorout=0xffffffff check=0x87315576 residue=0x45270551 name="CRC-32/BASE91-D"
@@ -186,6 +189,7 @@ pub const CRC32_BASE91_D: CrcParams = CrcParams {
     xorout: CRC_32_BASE91_D.xorout as u64,
     check: CRC_32_BASE91_D.check as u64,
     keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_A833982B_REFLECTED),
+    combine_keys: Some(&COMBINE_KEYS_CRC32_BASE91_D),
 };
 
 // width=32 poly=0x04c11db7 init=0xffffffff refin=false refout=false xorout=0xffffffff check=0xfc891918 residue=0xc704dd7b name="CRC-32/BZIP2"
@@ -201,6 +205,7 @@ pub const CRC32_BZIP2: CrcParams = CrcParams {
     xorout: CRC_32_BZIP2.xorout as u64,
     check: CRC_32_BZIP2.check as u64,
     keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_04C11DB7_FORWARD),
+    combine_keys: Some(&COMBINE_KEYS_CRC32_BZIP2),
 };
 
 // width=32 poly=0x8001801b init=0x00000000 refin=true refout=true xorout=0x00000000 check=0x6ec2edc4 residue=0x00000000 name="CRC-32/CD-ROM-EDC"
@@ -216,6 +221,7 @@ pub const CRC32_CD_ROM_EDC: CrcParams = CrcParams {
     xorout: CRC_32_CD_ROM_EDC.xorout as u64,
     check: CRC_32_CD_ROM_EDC.check as u64,
     keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_8001801B_REFLECTED),
+    combine_keys: Some(&COMBINE_KEYS_CRC32_CD_ROM_EDC),
 };
 
 // width=32 poly=0x04c11db7 init=0x00000000 refin=false refout=false xorout=0xffffffff check=0x765e7680 residue=0xc704dd7b name="CRC-32/CKSUM"
@@ -231,6 +237,7 @@ pub const CRC32_CKSUM: CrcParams = CrcParams {
     xorout: CRC_32_CKSUM.xorout as u64,
     check: CRC_32_CKSUM.check as u64,
     keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_04C11DB7_FORWARD),
+    combine_keys: Some(&COMBINE_KEYS_CRC32_CKSUM),
 };
 
 // width=32 poly=0x1edc6f41 init=0xffffffff refin=true refout=true xorout=0xffffffff check=0xe3069283 residue=0xb798b438 name="CRC-32/ISCSI"
@@ -246,6 +253,7 @@ pub const CRC32_ISCSI: CrcParams = CrcParams {
     xorout: CRC_32_ISCSI.xorout as u64,
     check: CRC_32_ISCSI.check as u64,
     keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_1EDC6F41_REFLECTED),
+    combine_keys: Some(&COMBINE_KEYS_CRC32_ISCSI),
 };
 
 // width=32 poly=0x04c11db7 init=0xffffffff refin=true refout=true xorout=0xffffffff check=0xcbf43926 residue=0xdebb20e3 name="CRC-32/ISO-HDLC"
@@ -261,6 +269,7 @@ pub const CRC32_ISO_HDLC: CrcParams = CrcParams {
     xorout: CRC_32_ISO_HDLC.xorout as u64,
     check: CRC_32_ISO_HDLC.check as u64,
     keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_04C11DB7_REFLECTED),
+    combine_keys: Some(&COMBINE_KEYS_CRC32_ISO_HDLC),
 };
 
 // width=32 poly=0x04c11db7 init=0xffffffff refin=true refout=true xorout=0x00000000 check=0x340bc6d9 residue=0x00000000 name="CRC-32/JAMCRC"
@@ -276,6 +285,7 @@ pub const CRC32_JAMCRC: CrcParams = CrcParams {
     xorout: CRC_32_JAMCRC.xorout as u64,
     check: CRC_32_JAMCRC.check as u64,
     keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_04C11DB7_REFLECTED),
+    combine_keys: Some(&COMBINE_KEYS_CRC32_JAMCRC),
 };
 
 // width=32 poly=0x741b8cd7 init=0xffffffff refin=true refout=true xorout=0x00000000 check=0xd2c22f51 residue=0x00000000 name="CRC-32/MEF"
@@ -291,6 +301,7 @@ pub const CRC32_MEF: CrcParams = CrcParams {
     xorout: CRC_32_MEF.xorout as u64,
     check: CRC_32_MEF.check as u64,
     keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_741B8CD7_REFLECTED),
+    combine_keys: Some(&COMBINE_KEYS_CRC32_MEF),
 };
 
 // width=32 poly=0x04c11db7 init=0xffffffff refin=false refout=false xorout=0x00000000 check=0x0376e6e7 residue=0x00000000 name="CRC-32/MPEG-2"
@@ -306,6 +317,7 @@ pub const CRC32_MPEG_2: CrcParams = CrcParams {
     xorout: CRC_32_MPEG_2.xorout as u64,
     check: CRC_32_MPEG_2.check as u64,
     keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_04C11DB7_FORWARD),
+    combine_keys: Some(&COMBINE_KEYS_CRC32_MPEG_2),
 };
 
 // width=32 poly=0x000000af init=0x00000000 refin=false refout=false xorout=0x00000000 check=0xbd0be338 residue=0x00000000 name="CRC-32/XFER"
@@ -321,6 +333,7 @@ pub const CRC32_XFER: CrcParams = CrcParams {
     xorout: CRC_32_XFER.xorout as u64,
     check: CRC_32_XFER.check as u64,
     keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_000000AF_FORWARD),
+    combine_keys: Some(&COMBINE_KEYS_CRC32_XFER),
 };
 
 // CRC-32/AIXM
@@ -582,3 +595,40 @@ pub(crate) const PSHUFB_SHF_TABLE_FORWARD: [[u64; 2]; 2] = [
     [0x8786858483828100, 0x8f8e8d8c8b8a8988],
     [0x0706050403020100, 0x0f0e0d0c0b0a0908],
 ];
+
+/// `x^(8 * 2^i) mod P(x)` for [`CRC32_AIXM`].
+static COMBINE_KEYS_CRC32_AIXM: CombineKeys = CombineKeys::new(CRC_32_AIXM.poly as u64, 32);
+
+/// `x^(8 * 2^i) mod P(x)` for [`CRC32_AUTOSAR`].
+static COMBINE_KEYS_CRC32_AUTOSAR: CombineKeys = CombineKeys::new(CRC_32_AUTOSAR.poly as u64, 32);
+
+/// `x^(8 * 2^i) mod P(x)` for [`CRC32_BASE91_D`].
+static COMBINE_KEYS_CRC32_BASE91_D: CombineKeys = CombineKeys::new(CRC_32_BASE91_D.poly as u64, 32);
+
+/// `x^(8 * 2^i) mod P(x)` for [`CRC32_BZIP2`].
+static COMBINE_KEYS_CRC32_BZIP2: CombineKeys = CombineKeys::new(CRC_32_BZIP2.poly as u64, 32);
+
+/// `x^(8 * 2^i) mod P(x)` for [`CRC32_CD_ROM_EDC`].
+static COMBINE_KEYS_CRC32_CD_ROM_EDC: CombineKeys =
+    CombineKeys::new(CRC_32_CD_ROM_EDC.poly as u64, 32);
+
+/// `x^(8 * 2^i) mod P(x)` for [`CRC32_CKSUM`].
+static COMBINE_KEYS_CRC32_CKSUM: CombineKeys = CombineKeys::new(CRC_32_CKSUM.poly as u64, 32);
+
+/// `x^(8 * 2^i) mod P(x)` for [`CRC32_ISCSI`].
+static COMBINE_KEYS_CRC32_ISCSI: CombineKeys = CombineKeys::new(CRC_32_ISCSI.poly as u64, 32);
+
+/// `x^(8 * 2^i) mod P(x)` for [`CRC32_ISO_HDLC`].
+static COMBINE_KEYS_CRC32_ISO_HDLC: CombineKeys = CombineKeys::new(CRC_32_ISO_HDLC.poly as u64, 32);
+
+/// `x^(8 * 2^i) mod P(x)` for [`CRC32_JAMCRC`].
+static COMBINE_KEYS_CRC32_JAMCRC: CombineKeys = CombineKeys::new(CRC_32_JAMCRC.poly as u64, 32);
+
+/// `x^(8 * 2^i) mod P(x)` for [`CRC32_MEF`].
+static COMBINE_KEYS_CRC32_MEF: CombineKeys = CombineKeys::new(CRC_32_MEF.poly as u64, 32);
+
+/// `x^(8 * 2^i) mod P(x)` for [`CRC32_MPEG_2`].
+static COMBINE_KEYS_CRC32_MPEG_2: CombineKeys = CombineKeys::new(CRC_32_MPEG_2.poly as u64, 32);
+
+/// `x^(8 * 2^i) mod P(x)` for [`CRC32_XFER`].
+static COMBINE_KEYS_CRC32_XFER: CombineKeys = CombineKeys::new(CRC_32_XFER.poly as u64, 32);

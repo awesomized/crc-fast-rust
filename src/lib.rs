@@ -233,7 +233,7 @@ use alloc::string::String;
 mod algorithm;
 pub mod arch;
 mod cache;
-mod combine;
+pub mod combine;
 mod consts;
 mod crc16;
 mod crc32;
@@ -425,6 +425,9 @@ pub struct CrcParams {
     pub xorout: u64,
     pub check: u64,
     pub keys: CrcKeysStorage,
+    /// `x^(8 * 2^i) mod P(x)` for combining, or `None` for a custom polynomial, which has no
+    /// table to point at and rebuilds the operator per combine instead.
+    pub combine_keys: Option<&'static combine::CombineKeys>,
 }
 
 /// Type alias for a function pointer that represents a CRC calculation function.
@@ -1086,6 +1089,9 @@ pub fn checksum_combine(
 ///
 /// assert_eq!(checksum, 0xcbf43926);
 /// ```
+///
+/// Parameters from [`CrcParams::new`] carry no compile-time combine keys, so each call rebuilds
+/// the operator. Prefer [`checksum_combine`] when the algorithm is one of the built-in ones.
 pub fn checksum_combine_with_params(
     params: CrcParams,
     checksum1: u64,
@@ -2014,6 +2020,7 @@ mod lib {
             xorout: 0xFFFFFFFF,
             check: 0xCBF43926,
             keys: CrcKeysStorage::from_keys_fold_256(test_keys),
+            combine_keys: None,
         };
 
         // Test valid key access

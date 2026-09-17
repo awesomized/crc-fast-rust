@@ -88,6 +88,7 @@ fn test_crc_params_get_key_checked() {
         xorout: 0xFFFFFFFF,
         check: 0x12345678,
         keys: CrcKeysStorage::from_keys_fold_256(keys_23),
+        combine_keys: None,
     };
 
     // Test valid indices return Some(value)
@@ -131,6 +132,7 @@ fn test_crc_params_get_key_checked() {
         xorout: 0xFFFFFFFFFFFFFFFF,
         check: 0x123456789ABCDEF0,
         keys: CrcKeysStorage::from_keys_fold_future_test(keys_25),
+        combine_keys: None,
     };
 
     // Test valid indices return Some(value)
@@ -185,6 +187,7 @@ fn test_key_count_returns_correct_values() {
         xorout: 0xFFFFFFFF,
         check: 0x12345678,
         keys: storage_23,
+        combine_keys: None,
     };
     assert_eq!(
         params_23.key_count(),
@@ -213,6 +216,7 @@ fn test_key_count_returns_correct_values() {
         xorout: 0xFFFFFFFFFFFFFFFF,
         check: 0x123456789ABCDEF0,
         keys: storage_25,
+        combine_keys: None,
     };
     assert_eq!(
         params_25.key_count(),
@@ -238,6 +242,7 @@ fn test_crc_params_get_key_bounds_checking() {
         xorout: 0xFFFFFFFF,
         check: 0x12345678,
         keys: CrcKeysStorage::from_keys_fold_256(keys_23),
+        combine_keys: None,
     };
 
     // Test valid indices
@@ -311,6 +316,7 @@ fn test_third_party_const_definitions_compatibility() {
             0x765F012345,
             0x876012345,
         ]),
+        combine_keys: None,
     };
 
     // Mock third-party CRC-64 definition
@@ -350,6 +356,7 @@ fn test_third_party_const_definitions_compatibility() {
             0x789ABCDEF01234,
             0x89ABCDEF012345,
         ]),
+        combine_keys: None,
     };
 
     // Test that third-party const definitions work correctly
@@ -431,6 +438,7 @@ fn test_existing_key_access_patterns_continue_to_work() {
         xorout: 0xFFFFFFFF,
         check: 0x12345678,
         keys: CrcKeysStorage::from_keys_fold_256(test_keys),
+        combine_keys: None,
     };
 
     // Pattern 1: Sequential access (common in folding algorithms)
@@ -515,6 +523,7 @@ fn test_backwards_compatibility_throughout_migration_phases() {
         xorout: 0x0000000000000000,
         check: 0x6C40DF5F0B497347,
         keys: storage,
+        combine_keys: None,
     };
 
     // Verify that CrcParams provides the same access patterns
@@ -609,6 +618,7 @@ fn test_key_access_performance_matches_direct_array_access() {
         xorout: 0xFFFFFFFF,
         check: 0x12345678,
         keys: storage,
+        combine_keys: None,
     };
 
     // Simulate intensive key access patterns that would reveal performance issues
@@ -750,6 +760,7 @@ fn test_memory_usage_impact_of_enum_based_storage() {
         xorout: 0xFFFFFFFF,
         check: 0x12345678,
         keys: storage_23,
+        combine_keys: None,
     };
 
     let params_25 = CrcParams {
@@ -764,6 +775,7 @@ fn test_memory_usage_impact_of_enum_based_storage() {
         xorout: 0xFFFFFFFFFFFFFFFF,
         check: 0x123456789ABCDEF0,
         keys: storage_25,
+        combine_keys: None,
     };
 
     let params_23_size = mem::size_of_val(&params_23);
@@ -942,6 +954,7 @@ fn test_create_crc_params_using_keys_future_test_variant() {
         xorout: 0xFFFFFFFFFFFFFFFF,
         check: 0x123456789ABCDEF0,
         keys: CrcKeysStorage::from_keys_fold_future_test(test_keys_25),
+        combine_keys: None,
     };
 
     // Verify that the future params work correctly
@@ -1010,6 +1023,7 @@ fn test_code_gracefully_handles_different_key_array_sizes() {
         xorout: 0xFFFFFFFF,
         check: 0x12345678,
         keys: CrcKeysStorage::from_keys_fold_256(keys_23),
+        combine_keys: None,
     };
 
     let params_25 = CrcParams {
@@ -1024,6 +1038,7 @@ fn test_code_gracefully_handles_different_key_array_sizes() {
         xorout: 0xFFFFFFFFFFFFFFFF,
         check: 0x123456789ABCDEF0,
         keys: CrcKeysStorage::from_keys_fold_future_test(keys_25),
+        combine_keys: None,
     };
 
     // Generic function that works with any CrcParams regardless of key count
@@ -1130,6 +1145,7 @@ fn test_expansion_to_larger_key_arrays_works_as_designed() {
         xorout: 0xFFFFFFFF,
         check: 0x12345678,
         keys: CrcKeysStorage::from_keys_fold_256(original_keys),
+        combine_keys: None,
     };
 
     let expanded_params = CrcParams {
@@ -1144,6 +1160,7 @@ fn test_expansion_to_larger_key_arrays_works_as_designed() {
         xorout: 0xFFFFFFFFFFFFFFFF,
         check: 0x123456789ABCDEF0,
         keys: CrcKeysStorage::from_keys_fold_future_test(expanded_keys),
+        combine_keys: None,
     };
 
     // Test that existing key access patterns continue to work
@@ -1290,6 +1307,7 @@ fn test_future_expansion_backwards_compatibility() {
         xorout: 0xFFFFFFFF,
         check: 0x12345678,
         keys: CrcKeysStorage::from_keys_fold_256(keys_23),
+        combine_keys: None,
     };
 
     // Test with expanded 25-key params
@@ -1306,6 +1324,7 @@ fn test_future_expansion_backwards_compatibility() {
         xorout: 0xFFFFFFFFFFFFFFFF,
         check: 0x123456789ABCDEF0,
         keys: CrcKeysStorage::from_keys_fold_future_test(keys_25),
+        combine_keys: None,
     };
 
     // Run third-party function with both variants
@@ -1384,6 +1403,7 @@ mod ffi_tests {
             xorout: 0xFFFFFFFF,
             check: 0x12345678,
             keys: CrcKeysStorage::from_keys_fold_256(keys_23),
+            combine_keys: None,
         };
 
         // Convert to FFI struct
@@ -1457,6 +1477,7 @@ mod ffi_tests {
             xorout: 0xFFFFFFFFFFFFFFFF,
             check: 0x123456789ABCDEF0,
             keys: CrcKeysStorage::from_keys_fold_future_test(keys_25),
+            combine_keys: None,
         };
 
         // Convert to FFI struct
@@ -1515,6 +1536,7 @@ mod ffi_tests {
             xorout: 0xFFFFFFFF,
             check: 0x12345678,
             keys: CrcKeysStorage::from_keys_fold_256(keys_23),
+            combine_keys: None,
         };
 
         // Convert to FFI multiple times
@@ -1545,6 +1567,7 @@ mod ffi_tests {
             xorout: 0xFFFFFFFF,
             check: 0x12345678,
             keys: CrcKeysStorage::from_keys_fold_256(different_keys),
+            combine_keys: None,
         };
 
         let ffi_params3: CrcFastParams = different_params.into();
@@ -1571,6 +1594,7 @@ mod ffi_tests {
             xorout: 0xFFFFFFFF,
             check: 0x12345678,
             keys: CrcKeysStorage::from_keys_fold_256(keys_23),
+            combine_keys: None,
         };
 
         let ffi_params: CrcFastParams = params.into();
@@ -1631,6 +1655,7 @@ mod ffi_tests {
             xorout: 0xFFFFFFFF,
             check: 0x12345678,
             keys: CrcKeysStorage::from_keys_fold_256(keys_23),
+            combine_keys: None,
         };
 
         // Test 25-key variant
@@ -1647,6 +1672,7 @@ mod ffi_tests {
             xorout: 0xFFFFFFFFFFFFFFFF,
             check: 0x123456789ABCDEF0,
             keys: CrcKeysStorage::from_keys_fold_future_test(keys_25),
+            combine_keys: None,
         };
 
         // Convert both to FFI

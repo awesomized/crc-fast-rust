@@ -343,6 +343,8 @@ fn try_params_from_ffi(value: &CrcFastParams) -> Option<CrcParams> {
         xorout: value.xorout,
         check: value.check,
         keys: storage,
+        // A runtime polynomial has no const table to point at.
+        combine_keys: None,
     })
 }
 

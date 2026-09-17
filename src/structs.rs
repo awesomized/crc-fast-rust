@@ -86,6 +86,12 @@ impl CrcParams {
     /// The first call with a given set of parameters will generate and cache the keys, while
     /// subsequent calls with the same parameters will use the cached keys for optimal performance.
     ///
+    /// Combining is the exception. The built-in algorithms carry combine keys built at compile
+    /// time; a runtime polynomial has none, so
+    /// [`checksum_combine_with_params`](crate::checksum_combine_with_params) and
+    /// [`Digest::combine`](crate::Digest::combine) rebuild the operator on every call for
+    /// parameters made here. Checksumming is unaffected.
+    ///
     /// Does not support mis-matched refin/refout parameters, so both must be true or both false.
     ///
     /// Rocksoft parameters for lots of variants: https://reveng.sourceforge.io/crc-catalogue/all.htm
@@ -125,6 +131,9 @@ impl CrcParams {
             xorout,
             check,
             keys,
+            // A runtime polynomial has no const table to point at; combining rebuilds the
+            // operator per call instead.
+            combine_keys: None,
         }
     }
 

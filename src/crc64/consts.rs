@@ -2,6 +2,7 @@
 
 #![allow(dead_code)]
 
+use crate::combine::CombineKeys;
 use crate::consts::*;
 use crate::structs::Algorithm;
 use crate::CrcAlgorithm;
@@ -97,6 +98,7 @@ pub const CRC64_ECMA_182: CrcParams = CrcParams {
     xorout: CRC_64_ECMA_182.xorout,
     check: CRC_64_ECMA_182.check,
     keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_42F0E1EBA9EA3693_FORWARD),
+    combine_keys: Some(&COMBINE_KEYS_CRC64_ECMA_182),
 };
 
 // width=64 poly=0x000000000000001b init=0xffffffffffffffff refin=true refout=true xorout=0xffffffffffffffff check=0xb90956c775a41001 residue=0x5300000000000000 name="CRC-64/GO-ISO"
@@ -112,6 +114,7 @@ pub const CRC64_GO_ISO: CrcParams = CrcParams {
     xorout: CRC_64_GO_ISO.xorout,
     check: CRC_64_GO_ISO.check,
     keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_000000000000001B_REFLECTED),
+    combine_keys: Some(&COMBINE_KEYS_CRC64_GO_ISO),
 };
 
 // width=64 poly=0x259c84cba6426349 init=0xffffffffffffffff refin=true refout=true xorout=0x0000000000000000 check=0x75d4b74f024eceea residue=0x0000000000000000 name="CRC-64/MS"
@@ -127,6 +130,7 @@ pub const CRC64_MS: CrcParams = CrcParams {
     xorout: CRC_64_MS.xorout,
     check: CRC_64_MS.check,
     keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_259C84CBA6426349_REFLECTED),
+    combine_keys: Some(&COMBINE_KEYS_CRC64_MS),
 };
 
 // https://reveng.sourceforge.io/crc-catalogue/all.htm#crc.cat.crc-64-nvme
@@ -143,6 +147,7 @@ pub const CRC64_NVME: CrcParams = CrcParams {
     xorout: CRC_64_NVME.xorout,
     check: CRC_64_NVME.check,
     keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_AD93D23594C93659_REFLECTED),
+    combine_keys: Some(&COMBINE_KEYS_CRC64_NVME),
 };
 
 // width=64 poly=0xad93d23594c935a9 init=0x0000000000000000 refin=true refout=true xorout=0x0000000000000000 check=0xe9c6d914c4b8d9ca residue=0x0000000000000000 name="CRC-64/REDIS"
@@ -158,6 +163,7 @@ pub const CRC64_REDIS: CrcParams = CrcParams {
     xorout: CRC_64_REDIS.xorout,
     check: CRC_64_REDIS.check,
     keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_AD93D23594C935A9_REFLECTED),
+    combine_keys: Some(&COMBINE_KEYS_CRC64_REDIS),
 };
 
 // width=64 poly=0x42f0e1eba9ea3693 init=0xffffffffffffffff refin=false refout=false xorout=0xffffffffffffffff check=0x62ec59e3f1a4f00a residue=0xfcacbebd5931a992 name="CRC-64/WE"
@@ -173,6 +179,7 @@ pub const CRC64_WE: CrcParams = CrcParams {
     xorout: CRC_64_WE.xorout,
     check: CRC_64_WE.check,
     keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_42F0E1EBA9EA3693_FORWARD),
+    combine_keys: Some(&COMBINE_KEYS_CRC64_WE),
 };
 
 // width=64 poly=0x42f0e1eba9ea3693 init=0xffffffffffffffff refin=true refout=true xorout=0xffffffffffffffff check=0x995dc9bbdf1939fa residue=0x49958c9abd7d353f name="CRC-64/XZ"
@@ -188,6 +195,7 @@ pub const CRC64_XZ: CrcParams = CrcParams {
     xorout: CRC_64_XZ.xorout,
     check: CRC_64_XZ.check,
     keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_42F0E1EBA9EA3693_REFLECTED),
+    combine_keys: Some(&COMBINE_KEYS_CRC64_XZ),
 };
 
 // CRC-64/MS
@@ -409,3 +417,27 @@ pub const PSBTBL_FORWARD: AlignedTableForward = AlignedTableForward {
         0x80,
     ],
 };
+
+/// `x^(8 * 2^i) mod P(x)` for [`CRC64_ECMA_182`].
+static COMBINE_KEYS_CRC64_ECMA_182: CombineKeys =
+    CombineKeys::new(CRC_64_ECMA_182.poly, CRC_64_ECMA_182.width);
+
+/// `x^(8 * 2^i) mod P(x)` for [`CRC64_GO_ISO`].
+static COMBINE_KEYS_CRC64_GO_ISO: CombineKeys =
+    CombineKeys::new(CRC_64_GO_ISO.poly, CRC_64_GO_ISO.width);
+
+/// `x^(8 * 2^i) mod P(x)` for [`CRC64_MS`].
+static COMBINE_KEYS_CRC64_MS: CombineKeys = CombineKeys::new(CRC_64_MS.poly, 64);
+
+/// `x^(8 * 2^i) mod P(x)` for [`CRC64_NVME`].
+static COMBINE_KEYS_CRC64_NVME: CombineKeys = CombineKeys::new(CRC_64_NVME.poly, CRC_64_NVME.width);
+
+/// `x^(8 * 2^i) mod P(x)` for [`CRC64_REDIS`].
+static COMBINE_KEYS_CRC64_REDIS: CombineKeys =
+    CombineKeys::new(CRC_64_REDIS.poly, CRC_64_REDIS.width);
+
+/// `x^(8 * 2^i) mod P(x)` for [`CRC64_WE`].
+static COMBINE_KEYS_CRC64_WE: CombineKeys = CombineKeys::new(CRC_64_WE.poly, CRC_64_WE.width);
+
+/// `x^(8 * 2^i) mod P(x)` for [`CRC64_XZ`].
+static COMBINE_KEYS_CRC64_XZ: CombineKeys = CombineKeys::new(CRC_64_XZ.poly, CRC_64_XZ.width);

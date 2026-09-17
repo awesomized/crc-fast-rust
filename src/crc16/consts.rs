@@ -2,6 +2,7 @@
 
 #![allow(dead_code)]
 
+use crate::combine::CombineKeys;
 use crate::consts::{
     NAME_CRC16_ARC, NAME_CRC16_CDMA2000, NAME_CRC16_CMS, NAME_CRC16_DDS_110, NAME_CRC16_DECT_R,
     NAME_CRC16_DECT_X, NAME_CRC16_DNP, NAME_CRC16_EN_13757, NAME_CRC16_GENIBUS, NAME_CRC16_GSM,
@@ -372,6 +373,7 @@ pub const CRC16_ARC: CrcParams = CrcParams {
     xorout: CRC_16_ARC.xorout as u64,
     check: CRC_16_ARC.check as u64,
     keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_8005_REFLECTED),
+    combine_keys: Some(&COMBINE_KEYS_CRC16_ARC),
 };
 
 // width=16 poly=0xc867 init=0xffff refin=false refout=false xorout=0x0000 check=0x4c06 residue=0x0000 name="CRC-16/CDMA2000"
@@ -387,6 +389,7 @@ pub const CRC16_CDMA2000: CrcParams = CrcParams {
     xorout: CRC_16_CDMA2000.xorout as u64,
     check: CRC_16_CDMA2000.check as u64,
     keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_C867_FORWARD),
+    combine_keys: Some(&COMBINE_KEYS_CRC16_CDMA2000),
 };
 
 // width=16 poly=0x8005 init=0xffff refin=false refout=false xorout=0x0000 check=0xaee7 residue=0x0000 name="CRC-16/CMS"
@@ -402,6 +405,7 @@ pub const CRC16_CMS: CrcParams = CrcParams {
     xorout: CRC_16_CMS.xorout as u64,
     check: CRC_16_CMS.check as u64,
     keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_8005_FORWARD),
+    combine_keys: Some(&COMBINE_KEYS_CRC16_CMS),
 };
 
 // width=16 poly=0x8005 init=0x800d refin=false refout=false xorout=0x0000 check=0x9ecf residue=0x0000 name="CRC-16/DDS-110"
@@ -417,6 +421,7 @@ pub const CRC16_DDS_110: CrcParams = CrcParams {
     xorout: CRC_16_DDS_110.xorout as u64,
     check: CRC_16_DDS_110.check as u64,
     keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_8005_FORWARD),
+    combine_keys: Some(&COMBINE_KEYS_CRC16_DDS_110),
 };
 
 // width=16 poly=0x0589 init=0x0000 refin=false refout=false xorout=0x0001 check=0x007e residue=0x0589 name="CRC-16/DECT-R"
@@ -432,6 +437,7 @@ pub const CRC16_DECT_R: CrcParams = CrcParams {
     xorout: CRC_16_DECT_R.xorout as u64,
     check: CRC_16_DECT_R.check as u64,
     keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_0589_FORWARD),
+    combine_keys: Some(&COMBINE_KEYS_CRC16_DECT_R),
 };
 
 // width=16 poly=0x0589 init=0x0000 refin=false refout=false xorout=0x0000 check=0x007f residue=0x0000 name="CRC-16/DECT-X"
@@ -447,6 +453,7 @@ pub const CRC16_DECT_X: CrcParams = CrcParams {
     xorout: CRC_16_DECT_X.xorout as u64,
     check: CRC_16_DECT_X.check as u64,
     keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_0589_FORWARD),
+    combine_keys: Some(&COMBINE_KEYS_CRC16_DECT_X),
 };
 
 // width=16 poly=0x3d65 init=0x0000 refin=true refout=true xorout=0xffff check=0xea82 residue=0x66c5 name="CRC-16/DNP"
@@ -462,6 +469,7 @@ pub const CRC16_DNP: CrcParams = CrcParams {
     xorout: CRC_16_DNP.xorout as u64,
     check: CRC_16_DNP.check as u64,
     keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_3D65_REFLECTED),
+    combine_keys: Some(&COMBINE_KEYS_CRC16_DNP),
 };
 
 // width=16 poly=0x3d65 init=0x0000 refin=false refout=false xorout=0xffff check=0xc2b7 residue=0xa366 name="CRC-16/EN-13757"
@@ -477,6 +485,7 @@ pub const CRC16_EN_13757: CrcParams = CrcParams {
     xorout: CRC_16_EN_13757.xorout as u64,
     check: CRC_16_EN_13757.check as u64,
     keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_3D65_FORWARD),
+    combine_keys: Some(&COMBINE_KEYS_CRC16_EN_13757),
 };
 
 // width=16 poly=0x1021 init=0xffff refin=false refout=false xorout=0xffff check=0xd64e residue=0x1d0f name="CRC-16/GENIBUS"
@@ -492,6 +501,7 @@ pub const CRC16_GENIBUS: CrcParams = CrcParams {
     xorout: CRC_16_GENIBUS.xorout as u64,
     check: CRC_16_GENIBUS.check as u64,
     keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_1021_FORWARD),
+    combine_keys: Some(&COMBINE_KEYS_CRC16_GENIBUS),
 };
 
 // width=16 poly=0x1021 init=0x0000 refin=false refout=false xorout=0xffff check=0xce3c residue=0x1d0f name="CRC-16/GSM"
@@ -507,6 +517,7 @@ pub const CRC16_GSM: CrcParams = CrcParams {
     xorout: CRC_16_GSM.xorout as u64,
     check: CRC_16_GSM.check as u64,
     keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_1021_FORWARD),
+    combine_keys: Some(&COMBINE_KEYS_CRC16_GSM),
 };
 
 // width=16 poly=0x1021 init=0xffff refin=false refout=false xorout=0x0000 check=0x29b1 residue=0x0000 name="CRC-16/IBM-3740"
@@ -522,6 +533,7 @@ pub const CRC16_IBM_3740: CrcParams = CrcParams {
     xorout: CRC_16_IBM_3740.xorout as u64,
     check: CRC_16_IBM_3740.check as u64,
     keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_1021_FORWARD),
+    combine_keys: Some(&COMBINE_KEYS_CRC16_IBM_3740),
 };
 
 // width=16 poly=0x1021 init=0xffff refin=true refout=true xorout=0xffff check=0x906e residue=0xf0b8 name="CRC-16/IBM-SDLC"
@@ -537,6 +549,7 @@ pub const CRC16_IBM_SDLC: CrcParams = CrcParams {
     xorout: CRC_16_IBM_SDLC.xorout as u64,
     check: CRC_16_IBM_SDLC.check as u64,
     keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_1021_REVERSE),
+    combine_keys: Some(&COMBINE_KEYS_CRC16_IBM_SDLC),
 };
 
 // width=16 poly=0x1021 init=0xc6c6 refin=true refout=true xorout=0x0000 check=0xbf05 residue=0x0000 name="CRC-16/ISO-IEC-14443-3-A"
@@ -553,6 +566,7 @@ pub const CRC16_ISO_IEC_14443_3_A: CrcParams = CrcParams {
     xorout: CRC_16_ISO_IEC_14443_3_A.xorout as u64,
     check: CRC_16_ISO_IEC_14443_3_A.check as u64,
     keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_1021_REVERSE),
+    combine_keys: Some(&COMBINE_KEYS_CRC16_ISO_IEC_14443_3_A),
 };
 
 // width=16 poly=0x1021 init=0x0000 refin=true refout=true xorout=0x0000 check=0x2189 residue=0x0000 name="CRC-16/KERMIT"
@@ -568,6 +582,7 @@ pub const CRC16_KERMIT: CrcParams = CrcParams {
     xorout: CRC_16_KERMIT.xorout as u64,
     check: CRC_16_KERMIT.check as u64,
     keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_1021_REVERSE),
+    combine_keys: Some(&COMBINE_KEYS_CRC16_KERMIT),
 };
 
 // width=16 poly=0x6f63 init=0x0000 refin=false refout=false xorout=0x0000 check=0xbdf4 residue=0x0000 name="CRC-16/LJ1200"
@@ -583,6 +598,7 @@ pub const CRC16_LJ1200: CrcParams = CrcParams {
     xorout: CRC_16_LJ1200.xorout as u64,
     check: CRC_16_LJ1200.check as u64,
     keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_6F63_FORWARD),
+    combine_keys: Some(&COMBINE_KEYS_CRC16_LJ1200),
 };
 
 // width=16 poly=0x5935 init=0xffff refin=false refout=false xorout=0x0000 check=0x772b residue=0x0000 name="CRC-16/M17"
@@ -598,6 +614,7 @@ pub const CRC16_M17: CrcParams = CrcParams {
     xorout: CRC_16_M17.xorout as u64,
     check: CRC_16_M17.check as u64,
     keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_5935_FORWARD),
+    combine_keys: Some(&COMBINE_KEYS_CRC16_M17),
 };
 
 // width=16 poly=0x8005 init=0x0000 refin=true refout=true xorout=0xffff check=0x44c2 residue=0xb001 name="CRC-16/MAXIM-DOW"
@@ -613,6 +630,7 @@ pub const CRC16_MAXIM_DOW: CrcParams = CrcParams {
     xorout: CRC_16_MAXIM_DOW.xorout as u64,
     check: CRC_16_MAXIM_DOW.check as u64,
     keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_8005_REFLECTED),
+    combine_keys: Some(&COMBINE_KEYS_CRC16_MAXIM_DOW),
 };
 
 // width=16 poly=0x1021 init=0xffff refin=true refout=true xorout=0x0000 check=0x6f91 residue=0x0000 name="CRC-16/MCRF4XX"
@@ -628,6 +646,7 @@ pub const CRC16_MCRF4XX: CrcParams = CrcParams {
     xorout: CRC_16_MCRF4XX.xorout as u64,
     check: CRC_16_MCRF4XX.check as u64,
     keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_1021_REVERSE),
+    combine_keys: Some(&COMBINE_KEYS_CRC16_MCRF4XX),
 };
 
 // width=16 poly=0x8005 init=0xffff refin=true refout=true xorout=0x0000 check=0x4b37 residue=0x0000 name="CRC-16/MODBUS"
@@ -643,6 +662,7 @@ pub const CRC16_MODBUS: CrcParams = CrcParams {
     xorout: CRC_16_MODBUS.xorout as u64,
     check: CRC_16_MODBUS.check as u64,
     keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_8005_REFLECTED),
+    combine_keys: Some(&COMBINE_KEYS_CRC16_MODBUS),
 };
 
 // width=16 poly=0x080b init=0xffff refin=true refout=true xorout=0x0000 check=0xa066 residue=0x0000 name="CRC-16/NRSC-5"
@@ -658,6 +678,7 @@ pub const CRC16_NRSC_5: CrcParams = CrcParams {
     xorout: CRC_16_NRSC_5.xorout as u64,
     check: CRC_16_NRSC_5.check as u64,
     keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_080B_REFLECTED),
+    combine_keys: Some(&COMBINE_KEYS_CRC16_NRSC_5),
 };
 
 // width=16 poly=0x5935 init=0x0000 refin=false refout=false xorout=0x0000 check=0x5d38 residue=0x0000 name="CRC-16/OPENSAFETY-A"
@@ -673,6 +694,7 @@ pub const CRC16_OPENSAFETY_A: CrcParams = CrcParams {
     xorout: CRC_16_OPENSAFETY_A.xorout as u64,
     check: CRC_16_OPENSAFETY_A.check as u64,
     keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_5935_FORWARD),
+    combine_keys: Some(&COMBINE_KEYS_CRC16_OPENSAFETY_A),
 };
 
 // width=16 poly=0x755b init=0x0000 refin=false refout=false xorout=0x0000 check=0x20fe residue=0x0000 name="CRC-16/OPENSAFETY-B"
@@ -688,6 +710,7 @@ pub const CRC16_OPENSAFETY_B: CrcParams = CrcParams {
     xorout: CRC_16_OPENSAFETY_B.xorout as u64,
     check: CRC_16_OPENSAFETY_B.check as u64,
     keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_755B_FORWARD),
+    combine_keys: Some(&COMBINE_KEYS_CRC16_OPENSAFETY_B),
 };
 
 // width=16 poly=0x1dcf init=0xffff refin=false refout=false xorout=0xffff check=0xa819 residue=0xe394 name="CRC-16/PROFIBUS"
@@ -703,6 +726,7 @@ pub const CRC16_PROFIBUS: CrcParams = CrcParams {
     xorout: CRC_16_PROFIBUS.xorout as u64,
     check: CRC_16_PROFIBUS.check as u64,
     keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_1DCF_FORWARD),
+    combine_keys: Some(&COMBINE_KEYS_CRC16_PROFIBUS),
 };
 
 // width=16 poly=0x1021 init=0xb2aa refin=true refout=true xorout=0x0000 check=0x63d0 residue=0x0000 name="CRC-16/RIELLO"
@@ -719,6 +743,7 @@ pub const CRC16_RIELLO: CrcParams = CrcParams {
     xorout: CRC_16_RIELLO.xorout as u64,
     check: CRC_16_RIELLO.check as u64,
     keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_1021_REVERSE),
+    combine_keys: Some(&COMBINE_KEYS_CRC16_RIELLO),
 };
 
 // width=16 poly=0x1021 init=0x1d0f refin=false refout=false xorout=0x0000 check=0xe5cc residue=0x0000 name="CRC-16/SPI-FUJITSU"
@@ -734,6 +759,7 @@ pub const CRC16_SPI_FUJITSU: CrcParams = CrcParams {
     xorout: CRC_16_SPI_FUJITSU.xorout as u64,
     check: CRC_16_SPI_FUJITSU.check as u64,
     keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_1021_FORWARD),
+    combine_keys: Some(&COMBINE_KEYS_CRC16_SPI_FUJITSU),
 };
 
 // width=16 poly=0x8bb7 init=0x0000 refin=false refout=false xorout=0x0000 check=0xd0db residue=0x0000 name="CRC-16/T10-DIF"
@@ -749,6 +775,7 @@ pub const CRC16_T10_DIF: CrcParams = CrcParams {
     xorout: CRC_16_T10_DIF.xorout as u64,
     check: CRC_16_T10_DIF.check as u64,
     keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_8BB7_FORWARD),
+    combine_keys: Some(&COMBINE_KEYS_CRC16_T10_DIF),
 };
 
 // width=16 poly=0xa097 init=0x0000 refin=false refout=false xorout=0x0000 check=0x0fb3 residue=0x0000 name="CRC-16/TELEDISK"
@@ -764,6 +791,7 @@ pub const CRC16_TELEDISK: CrcParams = CrcParams {
     xorout: CRC_16_TELEDISK.xorout as u64,
     check: CRC_16_TELEDISK.check as u64,
     keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_A097_FORWARD),
+    combine_keys: Some(&COMBINE_KEYS_CRC16_TELEDISK),
 };
 
 // width=16 poly=0x1021 init=0x89ec refin=true refout=true xorout=0x0000 check=0x26b1 residue=0x0000 name="CRC-16/TMS37157"
@@ -780,6 +808,7 @@ pub const CRC16_TMS37157: CrcParams = CrcParams {
     xorout: CRC_16_TMS37157.xorout as u64,
     check: CRC_16_TMS37157.check as u64,
     keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_1021_REVERSE),
+    combine_keys: Some(&COMBINE_KEYS_CRC16_TMS37157),
 };
 
 // width=16 poly=0x8005 init=0x0000 refin=false refout=false xorout=0x0000 check=0xfee8 residue=0x0000 name="CRC-16/UMTS"
@@ -795,6 +824,7 @@ pub const CRC16_UMTS: CrcParams = CrcParams {
     xorout: CRC_16_UMTS.xorout as u64,
     check: CRC_16_UMTS.check as u64,
     keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_8005_FORWARD),
+    combine_keys: Some(&COMBINE_KEYS_CRC16_UMTS),
 };
 
 // width=16 poly=0x8005 init=0xffff refin=true refout=true xorout=0xffff check=0xb4c8 residue=0xb001 name="CRC-16/USB"
@@ -810,6 +840,7 @@ pub const CRC16_USB: CrcParams = CrcParams {
     xorout: CRC_16_USB.xorout as u64,
     check: CRC_16_USB.check as u64,
     keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_8005_REFLECTED),
+    combine_keys: Some(&COMBINE_KEYS_CRC16_USB),
 };
 
 // width=16 poly=0x1021 init=0x0000 refin=false refout=false xorout=0x0000 check=0x31c3 residue=0x0000 name="CRC-16/XMODEM"
@@ -825,6 +856,7 @@ pub const CRC16_XMODEM: CrcParams = CrcParams {
     xorout: CRC_16_XMODEM.xorout as u64,
     check: CRC_16_XMODEM.check as u64,
     keys: crate::CrcKeysStorage::from_keys_fold_256(KEYS_1021_FORWARD),
+    combine_keys: Some(&COMBINE_KEYS_CRC16_XMODEM),
 };
 
 pub const KEYS_8005_FORWARD: [u64; 23] = [
@@ -1216,3 +1248,101 @@ pub const KEYS_1021_REVERSE: [u64; 23] = [
     0x0000000000019208, // (2^(32*63) mod P(x))' << 1 (256-byte folding)
     0x0000000000002df8, // (2^(32*65) mod P(x))' << 1 (256-byte folding)
 ];
+
+/// `x^(8 * 2^i) mod P(x)` for [`CRC16_ARC`].
+static COMBINE_KEYS_CRC16_ARC: CombineKeys = CombineKeys::new(CRC_16_ARC.poly as u64, 16);
+
+/// `x^(8 * 2^i) mod P(x)` for [`CRC16_CDMA2000`].
+static COMBINE_KEYS_CRC16_CDMA2000: CombineKeys = CombineKeys::new(CRC_16_CDMA2000.poly as u64, 16);
+
+/// `x^(8 * 2^i) mod P(x)` for [`CRC16_CMS`].
+static COMBINE_KEYS_CRC16_CMS: CombineKeys = CombineKeys::new(CRC_16_CMS.poly as u64, 16);
+
+/// `x^(8 * 2^i) mod P(x)` for [`CRC16_DDS_110`].
+static COMBINE_KEYS_CRC16_DDS_110: CombineKeys = CombineKeys::new(CRC_16_DDS_110.poly as u64, 16);
+
+/// `x^(8 * 2^i) mod P(x)` for [`CRC16_DECT_R`].
+static COMBINE_KEYS_CRC16_DECT_R: CombineKeys = CombineKeys::new(CRC_16_DECT_R.poly as u64, 16);
+
+/// `x^(8 * 2^i) mod P(x)` for [`CRC16_DECT_X`].
+static COMBINE_KEYS_CRC16_DECT_X: CombineKeys = CombineKeys::new(CRC_16_DECT_X.poly as u64, 16);
+
+/// `x^(8 * 2^i) mod P(x)` for [`CRC16_DNP`].
+static COMBINE_KEYS_CRC16_DNP: CombineKeys = CombineKeys::new(CRC_16_DNP.poly as u64, 16);
+
+/// `x^(8 * 2^i) mod P(x)` for [`CRC16_EN_13757`].
+static COMBINE_KEYS_CRC16_EN_13757: CombineKeys = CombineKeys::new(CRC_16_EN_13757.poly as u64, 16);
+
+/// `x^(8 * 2^i) mod P(x)` for [`CRC16_GENIBUS`].
+static COMBINE_KEYS_CRC16_GENIBUS: CombineKeys = CombineKeys::new(CRC_16_GENIBUS.poly as u64, 16);
+
+/// `x^(8 * 2^i) mod P(x)` for [`CRC16_GSM`].
+static COMBINE_KEYS_CRC16_GSM: CombineKeys = CombineKeys::new(CRC_16_GSM.poly as u64, 16);
+
+/// `x^(8 * 2^i) mod P(x)` for [`CRC16_IBM_3740`].
+static COMBINE_KEYS_CRC16_IBM_3740: CombineKeys = CombineKeys::new(CRC_16_IBM_3740.poly as u64, 16);
+
+/// `x^(8 * 2^i) mod P(x)` for [`CRC16_IBM_SDLC`].
+static COMBINE_KEYS_CRC16_IBM_SDLC: CombineKeys = CombineKeys::new(CRC_16_IBM_SDLC.poly as u64, 16);
+
+/// `x^(8 * 2^i) mod P(x)` for [`CRC16_ISO_IEC_14443_3_A`].
+static COMBINE_KEYS_CRC16_ISO_IEC_14443_3_A: CombineKeys =
+    CombineKeys::new(CRC_16_ISO_IEC_14443_3_A.poly as u64, 16);
+
+/// `x^(8 * 2^i) mod P(x)` for [`CRC16_KERMIT`].
+static COMBINE_KEYS_CRC16_KERMIT: CombineKeys = CombineKeys::new(CRC_16_KERMIT.poly as u64, 16);
+
+/// `x^(8 * 2^i) mod P(x)` for [`CRC16_LJ1200`].
+static COMBINE_KEYS_CRC16_LJ1200: CombineKeys = CombineKeys::new(CRC_16_LJ1200.poly as u64, 16);
+
+/// `x^(8 * 2^i) mod P(x)` for [`CRC16_M17`].
+static COMBINE_KEYS_CRC16_M17: CombineKeys = CombineKeys::new(CRC_16_M17.poly as u64, 16);
+
+/// `x^(8 * 2^i) mod P(x)` for [`CRC16_MAXIM_DOW`].
+static COMBINE_KEYS_CRC16_MAXIM_DOW: CombineKeys =
+    CombineKeys::new(CRC_16_MAXIM_DOW.poly as u64, 16);
+
+/// `x^(8 * 2^i) mod P(x)` for [`CRC16_MCRF4XX`].
+static COMBINE_KEYS_CRC16_MCRF4XX: CombineKeys = CombineKeys::new(CRC_16_MCRF4XX.poly as u64, 16);
+
+/// `x^(8 * 2^i) mod P(x)` for [`CRC16_MODBUS`].
+static COMBINE_KEYS_CRC16_MODBUS: CombineKeys = CombineKeys::new(CRC_16_MODBUS.poly as u64, 16);
+
+/// `x^(8 * 2^i) mod P(x)` for [`CRC16_NRSC_5`].
+static COMBINE_KEYS_CRC16_NRSC_5: CombineKeys = CombineKeys::new(CRC_16_NRSC_5.poly as u64, 16);
+
+/// `x^(8 * 2^i) mod P(x)` for [`CRC16_OPENSAFETY_A`].
+static COMBINE_KEYS_CRC16_OPENSAFETY_A: CombineKeys =
+    CombineKeys::new(CRC_16_OPENSAFETY_A.poly as u64, 16);
+
+/// `x^(8 * 2^i) mod P(x)` for [`CRC16_OPENSAFETY_B`].
+static COMBINE_KEYS_CRC16_OPENSAFETY_B: CombineKeys =
+    CombineKeys::new(CRC_16_OPENSAFETY_B.poly as u64, 16);
+
+/// `x^(8 * 2^i) mod P(x)` for [`CRC16_PROFIBUS`].
+static COMBINE_KEYS_CRC16_PROFIBUS: CombineKeys = CombineKeys::new(CRC_16_PROFIBUS.poly as u64, 16);
+
+/// `x^(8 * 2^i) mod P(x)` for [`CRC16_RIELLO`].
+static COMBINE_KEYS_CRC16_RIELLO: CombineKeys = CombineKeys::new(CRC_16_RIELLO.poly as u64, 16);
+
+/// `x^(8 * 2^i) mod P(x)` for [`CRC16_SPI_FUJITSU`].
+static COMBINE_KEYS_CRC16_SPI_FUJITSU: CombineKeys =
+    CombineKeys::new(CRC_16_SPI_FUJITSU.poly as u64, 16);
+
+/// `x^(8 * 2^i) mod P(x)` for [`CRC16_T10_DIF`].
+static COMBINE_KEYS_CRC16_T10_DIF: CombineKeys = CombineKeys::new(CRC_16_T10_DIF.poly as u64, 16);
+
+/// `x^(8 * 2^i) mod P(x)` for [`CRC16_TELEDISK`].
+static COMBINE_KEYS_CRC16_TELEDISK: CombineKeys = CombineKeys::new(CRC_16_TELEDISK.poly as u64, 16);
+
+/// `x^(8 * 2^i) mod P(x)` for [`CRC16_TMS37157`].
+static COMBINE_KEYS_CRC16_TMS37157: CombineKeys = CombineKeys::new(CRC_16_TMS37157.poly as u64, 16);
+
+/// `x^(8 * 2^i) mod P(x)` for [`CRC16_UMTS`].
+static COMBINE_KEYS_CRC16_UMTS: CombineKeys = CombineKeys::new(CRC_16_UMTS.poly as u64, 16);
+
+/// `x^(8 * 2^i) mod P(x)` for [`CRC16_USB`].
+static COMBINE_KEYS_CRC16_USB: CombineKeys = CombineKeys::new(CRC_16_USB.poly as u64, 16);
+
+/// `x^(8 * 2^i) mod P(x)` for [`CRC16_XMODEM`].
+static COMBINE_KEYS_CRC16_XMODEM: CombineKeys = CombineKeys::new(CRC_16_XMODEM.poly as u64, 16);
