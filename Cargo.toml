@@ -107,6 +107,7 @@ harness = false
 required-features = ["std"]
 
 [features]
+lazy-tables = ["std"]
 # default features
 default = ["std", "panic-handler", "ffi"]
 std = ["alloc"] # std implies alloc is available

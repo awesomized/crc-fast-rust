@@ -77,6 +77,7 @@ The library supports various feature flags for different environments:
 ### Optional Features
 * `alloc` - Heap allocation support (enables `Digest` trait, custom CRC params, checksum combining)
 * `cache` - Caches generated constants for custom CRC parameters (requires `alloc`)
+* `lazy-tables` - Generates software lookup tables on first use and reuses them (requires `std`)
 * `cli` - Enables command-line tools (`checksum`, `arch-check`, `get-custom-params`)
 
 ### Building for `no_std`
@@ -98,6 +99,12 @@ Tested on ARM Cortex-M (`thumbv7em-none-eabihf`, `thumbv8m.main-none-eabihf`) an
 `riscv32imac-unknown-none-elf`).
 
 ### Building for `WASM`
+
+With `std` enabled, WebAssembly builds generate software lookup tables on first use. The tables
+are omitted from the binary, and algorithms with the same polynomial and reflection mode share
+one allocation. Each distinct table uses 8 KiB for CRC-16, 16 KiB for CRC-32, or 32 KiB for CRC-64.
+Native builds can select the same behavior with `lazy-tables`. Builds without `std` keep prebuilt
+tables.
 
 For WebAssembly targets:
 
