@@ -1292,7 +1292,9 @@ fn crc32_iscsi_calculator(state: u64, data: &[u8], _params: &CrcParams) -> u64 {
         let arch_ops = get_arch_ops();
         match arch_ops.get_tier() {
             PerformanceTier::AArch64AesSha3 | PerformanceTier::AArch64Aes => {
-                return fusion::crc32_iscsi(state as u32, data) as u64;
+                if std::arch::is_aarch64_feature_detected!("crc") {
+                    return fusion::crc32_iscsi(state as u32, data) as u64;
+                }
             }
             _ => {}
         }
@@ -1335,7 +1337,9 @@ fn crc32_iso_hdlc_calculator(state: u64, data: &[u8], _params: &CrcParams) -> u6
 
         match arch_ops.get_tier() {
             PerformanceTier::AArch64AesSha3 | PerformanceTier::AArch64Aes => {
-                return fusion::crc32_iso_hdlc(state as u32, data) as u64;
+                if std::arch::is_aarch64_feature_detected!("crc") {
+                    return fusion::crc32_iso_hdlc(state as u32, data) as u64;
+                }
             }
             _ => {}
         }
