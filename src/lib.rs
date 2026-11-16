@@ -272,7 +272,7 @@ macro_rules! calculator {
 /// Calculates a predefined CRC algorithm with the calculator selected by [`calculator!`], without
 /// going through a function pointer.
 macro_rules! calculate {
-    ($software:ident, $state:expr, $data:expr, $params:expr) => {{
+    ($software:ident, $state:expr, $data:expr, $params:expr $(,)?) => {{
         #[cfg(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64"))]
         {
             Calculator::calculate($state, $data, $params)
@@ -766,128 +766,168 @@ impl Write for Digest {
 #[allow(deprecated)]
 pub fn checksum(algorithm: CrcAlgorithm, buf: &[u8]) -> u64 {
     // avoid using get_calculator_params() here to reduce overhead for small data sizes
+    //
+    // each arm calls the algorithm's own calculator, rather than the generic software dispatcher,
+    // which references every lookup table and can't be inlined into other crates without LTO
     match algorithm {
         CrcAlgorithm::Crc16Arc => {
-            Calculator::calculate(CRC16_ARC.init, buf, &CRC16_ARC) ^ CRC16_ARC.xorout
+            calculate!(crc16_arc, CRC16_ARC.init, buf, &CRC16_ARC) ^ CRC16_ARC.xorout
         }
         CrcAlgorithm::Crc16Cdma2000 => {
-            Calculator::calculate(CRC16_CDMA2000.init, buf, &CRC16_CDMA2000) ^ CRC16_CDMA2000.xorout
+            calculate!(crc16_cdma2000, CRC16_CDMA2000.init, buf, &CRC16_CDMA2000)
+                ^ CRC16_CDMA2000.xorout
         }
         CrcAlgorithm::Crc16Cms => {
-            Calculator::calculate(CRC16_CMS.init, buf, &CRC16_CMS) ^ CRC16_CMS.xorout
+            calculate!(crc16_cms, CRC16_CMS.init, buf, &CRC16_CMS) ^ CRC16_CMS.xorout
         }
         CrcAlgorithm::Crc16Dds110 => {
-            Calculator::calculate(CRC16_DDS_110.init, buf, &CRC16_DDS_110) ^ CRC16_DDS_110.xorout
+            calculate!(crc16_dds_110, CRC16_DDS_110.init, buf, &CRC16_DDS_110)
+                ^ CRC16_DDS_110.xorout
         }
         CrcAlgorithm::Crc16DectR => {
-            Calculator::calculate(CRC16_DECT_R.init, buf, &CRC16_DECT_R) ^ CRC16_DECT_R.xorout
+            calculate!(crc16_dect_r, CRC16_DECT_R.init, buf, &CRC16_DECT_R) ^ CRC16_DECT_R.xorout
         }
         CrcAlgorithm::Crc16DectX => {
-            Calculator::calculate(CRC16_DECT_X.init, buf, &CRC16_DECT_X) ^ CRC16_DECT_X.xorout
+            calculate!(crc16_dect_x, CRC16_DECT_X.init, buf, &CRC16_DECT_X) ^ CRC16_DECT_X.xorout
         }
         CrcAlgorithm::Crc16Dnp => {
-            Calculator::calculate(CRC16_DNP.init, buf, &CRC16_DNP) ^ CRC16_DNP.xorout
+            calculate!(crc16_dnp, CRC16_DNP.init, buf, &CRC16_DNP) ^ CRC16_DNP.xorout
         }
         CrcAlgorithm::Crc16En13757 => {
-            Calculator::calculate(CRC16_EN_13757.init, buf, &CRC16_EN_13757) ^ CRC16_EN_13757.xorout
+            calculate!(crc16_en_13757, CRC16_EN_13757.init, buf, &CRC16_EN_13757)
+                ^ CRC16_EN_13757.xorout
         }
         CrcAlgorithm::Crc16Genibus => {
-            Calculator::calculate(CRC16_GENIBUS.init, buf, &CRC16_GENIBUS) ^ CRC16_GENIBUS.xorout
+            calculate!(crc16_genibus, CRC16_GENIBUS.init, buf, &CRC16_GENIBUS)
+                ^ CRC16_GENIBUS.xorout
         }
         CrcAlgorithm::Crc16Gsm => {
-            Calculator::calculate(CRC16_GSM.init, buf, &CRC16_GSM) ^ CRC16_GSM.xorout
+            calculate!(crc16_gsm, CRC16_GSM.init, buf, &CRC16_GSM) ^ CRC16_GSM.xorout
         }
         CrcAlgorithm::Crc16Ibm3740 => {
-            Calculator::calculate(CRC16_IBM_3740.init, buf, &CRC16_IBM_3740) ^ CRC16_IBM_3740.xorout
+            calculate!(crc16_ibm_3740, CRC16_IBM_3740.init, buf, &CRC16_IBM_3740)
+                ^ CRC16_IBM_3740.xorout
         }
         CrcAlgorithm::Crc16IbmSdlc => {
-            Calculator::calculate(CRC16_IBM_SDLC.init, buf, &CRC16_IBM_SDLC) ^ CRC16_IBM_SDLC.xorout
+            calculate!(crc16_ibm_sdlc, CRC16_IBM_SDLC.init, buf, &CRC16_IBM_SDLC)
+                ^ CRC16_IBM_SDLC.xorout
         }
         CrcAlgorithm::Crc16IsoIec144433A => {
-            Calculator::calculate(
+            calculate!(
+                crc16_iso_iec_14443_3_a,
                 CRC16_ISO_IEC_14443_3_A.init_algorithm,
                 buf,
                 &CRC16_ISO_IEC_14443_3_A,
             ) ^ CRC16_ISO_IEC_14443_3_A.xorout
         }
         CrcAlgorithm::Crc16Kermit => {
-            Calculator::calculate(CRC16_KERMIT.init, buf, &CRC16_KERMIT) ^ CRC16_KERMIT.xorout
+            calculate!(crc16_kermit, CRC16_KERMIT.init, buf, &CRC16_KERMIT) ^ CRC16_KERMIT.xorout
         }
         CrcAlgorithm::Crc16Lj1200 => {
-            Calculator::calculate(CRC16_LJ1200.init, buf, &CRC16_LJ1200) ^ CRC16_LJ1200.xorout
+            calculate!(crc16_lj1200, CRC16_LJ1200.init, buf, &CRC16_LJ1200) ^ CRC16_LJ1200.xorout
         }
         CrcAlgorithm::Crc16M17 => {
-            Calculator::calculate(CRC16_M17.init, buf, &CRC16_M17) ^ CRC16_M17.xorout
+            calculate!(crc16_m17, CRC16_M17.init, buf, &CRC16_M17) ^ CRC16_M17.xorout
         }
         CrcAlgorithm::Crc16MaximDow => {
-            Calculator::calculate(CRC16_MAXIM_DOW.init, buf, &CRC16_MAXIM_DOW)
+            calculate!(crc16_maxim_dow, CRC16_MAXIM_DOW.init, buf, &CRC16_MAXIM_DOW)
                 ^ CRC16_MAXIM_DOW.xorout
         }
         CrcAlgorithm::Crc16Mcrf4xx => {
-            Calculator::calculate(CRC16_MCRF4XX.init, buf, &CRC16_MCRF4XX) ^ CRC16_MCRF4XX.xorout
+            calculate!(crc16_mcrf4xx, CRC16_MCRF4XX.init, buf, &CRC16_MCRF4XX)
+                ^ CRC16_MCRF4XX.xorout
         }
         CrcAlgorithm::Crc16Modbus => {
-            Calculator::calculate(CRC16_MODBUS.init, buf, &CRC16_MODBUS) ^ CRC16_MODBUS.xorout
+            calculate!(crc16_modbus, CRC16_MODBUS.init, buf, &CRC16_MODBUS) ^ CRC16_MODBUS.xorout
         }
         CrcAlgorithm::Crc16Nrsc5 => {
-            Calculator::calculate(CRC16_NRSC_5.init, buf, &CRC16_NRSC_5) ^ CRC16_NRSC_5.xorout
+            calculate!(crc16_nrsc_5, CRC16_NRSC_5.init, buf, &CRC16_NRSC_5) ^ CRC16_NRSC_5.xorout
         }
         CrcAlgorithm::Crc16OpensafetyA => {
-            Calculator::calculate(CRC16_OPENSAFETY_A.init, buf, &CRC16_OPENSAFETY_A)
-                ^ CRC16_OPENSAFETY_A.xorout
+            calculate!(
+                crc16_opensafety_a,
+                CRC16_OPENSAFETY_A.init,
+                buf,
+                &CRC16_OPENSAFETY_A
+            ) ^ CRC16_OPENSAFETY_A.xorout
         }
         CrcAlgorithm::Crc16OpensafetyB => {
-            Calculator::calculate(CRC16_OPENSAFETY_B.init, buf, &CRC16_OPENSAFETY_B)
-                ^ CRC16_OPENSAFETY_B.xorout
+            calculate!(
+                crc16_opensafety_b,
+                CRC16_OPENSAFETY_B.init,
+                buf,
+                &CRC16_OPENSAFETY_B
+            ) ^ CRC16_OPENSAFETY_B.xorout
         }
         CrcAlgorithm::Crc16Profibus => {
-            Calculator::calculate(CRC16_PROFIBUS.init, buf, &CRC16_PROFIBUS) ^ CRC16_PROFIBUS.xorout
+            calculate!(crc16_profibus, CRC16_PROFIBUS.init, buf, &CRC16_PROFIBUS)
+                ^ CRC16_PROFIBUS.xorout
         }
         CrcAlgorithm::Crc16Riello => {
-            Calculator::calculate(CRC16_RIELLO.init_algorithm, buf, &CRC16_RIELLO)
-                ^ CRC16_RIELLO.xorout
+            calculate!(
+                crc16_riello,
+                CRC16_RIELLO.init_algorithm,
+                buf,
+                &CRC16_RIELLO
+            ) ^ CRC16_RIELLO.xorout
         }
         CrcAlgorithm::Crc16SpiFujitsu => {
-            Calculator::calculate(CRC16_SPI_FUJITSU.init, buf, &CRC16_SPI_FUJITSU)
-                ^ CRC16_SPI_FUJITSU.xorout
+            calculate!(
+                crc16_spi_fujitsu,
+                CRC16_SPI_FUJITSU.init,
+                buf,
+                &CRC16_SPI_FUJITSU
+            ) ^ CRC16_SPI_FUJITSU.xorout
         }
         CrcAlgorithm::Crc16T10Dif => {
-            Calculator::calculate(CRC16_T10_DIF.init, buf, &CRC16_T10_DIF) ^ CRC16_T10_DIF.xorout
+            calculate!(crc16_t10_dif, CRC16_T10_DIF.init, buf, &CRC16_T10_DIF)
+                ^ CRC16_T10_DIF.xorout
         }
         CrcAlgorithm::Crc16Teledisk => {
-            Calculator::calculate(CRC16_TELEDISK.init, buf, &CRC16_TELEDISK) ^ CRC16_TELEDISK.xorout
+            calculate!(crc16_teledisk, CRC16_TELEDISK.init, buf, &CRC16_TELEDISK)
+                ^ CRC16_TELEDISK.xorout
         }
         CrcAlgorithm::Crc16Tms37157 => {
-            Calculator::calculate(CRC16_TMS37157.init_algorithm, buf, &CRC16_TMS37157)
-                ^ CRC16_TMS37157.xorout
+            calculate!(
+                crc16_tms37157,
+                CRC16_TMS37157.init_algorithm,
+                buf,
+                &CRC16_TMS37157
+            ) ^ CRC16_TMS37157.xorout
         }
         CrcAlgorithm::Crc16Umts => {
-            Calculator::calculate(CRC16_UMTS.init, buf, &CRC16_UMTS) ^ CRC16_UMTS.xorout
+            calculate!(crc16_umts, CRC16_UMTS.init, buf, &CRC16_UMTS) ^ CRC16_UMTS.xorout
         }
         CrcAlgorithm::Crc16Usb => {
-            Calculator::calculate(CRC16_USB.init, buf, &CRC16_USB) ^ CRC16_USB.xorout
+            calculate!(crc16_usb, CRC16_USB.init, buf, &CRC16_USB) ^ CRC16_USB.xorout
         }
         CrcAlgorithm::Crc16Xmodem => {
-            Calculator::calculate(CRC16_XMODEM.init, buf, &CRC16_XMODEM) ^ CRC16_XMODEM.xorout
+            calculate!(crc16_xmodem, CRC16_XMODEM.init, buf, &CRC16_XMODEM) ^ CRC16_XMODEM.xorout
         }
         CrcAlgorithm::Crc32Aixm => {
-            Calculator::calculate(CRC32_AIXM.init, buf, &CRC32_AIXM) ^ CRC32_AIXM.xorout
+            calculate!(crc32_aixm, CRC32_AIXM.init, buf, &CRC32_AIXM) ^ CRC32_AIXM.xorout
         }
         CrcAlgorithm::Crc32Autosar => {
-            Calculator::calculate(CRC32_AUTOSAR.init, buf, &CRC32_AUTOSAR) ^ CRC32_AUTOSAR.xorout
+            calculate!(crc32_autosar, CRC32_AUTOSAR.init, buf, &CRC32_AUTOSAR)
+                ^ CRC32_AUTOSAR.xorout
         }
         CrcAlgorithm::Crc32Base91D => {
-            Calculator::calculate(CRC32_BASE91_D.init, buf, &CRC32_BASE91_D) ^ CRC32_BASE91_D.xorout
+            calculate!(crc32_base91_d, CRC32_BASE91_D.init, buf, &CRC32_BASE91_D)
+                ^ CRC32_BASE91_D.xorout
         }
         CrcAlgorithm::Crc32Bzip2 => {
-            Calculator::calculate(CRC32_BZIP2.init, buf, &CRC32_BZIP2) ^ CRC32_BZIP2.xorout
+            calculate!(crc32_bzip2, CRC32_BZIP2.init, buf, &CRC32_BZIP2) ^ CRC32_BZIP2.xorout
         }
         CrcAlgorithm::Crc32CdRomEdc => {
-            Calculator::calculate(CRC32_CD_ROM_EDC.init, buf, &CRC32_CD_ROM_EDC)
-                ^ CRC32_CD_ROM_EDC.xorout
+            calculate!(
+                crc32_cd_rom_edc,
+                CRC32_CD_ROM_EDC.init,
+                buf,
+                &CRC32_CD_ROM_EDC
+            ) ^ CRC32_CD_ROM_EDC.xorout
         }
         CrcAlgorithm::Crc32Cksum => {
-            Calculator::calculate(CRC32_CKSUM.init, buf, &CRC32_CKSUM) ^ CRC32_CKSUM.xorout
+            calculate!(crc32_cksum, CRC32_CKSUM.init, buf, &CRC32_CKSUM) ^ CRC32_CKSUM.xorout
         }
         CrcAlgorithm::Crc32Custom => {
             panic!("Custom CRC-32 requires parameters via CrcParams::new()")
@@ -900,16 +940,16 @@ pub fn checksum(algorithm: CrcAlgorithm, buf: &[u8]) -> u64 {
                 ^ CRC32_ISO_HDLC.xorout
         }
         CrcAlgorithm::Crc32Jamcrc => {
-            Calculator::calculate(CRC32_JAMCRC.init, buf, &CRC32_JAMCRC) ^ CRC32_JAMCRC.xorout
+            calculate!(crc32_jamcrc, CRC32_JAMCRC.init, buf, &CRC32_JAMCRC) ^ CRC32_JAMCRC.xorout
         }
         CrcAlgorithm::Crc32Mef => {
-            Calculator::calculate(CRC32_MEF.init, buf, &CRC32_MEF) ^ CRC32_MEF.xorout
+            calculate!(crc32_mef, CRC32_MEF.init, buf, &CRC32_MEF) ^ CRC32_MEF.xorout
         }
         CrcAlgorithm::Crc32Mpeg2 => {
-            Calculator::calculate(CRC32_MPEG_2.init, buf, &CRC32_MPEG_2) ^ CRC32_MPEG_2.xorout
+            calculate!(crc32_mpeg_2, CRC32_MPEG_2.init, buf, &CRC32_MPEG_2) ^ CRC32_MPEG_2.xorout
         }
         CrcAlgorithm::Crc32Xfer => {
-            Calculator::calculate(CRC32_XFER.init, buf, &CRC32_XFER) ^ CRC32_XFER.xorout
+            calculate!(crc32_xfer, CRC32_XFER.init, buf, &CRC32_XFER) ^ CRC32_XFER.xorout
         }
         CrcAlgorithm::CrcCustom => {
             panic!("Custom CRC requires parameters via CrcParams::new()")
@@ -918,25 +958,26 @@ pub fn checksum(algorithm: CrcAlgorithm, buf: &[u8]) -> u64 {
             panic!("Custom CRC-64 requires parameters via CrcParams::new()")
         }
         CrcAlgorithm::Crc64Ecma182 => {
-            Calculator::calculate(CRC64_ECMA_182.init, buf, &CRC64_ECMA_182) ^ CRC64_ECMA_182.xorout
+            calculate!(crc64_ecma_182, CRC64_ECMA_182.init, buf, &CRC64_ECMA_182)
+                ^ CRC64_ECMA_182.xorout
         }
         CrcAlgorithm::Crc64GoIso => {
-            Calculator::calculate(CRC64_GO_ISO.init, buf, &CRC64_GO_ISO) ^ CRC64_GO_ISO.xorout
+            calculate!(crc64_go_iso, CRC64_GO_ISO.init, buf, &CRC64_GO_ISO) ^ CRC64_GO_ISO.xorout
         }
         CrcAlgorithm::Crc64Ms => {
-            Calculator::calculate(CRC64_MS.init, buf, &CRC64_MS) ^ CRC64_MS.xorout
+            calculate!(crc64_ms, CRC64_MS.init, buf, &CRC64_MS) ^ CRC64_MS.xorout
         }
         CrcAlgorithm::Crc64Nvme => {
-            Calculator::calculate(CRC64_NVME.init, buf, &CRC64_NVME) ^ CRC64_NVME.xorout
+            calculate!(crc64_nvme, CRC64_NVME.init, buf, &CRC64_NVME) ^ CRC64_NVME.xorout
         }
         CrcAlgorithm::Crc64Redis => {
-            Calculator::calculate(CRC64_REDIS.init, buf, &CRC64_REDIS) ^ CRC64_REDIS.xorout
+            calculate!(crc64_redis, CRC64_REDIS.init, buf, &CRC64_REDIS) ^ CRC64_REDIS.xorout
         }
         CrcAlgorithm::Crc64We => {
-            Calculator::calculate(CRC64_WE.init, buf, &CRC64_WE) ^ CRC64_WE.xorout
+            calculate!(crc64_we, CRC64_WE.init, buf, &CRC64_WE) ^ CRC64_WE.xorout
         }
         CrcAlgorithm::Crc64Xz => {
-            Calculator::calculate(CRC64_XZ.init, buf, &CRC64_XZ) ^ CRC64_XZ.xorout
+            calculate!(crc64_xz, CRC64_XZ.init, buf, &CRC64_XZ) ^ CRC64_XZ.xorout
         }
     }
 }

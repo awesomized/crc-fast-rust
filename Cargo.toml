@@ -124,7 +124,7 @@ cache = [
 ] # no_std caching requires alloc + hashbrown HashMap + spin for synchronization
 
 runtime-tables = [
-] # generate the software fallback's lookup tables at first use instead of embedding them, for much smaller artifacts (WebAssembly, etc)
+] # generate the software fallback's lookup tables at first use instead of embedding them, for much smaller artifacts (WebAssembly, etc), at the cost of static RAM for each table (see "Binary size" in the README)
 
 # the features below are deprecated, aren't in use, and will be removed in the next MAJOR version (v2)
 vpclmulqdq = [] # deprecated, VPCLMULQDQ stabilized in Rust 1.89.0

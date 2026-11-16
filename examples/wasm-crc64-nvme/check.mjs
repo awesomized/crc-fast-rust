@@ -41,6 +41,14 @@ assertEqual(checksum(0n, encode('hello, world!')), 0xf8046e40c403f1d0n, 'hello, 
 assertEqual(checksum(0n, new Uint8Array(4096)), 0x6482d367eb22b64en, '4096 zero bytes');
 assertEqual(checksum(0n, new Uint8Array(4096).fill(255)), 0xc0ddba7302eca3acn, '4096 0xff bytes');
 
+// an empty input needs no buffer, so a null pointer must be fine for it
+assertEqual(BigInt.asUintN(64, crc64_nvme(0n, 0, 0)), 0n, 'empty input at a null pointer');
+assertEqual(
+  BigInt.asUintN(64, crc64_nvme(0xae8b14860a799888n, 0, 0)),
+  0xae8b14860a799888n,
+  'continuing with an empty input at a null pointer',
+);
+
 // streaming in pieces must match a single pass
 assertEqual(
   checksum(checksum(0n, encode('1234')), encode('56789')),

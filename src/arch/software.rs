@@ -332,6 +332,10 @@ mod lazy {
     /// The table lives in zero-initialized static memory, so it adds nothing to the size of the
     /// compiled artifact. Initialization is guarded by a small spin lock: the first caller fills
     /// the table in place while concurrent callers wait, after which the table is immutable.
+    ///
+    /// The wait is unbounded, so a caller which has interrupted the first one (an interrupt or
+    /// signal handler) never returns. That's accepted to keep this small, and documented in the
+    /// README along with the way around it, which is to use each algorithm once during startup.
     pub(crate) struct LazyTable<T: 'static> {
         state: AtomicU8,
         table: UnsafeCell<[[T; 256]; 16]>,
@@ -503,6 +507,16 @@ pub(crate) mod table {
     );
 }
 
+/// Yields the lookup table and the reflection of a predefined CRC algorithm.
+///
+/// The reflection is read from the algorithm's parameters rather than restated at each use, so the
+/// generic [`update`] and the dedicated calculators in [`calc`] can't disagree about it.
+macro_rules! predefined {
+    ($consts:ident, $params:ident) => {
+        (table::$params(), crate::$consts::consts::$params.refin)
+    };
+}
+
 /// Calculator functions dedicated to a single predefined CRC algorithm.
 ///
 /// Unlike [`update`], which selects the lookup table at runtime and therefore references every
@@ -517,12 +531,9 @@ pub(crate) mod calc {
         ($ty:ty, $kernel:ident, $consts:ident, $all:ident: $($name:ident => $params:ident,)*) => {
             $(
                 pub(crate) fn $name(state: u64, data: &[u8], _params: &CrcParams) -> u64 {
-                    $kernel(
-                        state as $ty,
-                        table::$params(),
-                        crate::$consts::consts::$params.refin,
-                        data,
-                    ) as u64
+                    let (table, refin) = predefined!($consts, $params);
+
+                    $kernel(state as $ty, table, refin, data) as u64
                 }
             )*
 
@@ -615,37 +626,37 @@ pub(crate) fn update(state: u64, data: &[u8], params: &CrcParams) -> u64 {
 
 fn update_crc16(state: u16, data: &[u8], params: &CrcParams) -> u16 {
     let (table, refin) = match params.algorithm {
-        CrcAlgorithm::Crc16Arc => (table::CRC16_ARC(), true),
-        CrcAlgorithm::Crc16Cdma2000 => (table::CRC16_CDMA2000(), false),
-        CrcAlgorithm::Crc16Cms => (table::CRC16_CMS(), false),
-        CrcAlgorithm::Crc16Dds110 => (table::CRC16_DDS_110(), false),
-        CrcAlgorithm::Crc16DectR => (table::CRC16_DECT_R(), false),
-        CrcAlgorithm::Crc16DectX => (table::CRC16_DECT_X(), false),
-        CrcAlgorithm::Crc16Dnp => (table::CRC16_DNP(), true),
-        CrcAlgorithm::Crc16En13757 => (table::CRC16_EN_13757(), false),
-        CrcAlgorithm::Crc16Genibus => (table::CRC16_GENIBUS(), false),
-        CrcAlgorithm::Crc16Gsm => (table::CRC16_GSM(), false),
-        CrcAlgorithm::Crc16Ibm3740 => (table::CRC16_IBM_3740(), false),
-        CrcAlgorithm::Crc16IbmSdlc => (table::CRC16_IBM_SDLC(), true),
-        CrcAlgorithm::Crc16IsoIec144433A => (table::CRC16_ISO_IEC_14443_3_A(), true),
-        CrcAlgorithm::Crc16Kermit => (table::CRC16_KERMIT(), true),
-        CrcAlgorithm::Crc16Lj1200 => (table::CRC16_LJ1200(), false),
-        CrcAlgorithm::Crc16M17 => (table::CRC16_M17(), false),
-        CrcAlgorithm::Crc16MaximDow => (table::CRC16_MAXIM_DOW(), true),
-        CrcAlgorithm::Crc16Mcrf4xx => (table::CRC16_MCRF4XX(), true),
-        CrcAlgorithm::Crc16Modbus => (table::CRC16_MODBUS(), true),
-        CrcAlgorithm::Crc16Nrsc5 => (table::CRC16_NRSC_5(), true),
-        CrcAlgorithm::Crc16OpensafetyA => (table::CRC16_OPENSAFETY_A(), false),
-        CrcAlgorithm::Crc16OpensafetyB => (table::CRC16_OPENSAFETY_B(), false),
-        CrcAlgorithm::Crc16Profibus => (table::CRC16_PROFIBUS(), false),
-        CrcAlgorithm::Crc16Riello => (table::CRC16_RIELLO(), true),
-        CrcAlgorithm::Crc16SpiFujitsu => (table::CRC16_SPI_FUJITSU(), false),
-        CrcAlgorithm::Crc16T10Dif => (table::CRC16_T10_DIF(), false),
-        CrcAlgorithm::Crc16Teledisk => (table::CRC16_TELEDISK(), false),
-        CrcAlgorithm::Crc16Tms37157 => (table::CRC16_TMS37157(), true),
-        CrcAlgorithm::Crc16Umts => (table::CRC16_UMTS(), false),
-        CrcAlgorithm::Crc16Usb => (table::CRC16_USB(), true),
-        CrcAlgorithm::Crc16Xmodem => (table::CRC16_XMODEM(), false),
+        CrcAlgorithm::Crc16Arc => predefined!(crc16, CRC16_ARC),
+        CrcAlgorithm::Crc16Cdma2000 => predefined!(crc16, CRC16_CDMA2000),
+        CrcAlgorithm::Crc16Cms => predefined!(crc16, CRC16_CMS),
+        CrcAlgorithm::Crc16Dds110 => predefined!(crc16, CRC16_DDS_110),
+        CrcAlgorithm::Crc16DectR => predefined!(crc16, CRC16_DECT_R),
+        CrcAlgorithm::Crc16DectX => predefined!(crc16, CRC16_DECT_X),
+        CrcAlgorithm::Crc16Dnp => predefined!(crc16, CRC16_DNP),
+        CrcAlgorithm::Crc16En13757 => predefined!(crc16, CRC16_EN_13757),
+        CrcAlgorithm::Crc16Genibus => predefined!(crc16, CRC16_GENIBUS),
+        CrcAlgorithm::Crc16Gsm => predefined!(crc16, CRC16_GSM),
+        CrcAlgorithm::Crc16Ibm3740 => predefined!(crc16, CRC16_IBM_3740),
+        CrcAlgorithm::Crc16IbmSdlc => predefined!(crc16, CRC16_IBM_SDLC),
+        CrcAlgorithm::Crc16IsoIec144433A => predefined!(crc16, CRC16_ISO_IEC_14443_3_A),
+        CrcAlgorithm::Crc16Kermit => predefined!(crc16, CRC16_KERMIT),
+        CrcAlgorithm::Crc16Lj1200 => predefined!(crc16, CRC16_LJ1200),
+        CrcAlgorithm::Crc16M17 => predefined!(crc16, CRC16_M17),
+        CrcAlgorithm::Crc16MaximDow => predefined!(crc16, CRC16_MAXIM_DOW),
+        CrcAlgorithm::Crc16Mcrf4xx => predefined!(crc16, CRC16_MCRF4XX),
+        CrcAlgorithm::Crc16Modbus => predefined!(crc16, CRC16_MODBUS),
+        CrcAlgorithm::Crc16Nrsc5 => predefined!(crc16, CRC16_NRSC_5),
+        CrcAlgorithm::Crc16OpensafetyA => predefined!(crc16, CRC16_OPENSAFETY_A),
+        CrcAlgorithm::Crc16OpensafetyB => predefined!(crc16, CRC16_OPENSAFETY_B),
+        CrcAlgorithm::Crc16Profibus => predefined!(crc16, CRC16_PROFIBUS),
+        CrcAlgorithm::Crc16Riello => predefined!(crc16, CRC16_RIELLO),
+        CrcAlgorithm::Crc16SpiFujitsu => predefined!(crc16, CRC16_SPI_FUJITSU),
+        CrcAlgorithm::Crc16T10Dif => predefined!(crc16, CRC16_T10_DIF),
+        CrcAlgorithm::Crc16Teledisk => predefined!(crc16, CRC16_TELEDISK),
+        CrcAlgorithm::Crc16Tms37157 => predefined!(crc16, CRC16_TMS37157),
+        CrcAlgorithm::Crc16Umts => predefined!(crc16, CRC16_UMTS),
+        CrcAlgorithm::Crc16Usb => predefined!(crc16, CRC16_USB),
+        CrcAlgorithm::Crc16Xmodem => predefined!(crc16, CRC16_XMODEM),
         CrcAlgorithm::CrcCustom => {
             return update_crc16_custom(state, data, params);
         }
@@ -711,18 +722,18 @@ fn update_crc16_custom(_state: u16, _data: &[u8], _params: &CrcParams) -> u16 {
 
 fn update_crc32(state: u32, data: &[u8], params: &CrcParams) -> u32 {
     let (table, refin) = match params.algorithm {
-        CrcAlgorithm::Crc32Aixm => (table::CRC32_AIXM(), false),
-        CrcAlgorithm::Crc32Autosar => (table::CRC32_AUTOSAR(), true),
-        CrcAlgorithm::Crc32Base91D => (table::CRC32_BASE91_D(), true),
-        CrcAlgorithm::Crc32Bzip2 => (table::CRC32_BZIP2(), false),
-        CrcAlgorithm::Crc32CdRomEdc => (table::CRC32_CD_ROM_EDC(), true),
-        CrcAlgorithm::Crc32Cksum => (table::CRC32_CKSUM(), false),
-        CrcAlgorithm::Crc32Iscsi => (table::CRC32_ISCSI(), true),
-        CrcAlgorithm::Crc32IsoHdlc => (table::CRC32_ISO_HDLC(), true),
-        CrcAlgorithm::Crc32Jamcrc => (table::CRC32_JAMCRC(), true),
-        CrcAlgorithm::Crc32Mef => (table::CRC32_MEF(), true),
-        CrcAlgorithm::Crc32Mpeg2 => (table::CRC32_MPEG_2(), false),
-        CrcAlgorithm::Crc32Xfer => (table::CRC32_XFER(), false),
+        CrcAlgorithm::Crc32Aixm => predefined!(crc32, CRC32_AIXM),
+        CrcAlgorithm::Crc32Autosar => predefined!(crc32, CRC32_AUTOSAR),
+        CrcAlgorithm::Crc32Base91D => predefined!(crc32, CRC32_BASE91_D),
+        CrcAlgorithm::Crc32Bzip2 => predefined!(crc32, CRC32_BZIP2),
+        CrcAlgorithm::Crc32CdRomEdc => predefined!(crc32, CRC32_CD_ROM_EDC),
+        CrcAlgorithm::Crc32Cksum => predefined!(crc32, CRC32_CKSUM),
+        CrcAlgorithm::Crc32Iscsi => predefined!(crc32, CRC32_ISCSI),
+        CrcAlgorithm::Crc32IsoHdlc => predefined!(crc32, CRC32_ISO_HDLC),
+        CrcAlgorithm::Crc32Jamcrc => predefined!(crc32, CRC32_JAMCRC),
+        CrcAlgorithm::Crc32Mef => predefined!(crc32, CRC32_MEF),
+        CrcAlgorithm::Crc32Mpeg2 => predefined!(crc32, CRC32_MPEG_2),
+        CrcAlgorithm::Crc32Xfer => predefined!(crc32, CRC32_XFER),
         #[allow(deprecated)]
         CrcAlgorithm::Crc32Custom | CrcAlgorithm::CrcCustom => {
             return update_crc32_custom(state, data, params);
@@ -789,13 +800,13 @@ fn update_crc32_custom(_state: u32, _data: &[u8], _params: &CrcParams) -> u32 {
 
 fn update_crc64(state: u64, data: &[u8], params: &CrcParams) -> u64 {
     let (table, refin) = match params.algorithm {
-        CrcAlgorithm::Crc64Ecma182 => (table::CRC64_ECMA_182(), false),
-        CrcAlgorithm::Crc64GoIso => (table::CRC64_GO_ISO(), true),
-        CrcAlgorithm::Crc64Ms => (table::CRC64_MS(), true),
-        CrcAlgorithm::Crc64Nvme => (table::CRC64_NVME(), true),
-        CrcAlgorithm::Crc64Redis => (table::CRC64_REDIS(), true),
-        CrcAlgorithm::Crc64We => (table::CRC64_WE(), false),
-        CrcAlgorithm::Crc64Xz => (table::CRC64_XZ(), true),
+        CrcAlgorithm::Crc64Ecma182 => predefined!(crc64, CRC64_ECMA_182),
+        CrcAlgorithm::Crc64GoIso => predefined!(crc64, CRC64_GO_ISO),
+        CrcAlgorithm::Crc64Ms => predefined!(crc64, CRC64_MS),
+        CrcAlgorithm::Crc64Nvme => predefined!(crc64, CRC64_NVME),
+        CrcAlgorithm::Crc64Redis => predefined!(crc64, CRC64_REDIS),
+        CrcAlgorithm::Crc64We => predefined!(crc64, CRC64_WE),
+        CrcAlgorithm::Crc64Xz => predefined!(crc64, CRC64_XZ),
         #[allow(deprecated)]
         CrcAlgorithm::Crc64Custom | CrcAlgorithm::CrcCustom => {
             return update_crc64_custom(state, data, params);
@@ -872,7 +883,8 @@ fn update_crc64_custom(_state: u64, _data: &[u8], _params: &CrcParams) -> u64 {
 /// - the lookups for the leading 8 bytes, which are loaded as a single word, XORed with the state,
 ///   and combined as a balanced tree to keep the loop-carried dependency chain short.
 ///
-/// Blocks are iterated through `chunks_exact`, which keeps the hot loop free of bounds checks.
+/// Blocks are split off as arrays through `as_chunks`, which keeps the hot loop free of bounds
+/// checks without relying on an iterator being inlined (`chunks_exact` isn't at `opt-level = "z"`).
 /// That's both faster and considerably smaller, which matters for targets like WebAssembly.
 macro_rules! define_native_update {
     ($(#[$doc:meta])* $name:ident, $ty:ty) => {
@@ -917,11 +929,11 @@ macro_rules! define_native_update {
 
             const TOP_BYTE: u32 = <$ty>::BITS - 8;
 
-            let mut chunks = bytes.chunks_exact(16);
+            let (blocks, remainder) = bytes.as_chunks::<16>();
 
             if reflect {
                 // Process 16 bytes at a time
-                for chunk in &mut chunks {
+                for chunk in blocks {
                     // the state is XORed into the leading bytes of the block, starting with its
                     // least significant byte
                     let word = u64::from_le_bytes(leading!(chunk)) ^ (crc as u64);
@@ -934,12 +946,12 @@ macro_rules! define_native_update {
                 }
 
                 // Process remaining bytes one at a time
-                for &byte in chunks.remainder() {
+                for &byte in remainder {
                     crc = table[0][(crc as u8 ^ byte) as usize] ^ (crc >> 8);
                 }
             } else {
                 // Process 16 bytes at a time
-                for chunk in &mut chunks {
+                for chunk in blocks {
                     // the state is XORed into the leading bytes of the block, starting with its
                     // most significant byte
                     let word = u64::from_be_bytes(leading!(chunk))
@@ -953,7 +965,7 @@ macro_rules! define_native_update {
                 }
 
                 // Process remaining bytes one at a time
-                for &byte in chunks.remainder() {
+                for &byte in remainder {
                     crc = table[0][((crc >> TOP_BYTE) as u8 ^ byte) as usize] ^ (crc << 8);
                 }
             }

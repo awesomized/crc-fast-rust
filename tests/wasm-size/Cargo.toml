@@ -1,0 +1,26 @@
+# Guards the binary size of WebAssembly builds which embed the precomputed lookup tables (i.e.
+# without the `runtime-tables` feature): only the tables of the algorithms in use should be linked.
+#
+# The release profile deliberately leaves `lto` and `codegen-units` at Cargo's defaults, since
+# that's what most consumers build with, and it's the hardest case: nothing can be inlined across
+# crates unless crc-fast marks it as such. CI builds this and checks the size of the result:
+#
+#   cargo build --release --target wasm32-unknown-unknown
+[package]
+name = "wasm-size"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+crc-fast = { path = "../..", default-features = false, features = ["panic-handler"] }
+
+[profile.release]
+panic = "abort"
+strip = true
+
+# keep this package out of any enclosing workspace
+[workspace]
