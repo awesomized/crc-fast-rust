@@ -66,6 +66,8 @@ jobs:
         run: cargo clippy --all-features -- -D warnings
       - name: Test
         run: cargo test --all-features
+      - name: Test software fallback with precomputed lookup tables (--all-features enables runtime-tables instead)
+        run: cargo test --lib arch::software
 
   test-x86_64:
     name: Test x86_64
@@ -98,6 +100,8 @@ jobs:
         run: cargo clippy --all-features -- -D warnings
       - name: Test
         run: cargo test --all-features
+      - name: Test software fallback with precomputed lookup tables (--all-features enables runtime-tables instead)
+        run: cargo test --lib arch::software
 
   test-x86-linux:
     name:  Test x86 Linux
@@ -184,6 +188,8 @@ jobs:
         run: cross run --features cli --bin arch-check --target ${{ matrix.target }}
       - name: Test
         run: cross test --all-features --target ${{ matrix.target }}
+      - name: Test with precomputed lookup tables (--all-features enables runtime-tables instead)
+        run: cross test --lib --target ${{ matrix.target }}
 
   miri-test-x86_64:
     name: Miri Test x86_64
@@ -286,10 +292,17 @@ jobs:
         run: cargo check --target ${{ matrix.target }} --no-default-features --features alloc,panic-handler --lib
       - name: Check WASM with cache
         run: cargo check --target ${{ matrix.target }} --no-default-features --features cache,panic-handler --lib
+      - name: Check WASM with runtime tables
+        run: cargo check --target ${{ matrix.target }} --no-default-features --features panic-handler,runtime-tables --lib
       - name: Build WASM release
         run: cargo build --target ${{ matrix.target }} --no-default-features --features alloc,panic-handler --lib --release
       - name: Run WASM tests (on host with std test harness)
         run: cargo test --test wasm_tests
+      - if: ${{ matrix.target == 'wasm32-unknown-unknown' && matrix.rust-toolchain == 'stable' }}
+        name: Build the minimal CRC-64/NVME module, then check its results and size
+        run: |
+          cargo build --manifest-path examples/wasm-crc64-nvme/Cargo.toml --target wasm32-unknown-unknown --release
+          node examples/wasm-crc64-nvme/check.mjs
       - if: ${{ matrix.target == 'wasm32-unknown-unknown' && matrix.rust-toolchain == 'stable' }}
         name: Install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh

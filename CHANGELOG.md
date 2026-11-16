@@ -1,5 +1,13 @@
 # Changes for crc-fast-rust
 
+## Unreleased
+* Only link the software fallback's lookup tables for the algorithms which are actually used, when the algorithm is
+  known at compile time, on targets without SIMD acceleration (`WASM`, embedded, etc). A `CRC-64/NVME` `WASM` module
+  shrinks from 461 KiB to 33 KiB.
+* Add the `runtime-tables` feature, which generates the software fallback's lookup tables at first use instead of
+  embedding them. A `CRC-64/NVME` `WASM` module shrinks further to under 1 KiB.
+* Speed up the software fallback by ~35% (measured in `WASM`).
+
 ## [1.10.0](https://github.com/awesomized/crc-fast-rust/releases/tag/1.10.0) - 2025-12-26
 * [Rust 1.89 baseline](https://github.com/awesomized/crc-fast-rust/pull/27)
 * [Remove 'crc' dependency](https://github.com/awesomized/crc-fast-rust/pull/40)

@@ -123,6 +123,9 @@ cache = [
     "spin",
 ] # no_std caching requires alloc + hashbrown HashMap + spin for synchronization
 
+runtime-tables = [
+] # generate the software fallback's lookup tables at first use instead of embedding them, for much smaller artifacts (WebAssembly, etc)
+
 # the features below are deprecated, aren't in use, and will be removed in the next MAJOR version (v2)
 vpclmulqdq = [] # deprecated, VPCLMULQDQ stabilized in Rust 1.89.0
 optimize_crc32_auto = [] # deprecated
