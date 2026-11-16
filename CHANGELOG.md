@@ -7,6 +7,8 @@
 * Add the `runtime-tables` feature, which generates the software fallback's lookup tables at first use instead of
   embedding them. A `CRC-64/NVME` `WASM` module shrinks further to under 1 KiB.
 * Speed up the software fallback by ~35% (measured in `WASM`).
+* Fix custom CRC parameters leaking a lookup table on every update in the software fallback, for `no_std` builds with
+  `alloc` but without `cache`.
 
 ## [1.10.0](https://github.com/awesomized/crc-fast-rust/releases/tag/1.10.0) - 2025-12-26
 * [Rust 1.89 baseline](https://github.com/awesomized/crc-fast-rust/pull/27)

@@ -224,6 +224,11 @@ pub const fn generate_table_u64(width: u8, poly: u64, reflect: bool) -> [[u64; 2
 // ============================================================================
 
 #[cfg(feature = "alloc")]
+extern crate alloc;
+#[cfg(feature = "alloc")]
+use alloc::boxed::Box;
+
+#[cfg(feature = "alloc")]
 #[cfg(feature = "std")]
 use std::collections::HashMap;
 #[cfg(feature = "alloc")]
@@ -280,6 +285,30 @@ static CUSTOM_CRC32_CACHE: Once<Mutex<HashMap<Crc32Key, Crc32CacheValue>>> = Onc
 #[cfg(feature = "alloc")]
 #[cfg(all(not(feature = "std"), feature = "cache"))]
 static CUSTOM_CRC64_CACHE: Once<Mutex<HashMap<Crc64Key, Crc64CacheValue>>> = Once::new();
+
+/// Generates the lookup table for custom parameters when there's no cache to keep it in.
+///
+/// The caller owns the table, so it's freed after use. It can't be leaked like the cached tables
+/// are: with nothing to find it again, every single update would leak another one.
+///
+/// The table is filled in place on the heap, since it's too large (up to 32 KiB) to build on the
+/// stack of a typical embedded target first.
+#[cfg(feature = "alloc")]
+#[cfg(any(test, not(any(feature = "std", feature = "cache"))))]
+fn uncached_table<T: Copy + Default>(
+    fill: impl FnOnce(&mut [[T; 256]; 16]),
+) -> Box<[[T; 256]; 16]> {
+    let lanes = alloc::vec![[T::default(); 256]; 16].into_boxed_slice();
+
+    let mut table: Box<[[T; 256]; 16]> = match lanes.try_into() {
+        Ok(table) => table,
+        Err(_) => unreachable!("the table always has 16 lanes"),
+    };
+
+    fill(&mut table);
+
+    table
+}
 
 // ============================================================================
 // Lookup table access
@@ -628,9 +657,6 @@ fn update_crc16(state: u16, data: &[u8], params: &CrcParams) -> u16 {
 
 #[cfg(feature = "alloc")]
 fn update_crc16_custom(state: u16, data: &[u8], params: &CrcParams) -> u16 {
-    extern crate alloc;
-    use alloc::boxed::Box;
-
     let refin = params.refin;
 
     #[cfg(any(feature = "std", feature = "cache"))]
@@ -668,10 +694,8 @@ fn update_crc16_custom(state: u16, data: &[u8], params: &CrcParams) -> u16 {
     };
 
     #[cfg(not(any(feature = "std", feature = "cache")))]
-    let table: &'static [[u16; 256]; 16] = {
-        let table = generate_table_u16(params.width, params.poly as u16, refin);
-        Box::leak(Box::new(table))
-    };
+    let table =
+        &uncached_table(|table| fill_table_u16(table, params.width, params.poly as u16, refin));
 
     native_update_u16(state, table, refin, data)
 }
@@ -711,9 +735,6 @@ fn update_crc32(state: u32, data: &[u8], params: &CrcParams) -> u32 {
 
 #[cfg(feature = "alloc")]
 fn update_crc32_custom(state: u32, data: &[u8], params: &CrcParams) -> u32 {
-    extern crate alloc;
-    use alloc::boxed::Box;
-
     let refin = params.refin;
 
     #[cfg(any(feature = "std", feature = "cache"))]
@@ -751,10 +772,8 @@ fn update_crc32_custom(state: u32, data: &[u8], params: &CrcParams) -> u32 {
     };
 
     #[cfg(not(any(feature = "std", feature = "cache")))]
-    let table: &'static [[u32; 256]; 16] = {
-        let table = generate_table_u32(params.width, params.poly as u32, refin);
-        Box::leak(Box::new(table))
-    };
+    let table =
+        &uncached_table(|table| fill_table_u32(table, params.width, params.poly as u32, refin));
 
     native_update_u32(state, table, refin, data)
 }
@@ -789,9 +808,6 @@ fn update_crc64(state: u64, data: &[u8], params: &CrcParams) -> u64 {
 
 #[cfg(feature = "alloc")]
 fn update_crc64_custom(state: u64, data: &[u8], params: &CrcParams) -> u64 {
-    extern crate alloc;
-    use alloc::boxed::Box;
-
     let refin = params.refin;
 
     #[cfg(any(feature = "std", feature = "cache"))]
@@ -829,10 +845,7 @@ fn update_crc64_custom(state: u64, data: &[u8], params: &CrcParams) -> u64 {
     };
 
     #[cfg(not(any(feature = "std", feature = "cache")))]
-    let table: &'static [[u64; 256]; 16] = {
-        let table = generate_table_u64(params.width, params.poly, refin);
-        Box::leak(Box::new(table))
-    };
+    let table = &uncached_table(|table| fill_table_u64(table, params.width, params.poly, refin));
 
     native_update_u64(state, table, refin, data)
 }
@@ -1095,6 +1108,58 @@ mod direct_tests {
                     split
                 );
             }
+        }
+    }
+
+    /// Without a cache, custom parameters generate their table for every call and free it again,
+    /// which isn't reachable through the public API in a test build since that always has a cache.
+    #[test]
+    fn test_uncached_table_matches_generated_table() {
+        use crate::crc16::consts::{CRC16_ARC, CRC16_T10_DIF};
+        use crate::crc32::consts::{CRC32_BZIP2, CRC32_ISO_HDLC};
+        use crate::crc64::consts::{CRC64_ECMA_182, CRC64_NVME};
+        use crate::test::consts::TEST_CHECK_STRING;
+
+        for params in [CRC16_ARC, CRC16_T10_DIF] {
+            let (width, poly, refin) = (params.width, params.poly as u16, params.refin);
+            let table = uncached_table(|table| fill_table_u16(table, width, poly, refin));
+            let state = params.init_algorithm as u16;
+
+            assert!(*table == generate_table_u16(width, poly, refin));
+            assert_eq!(
+                native_update_u16(state, &table, refin, TEST_CHECK_STRING) as u64 ^ params.xorout,
+                params.check,
+                "{}",
+                params.name
+            );
+        }
+
+        for params in [CRC32_ISO_HDLC, CRC32_BZIP2] {
+            let (width, poly, refin) = (params.width, params.poly as u32, params.refin);
+            let table = uncached_table(|table| fill_table_u32(table, width, poly, refin));
+            let state = params.init_algorithm as u32;
+
+            assert!(*table == generate_table_u32(width, poly, refin));
+            assert_eq!(
+                native_update_u32(state, &table, refin, TEST_CHECK_STRING) as u64 ^ params.xorout,
+                params.check,
+                "{}",
+                params.name
+            );
+        }
+
+        for params in [CRC64_NVME, CRC64_ECMA_182] {
+            let (width, poly, refin) = (params.width, params.poly, params.refin);
+            let table = uncached_table(|table| fill_table_u64(table, width, poly, refin));
+            let state = params.init_algorithm;
+
+            assert!(*table == generate_table_u64(width, poly, refin));
+            assert_eq!(
+                native_update_u64(state, &table, refin, TEST_CHECK_STRING) ^ params.xorout,
+                params.check,
+                "{}",
+                params.name
+            );
         }
     }
 
