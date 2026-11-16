@@ -78,6 +78,8 @@ The library supports various feature flags for different environments:
 * `alloc` - Heap allocation support (enables `Digest` trait, custom CRC params, checksum combining)
 * `cache` - Caches generated constants for custom CRC parameters (requires `alloc`)
 * `cli` - Enables command-line tools (`checksum`, `arch-check`, `get-custom-params`)
+* `runtime-tables` - Generates the software fallback's lookup tables at first use instead of embedding precomputed ones,
+  for [much smaller artifacts](#binary-size) (recommended for `WASM`, costs RAM instead of flash on embedded targets)
 
 ### Building for `no_std`
 
@@ -103,16 +105,81 @@ For WebAssembly targets:
 
 ```bash
 # Minimal WASM
-cargo build --target wasm32-unknown-unknown --no-default-features --lib
+cargo build --target wasm32-unknown-unknown --no-default-features --features panic-handler --lib
 
 # With heap allocation (typical use case)
-cargo build --target wasm32-unknown-unknown --no-default-features --features alloc --lib
+cargo build --target wasm32-unknown-unknown --no-default-features --features alloc,panic-handler --lib
 
 # Using wasm-pack for browser
-wasm-pack build --target web --no-default-features --features alloc
+wasm-pack build --target web --no-default-features --features alloc,panic-handler
 ```
 
 Tested on `wasm32-unknown-unknown`, `wasm32-wasip1`, and `wasm32-wasip2` targets.
+
+`WASM` doesn't have carry-less multiplication, so it uses the table-based software fallback, which runs at ~2.5 GiB/s 
+in V8 on a modern server CPU.
+
+### Binary size
+
+On targets which use the software fallback (`WASM`, embedded, etc), only the lookup tables for the algorithms you 
+actually use are linked into your binary, as long as the algorithm is known at compile time:
+
+```rust
+use crc_fast::{checksum, crc64_nvme, CrcAlgorithm, Digest};
+
+// each of these only needs the CRC-64/NVME lookup table
+let a = crc64_nvme(b"123456789");
+let b = checksum(CrcAlgorithm::Crc64Nvme, b"123456789");
+let c = Digest::new(CrcAlgorithm::Crc64Nvme);
+```
+
+This holds for any optimized (release) build, with or without `LTO`.
+
+Choosing the algorithm at runtime (from a variable, a string, etc) necessarily links the tables for every algorithm, as 
+do the `*_with_params` functions for custom CRC parameters.
+
+The precomputed tables are large (8 to 32 KiB per algorithm, ~460 KiB for all of them), so the `runtime-tables` feature
+generates each table the first time it's needed instead, which takes tens of microseconds, and moves the tables from your
+binary into zero-initialized memory. It's recommended for `WASM`, where download size matters and the tables occupy
+the module's memory either way.
+
+On embedded targets, keep in mind that it trades flash for RAM: every table which would otherwise have been linked is
+reserved as static memory (`.bss`) instead, whether or not it ever gets generated. That's 8 to 32 KiB of RAM for an
+algorithm known at compile time, but the full ~460 KiB when the algorithm is chosen at runtime, so leave the feature off
+in that case. Targets without atomic compare-and-swap (`thumbv6m`, for example) ignore the feature and keep the
+precomputed tables.
+
+A table is also generated under a spin lock. Code which interrupts the first use of an algorithm and then uses that
+algorithm itself (an interrupt or signal handler, or a higher-priority task on the same core) waits forever, since the
+table can't be finished until it returns. If that can happen in your program, use each algorithm once during startup,
+where an empty input is enough: `checksum(CrcAlgorithm::Crc32IsoHdlc, &[]);`
+
+Size of an optimized `wasm32-unknown-unknown` module exporting just the listed algorithms:
+
+| Algorithms                                       | 1.10.0  | default features | `runtime-tables` |
+|:-------------------------------------------------|--------:|-----------------:|-----------------:|
+| `CRC-64/NVME`                                    | 461 KiB |           33 KiB |      **0.8 KiB** |
+| `CRC-32/ISO-HDLC`, `CRC-32/ISCSI`, `CRC-64/NVME` | 461 KiB |           65 KiB |          1.8 KiB |
+| all of them, chosen by name at runtime           | 463 KiB |          463 KiB |           11 KiB |
+
+[examples/wasm-crc64-nvme](examples/wasm-crc64-nvme) is a complete `CRC-64/NVME` module with streaming support, which
+compiles to under 1 KiB and doesn't need `wasm-bindgen` or an allocator. To get similar results, your crate should:
+
+```toml
+[dependencies]
+crc-fast = { version = "1", default-features = false, features = ["panic-handler", "runtime-tables"] }
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+```
+
+The `panic-handler` feature supplies the `#[panic_handler]` which `no_std` requires, so your crate must not define its
+own. If you need heap allocation in `WASM`, use the `std` feature instead, which brings its own panic handler and
+allocator.
 
 ## Usage
 

@@ -1,0 +1,30 @@
+# A minimal WebAssembly module which only calculates CRC-64/NVME.
+#
+# It demonstrates (and, through `check.mjs`, guards) how small a WebAssembly build of crc-fast can
+# be, which is well under 1 KiB here. See "Building for WASM" in the main README.
+#
+#   cargo build --release --target wasm32-unknown-unknown
+#   node check.mjs
+[package]
+name = "crc64-nvme-wasm"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+# - `panic-handler` supplies the `#[panic_handler]` a `no_std` build needs
+# - `runtime-tables` builds the lookup table at first use, rather than embedding it
+crc-fast = { path = "../..", default-features = false, features = ["panic-handler", "runtime-tables"] }
+
+[profile.release]
+opt-level = "s" # as fast as 3 for this module, at about half the size
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+
+# keep this package out of any enclosing workspace
+[workspace]
